@@ -15,6 +15,11 @@ ZenAndVillage is an AI-powered SaaS platform for smart condominium and community
 ## Slogan
 Connected Communities. Intelligent Operations. Peaceful Living.
 
+## Brand Identity
+- **Primary color:** teal
+- **Visual tone:** calm, trustworthy, professional ("zen" aesthetic)
+- Design tokens and component rules live in `docs/architecture-guide.md` §4.
+
 ## Base version
 1.0.0
 
