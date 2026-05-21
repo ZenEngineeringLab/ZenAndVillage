@@ -22,6 +22,19 @@ The **Design System Scaffold** (`github.com/DAE-UX/design-system-scaffold`) is t
 
 ---
 
+## Knowledge Base
+
+The domain knowledge base is maintained in two files that must always stay in sync:
+
+| File | Language | Role |
+|---|---|---|
+| [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
+| [`docs/knowledge-base-pt_BR.md`](docs/knowledge-base-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+
+**Sync rule:** Any edit to either file must be reflected in the other before the task is considered complete. The en-US file (`knowledge-base.md`) is the source of truth. When content diverges, the en-US version takes precedence. Entity field names and code identifiers are defined in the en-US version; the pt-BR version may reference them rather than redefine them.
+
+---
+
 ## Language Policy
 
 **All project artifacts must be written in American English (en-US)**, regardless of the language the user uses in conversation.
