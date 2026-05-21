@@ -50,20 +50,14 @@
       "auto": "Auto",
       "autoDesc": "Automatically detected"
     },
-    "colorTheme": "Color theme",
-    "colorThemeDesc": "Choose the accent color for the interface.",
-    "themes": {
-      "teal": "Teal",
-      "blue": "Blue",
-      "violet": "Violet",
-      "rose": "Rose",
-      "amber": "Amber",
-      "emerald": "Emerald",
-      "indigo": "Indigo",
-      "coral": "Coral",
-      "sky": "Sky",
-      "fuchsia": "Fuchsia"
-    }
+    "colorTheme": "Color Scheme",
+    "colorThemeDesc": "Choose a color preset for the interface. Presets are created at ui.shadcn.com/create.",
+    "presetAddLabel": "Apply a custom preset code",
+    "presetCodePlaceholder": "e.g. b2p8z4YDZ",
+    "presetAdd": "Apply",
+    "presetHint": "Preset codes are generated at ui.shadcn.com/create.",
+    "presetInvalidCode": "Invalid preset code format. Codes start with \"b\".",
+    "presetNotFound": "This preset is not available yet. Built-in presets only for now."
   },
   "common": {
     "save": "Save",

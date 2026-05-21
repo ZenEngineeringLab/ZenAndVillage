@@ -50,20 +50,14 @@
       "auto": "Auto",
       "autoDesc": "Detectado automaticamente"
     },
-    "colorTheme": "Tema de cor",
-    "colorThemeDesc": "Escolha a cor de destaque da interface.",
-    "themes": {
-      "teal": "Teal",
-      "blue": "Azul",
-      "violet": "Violeta",
-      "rose": "Rosa",
-      "amber": "Âmbar",
-      "emerald": "Esmeralda",
-      "indigo": "Índigo",
-      "coral": "Coral",
-      "sky": "Céu",
-      "fuchsia": "Fúcsia"
-    }
+    "colorTheme": "Esquema de Cores",
+    "colorThemeDesc": "Escolha um preset de cores para a interface. Presets são criados em ui.shadcn.com/create.",
+    "presetAddLabel": "Aplicar um código de preset personalizado",
+    "presetCodePlaceholder": "ex: b2p8z4YDZ",
+    "presetAdd": "Aplicar",
+    "presetHint": "Códigos de preset são gerados em ui.shadcn.com/create.",
+    "presetInvalidCode": "Formato de código inválido. Os códigos começam com \"b\".",
+    "presetNotFound": "Este preset ainda não está disponível. Apenas presets integrados por enquanto."
   },
   "common": {
     "save": "Salvar",

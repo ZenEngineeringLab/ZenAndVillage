@@ -1,29 +1,20 @@
-import { Sun, Moon, Monitor, Globe, Check } from 'lucide-react'
+import { useState } from 'react'
+import { Sun, Moon, Monitor, Globe, Check, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Separator } from '@/shared/components/ui/separator'
 import { useTheme } from '@/shared/hooks/useTheme'
 import { useLocale } from '@/shared/hooks/useLocale'
 import { cn } from '@/shared/lib/utils'
-import type { Theme, ColorTheme } from '@/shared/types/entities'
+import { BUILTIN_PRESETS } from '@/shared/data/presets'
+import type { Theme } from '@/shared/types/entities'
 import type { Locale } from '@/shared/types/entities'
-
-const COLOR_THEMES: { value: ColorTheme; swatch: string }[] = [
-  { value: 'teal',    swatch: 'oklch(0.596 0.145 180.72)' },
-  { value: 'blue',    swatch: 'oklch(0.546 0.19 255)' },
-  { value: 'violet',  swatch: 'oklch(0.557 0.19 293)' },
-  { value: 'rose',    swatch: 'oklch(0.648 0.22 15)' },
-  { value: 'amber',   swatch: 'oklch(0.73 0.16 75)' },
-  { value: 'emerald', swatch: 'oklch(0.596 0.17 145)' },
-  { value: 'indigo',  swatch: 'oklch(0.558 0.19 275)' },
-  { value: 'coral',   swatch: 'oklch(0.68 0.19 40)' },
-  { value: 'sky',     swatch: 'oklch(0.60 0.17 220)' },
-  { value: 'fuchsia', swatch: 'oklch(0.60 0.20 310)' },
-]
 
 export function PreferencesPage() {
   const { t } = useTranslation()
-  const { theme, setTheme, colorTheme, setColorTheme } = useTheme()
+  const { theme, setTheme, activePreset, setActivePreset } = useTheme()
   const { locale, detectedLocale, changeLocale } = useLocale()
+  const [customCode, setCustomCode] = useState('')
+  const [customError, setCustomError] = useState('')
 
   const themeOptions: { value: Theme; icon: React.ElementType; labelKey: string; descKey: string }[] = [
     { value: 'light', icon: Sun,     labelKey: 'preferences.theme.light', descKey: 'preferences.theme.lightDesc' },
@@ -36,6 +27,22 @@ export function PreferencesPage() {
     { value: 'en_US', labelKey: 'preferences.locale.enUS' },
     { value: 'auto',  labelKey: 'preferences.locale.auto', descKey: 'preferences.locale.autoDesc' },
   ]
+
+  function handleAddCustomCode() {
+    const code = customCode.trim()
+    if (!code) return
+    if (!code.startsWith('b')) {
+      setCustomError(t('preferences.presetInvalidCode'))
+      return
+    }
+    if (BUILTIN_PRESETS.some((p) => p.code === code)) {
+      setActivePreset(code)
+      setCustomCode('')
+      setCustomError('')
+      return
+    }
+    setCustomError(t('preferences.presetNotFound'))
+  }
 
   return (
     <div className="max-w-2xl">
@@ -75,32 +82,58 @@ export function PreferencesPage() {
           <p className="text-sm text-muted-foreground">{t('preferences.colorThemeDesc')}</p>
         </div>
 
-        <div className="grid grid-cols-5 gap-3">
-          {COLOR_THEMES.map(({ value, swatch }) => {
-            const active = colorTheme === value
+        <div className="grid grid-cols-4 gap-3">
+          {BUILTIN_PRESETS.map((preset) => {
+            const active = activePreset === preset.code
             return (
               <button
-                key={value}
-                onClick={() => setColorTheme(value)}
+                key={preset.code}
+                onClick={() => setActivePreset(preset.code)}
                 className={cn(
                   'flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors',
                   active ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
                 )}
               >
-                <div className="relative h-8 w-8 rounded-full" style={{ backgroundColor: swatch }}>
+                <div
+                  className="relative h-9 w-9 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: preset.swatch }}
+                >
                   {active && (
-                    <Check
-                      className="absolute inset-0 m-auto h-4 w-4"
-                      style={{ color: value === 'amber' ? 'oklch(0.145 0 0)' : 'oklch(0.985 0 0)' }}
-                    />
+                    <Check className="h-4 w-4 text-white drop-shadow" />
                   )}
                 </div>
-                <span className={cn('text-xs font-medium capitalize', active && 'text-primary')}>
-                  {t(`preferences.themes.${value}`)}
+                <span className={cn('text-xs font-medium', active && 'text-primary')}>
+                  {preset.name}
                 </span>
+                <span className="text-[10px] text-muted-foreground font-mono">{preset.code}</span>
               </button>
             )
           })}
+        </div>
+
+        <div className="space-y-2 pt-2">
+          <p className="text-sm text-muted-foreground">{t('preferences.presetAddLabel')}</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customCode}
+              onChange={(e) => { setCustomCode(e.target.value); setCustomError('') }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddCustomCode()}
+              placeholder={t('preferences.presetCodePlaceholder')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            <button
+              onClick={handleAddCustomCode}
+              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-foreground shadow hover:opacity-90 transition-opacity"
+            >
+              <Plus className="h-4 w-4" />
+              {t('preferences.presetAdd')}
+            </button>
+          </div>
+          {customError && (
+            <p className="text-sm text-destructive">{customError}</p>
+          )}
+          <p className="text-xs text-muted-foreground">{t('preferences.presetHint')}</p>
         </div>
       </section>
 

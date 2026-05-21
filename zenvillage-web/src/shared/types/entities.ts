@@ -1,6 +1,5 @@
 export type Theme = 'light' | 'dark' | 'auto'
 export type Locale = 'en_US' | 'pt_BR' | 'auto'
-export type ColorTheme = 'teal' | 'blue' | 'violet' | 'rose' | 'amber' | 'emerald' | 'indigo' | 'coral' | 'sky' | 'fuchsia'
 
 export interface Tenant {
   id: string

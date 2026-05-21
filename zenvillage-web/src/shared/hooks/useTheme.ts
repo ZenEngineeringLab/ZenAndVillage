@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../store/app.store'
+import { BUILTIN_PRESETS, buildPresetCSS } from '../data/presets'
+
+const STYLE_ID = 'zen-preset-overrides'
 
 export function useTheme() {
-  const { theme, setTheme, colorTheme, setColorTheme } = useAppStore()
+  const { theme, setTheme, activePreset, setActivePreset } = useAppStore()
 
   useEffect(() => {
     const root = document.documentElement
@@ -23,8 +26,17 @@ export function useTheme() {
   }, [theme])
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-color-theme', colorTheme)
-  }, [colorTheme])
+    const preset = BUILTIN_PRESETS.find((p) => p.code === activePreset)
+    if (!preset) return
 
-  return { theme, setTheme, colorTheme, setColorTheme }
+    let styleEl = document.getElementById(STYLE_ID) as HTMLStyleElement | null
+    if (!styleEl) {
+      styleEl = document.createElement('style')
+      styleEl.id = STYLE_ID
+      document.head.appendChild(styleEl)
+    }
+    styleEl.textContent = buildPresetCSS(preset)
+  }, [activePreset])
+
+  return { theme, setTheme, activePreset, setActivePreset }
 }
