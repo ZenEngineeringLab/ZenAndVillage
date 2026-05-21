@@ -1,0 +1,392 @@
+{
+  "app": {
+    "name": "ZenAndVillage",
+    "slogan": "Connected Communities. Intelligent Operations. Peaceful Living."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tenants": "Tenants",
+    "propertyManagers": "Property Managers",
+    "condominiums": "Condominiums",
+    "residents": "Residents",
+    "employees": "Employees",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "header": {
+    "search": "Search...",
+    "searchHint": "⌘ K"
+  },
+  "userMenu": {
+    "preferences": "Preferences",
+    "tenantSelector": "Switch Tenant",
+    "signOut": "Sign Out"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "viewAll": "View all notifications",
+    "empty": "No notifications"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "appearance": "Appearance",
+    "appearanceDesc": "Customize how ZenAndVillage looks on your device.",
+    "language": "Language",
+    "languageDesc": "Choose the language used in the interface.",
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto",
+      "lightDesc": "Always use the light theme.",
+      "darkDesc": "Always use the dark theme.",
+      "autoDesc": "Automatically matches your system preference."
+    },
+    "locale": {
+      "label": "Language",
+      "ptBR": "Português (BR)",
+      "enUS": "English (US)",
+      "auto": "Auto",
+      "autoDesc": "Automatically detected"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "details": "Details",
+    "search": "Search",
+    "new": "New",
+    "actions": "Actions",
+    "loading": "Loading...",
+    "noResults": "No results found.",
+    "emptyState": "No records found.",
+    "required": "This field is required.",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "zipCode": "ZIP Code",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "page": "Page",
+    "of": "of",
+    "rowsPerPage": "Rows per page",
+    "previous": "Previous",
+    "deleteConfirm": "Are you sure you want to delete this record?"
+  },
+  "toast": {
+    "saved": "Record saved successfully.",
+    "deleted": "Record deleted successfully.",
+    "error": "An error occurred. Please try again."
+  },
+  "tenants": {
+    "title": "Tenants",
+    "subtitle": "Manage platform tenants",
+    "new": "New Tenant",
+    "edit": "Edit Tenant",
+    "emptyState": "No tenants found. Create your first tenant.",
+    "columns": {
+      "name": "Tenant Name",
+      "type": "Type",
+      "plan": "Plan",
+      "status": "Status",
+      "condominiums": "Condominiums",
+      "joinDate": "Join Date"
+    },
+    "type": {
+      "property_manager": "Property Manager",
+      "independent_condominium": "Independent Condo"
+    },
+    "plan": {
+      "starter": "Starter",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "status": {
+      "active": "Active",
+      "trial": "Trial",
+      "suspended": "Suspended",
+      "inactive": "Inactive"
+    },
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "cnpj": "CNPJ",
+      "contactEmail": "Contact Email",
+      "phone": "Phone",
+      "responsibleName": "Responsible Name",
+      "responsibleEmail": "Responsible Email",
+      "plan": "Plan",
+      "billingCycle": "Billing Cycle",
+      "status": "Status",
+      "billingCycleMonthly": "Monthly",
+      "billingCycleAnnual": "Annual"
+    },
+    "trial": {
+      "daysRemaining": "{{count}} days remaining",
+      "expired": "Trial expired"
+    },
+    "suspended": {
+      "banner": "This tenant is currently suspended. Access to features is restricted."
+    },
+    "usage": {
+      "condominiums": "Condominiums",
+      "units": "Units"
+    }
+  },
+  "propertyManagers": {
+    "title": "Property Managers",
+    "subtitle": "Manage property management companies",
+    "new": "New Property Manager",
+    "edit": "Edit Property Manager",
+    "emptyState": "No property managers found. Create your first property manager.",
+    "columns": {
+      "name": "Trade Name",
+      "cnpj": "CNPJ",
+      "location": "City/State",
+      "condominiums": "Condominiums",
+      "status": "Status",
+      "whiteLabel": "White-Label"
+    },
+    "tabs": {
+      "general": "General",
+      "address": "Address",
+      "whiteLabel": "White-Label"
+    },
+    "fields": {
+      "legalName": "Legal Name",
+      "tradeName": "Trade Name",
+      "cnpj": "CNPJ",
+      "creci": "CRECI",
+      "email": "Email",
+      "phone": "Phone",
+      "website": "Website",
+      "zip": "ZIP Code",
+      "street": "Street",
+      "number": "Number",
+      "complement": "Complement",
+      "neighborhood": "Neighborhood",
+      "city": "City",
+      "state": "State",
+      "whiteLabelEnabled": "Enable White-Label",
+      "platformName": "Platform Name",
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color",
+      "customDomain": "Custom Domain",
+      "customSenderEmail": "Custom Sender Email"
+    },
+    "detail": {
+      "title": "Property Manager Details",
+      "totalCondominiums": "Total Condominiums",
+      "totalUnits": "Total Units",
+      "totalResidents": "Total Residents",
+      "avgDefaultRate": "Avg. Default Rate"
+    }
+  },
+  "condominiums": {
+    "title": "Condominiums",
+    "subtitle": "Manage condominiums",
+    "new": "New Condominium",
+    "edit": "Edit Condominium",
+    "emptyState": "No condominiums found. Create your first condominium.",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "location": "City/State",
+      "propertyManager": "Property Manager",
+      "units": "Units",
+      "syndic": "Syndic",
+      "status": "Status"
+    },
+    "type": {
+      "residential": "Residential",
+      "commercial": "Commercial",
+      "mixed": "Mixed"
+    },
+    "tabs": {
+      "identification": "Identification",
+      "address": "Address",
+      "characteristics": "Characteristics",
+      "management": "Management"
+    },
+    "fields": {
+      "name": "Name",
+      "cnpj": "CNPJ",
+      "type": "Type",
+      "status": "Status",
+      "zip": "ZIP Code",
+      "street": "Street",
+      "number": "Number",
+      "complement": "Complement",
+      "neighborhood": "Neighborhood",
+      "city": "City",
+      "state": "State",
+      "numUnits": "Number of Units",
+      "numBlocks": "Number of Blocks",
+      "numFloors": "Floors",
+      "totalArea": "Total Area (m²)",
+      "inauguratedAt": "Inauguration Date",
+      "propertyManager": "Property Manager",
+      "syndic": "Syndic",
+      "bylawsUrl": "Bylaws URL",
+      "regulationsUrl": "Internal Regulations URL"
+    },
+    "filters": {
+      "type": "Filter by type",
+      "status": "Filter by status",
+      "propertyManager": "Filter by property manager"
+    },
+    "detail": {
+      "tabs": {
+        "blocks": "Blocks",
+        "units": "Units",
+        "documents": "Documents"
+      },
+      "totalUnits": "Total Units",
+      "occupancyRate": "Occupancy Rate",
+      "defaultRate": "Default Rate",
+      "activeEmployees": "Active Employees"
+    }
+  },
+  "residents": {
+    "title": "Residents",
+    "subtitle": "Manage residents and owners",
+    "new": "New Resident",
+    "edit": "Edit Resident",
+    "emptyState": "No residents found. Add your first resident.",
+    "columns": {
+      "name": "Name",
+      "cpf": "CPF",
+      "type": "Type",
+      "unit": "Unit / Block",
+      "condominium": "Condominium",
+      "financialStatus": "Financial Status"
+    },
+    "type": {
+      "owner": "Owner",
+      "tenant": "Tenant"
+    },
+    "financialStatus": {
+      "current": "Current",
+      "defaulting": "Defaulting"
+    },
+    "tabs": {
+      "personal": "Personal Data",
+      "unit": "Unit",
+      "vehicle": "Vehicle",
+      "profile": "Profile"
+    },
+    "fields": {
+      "name": "Name",
+      "cpf": "CPF",
+      "rg": "RG",
+      "email": "Email",
+      "phone": "Phone",
+      "secondaryPhone": "Secondary Phone",
+      "birthdate": "Birthdate",
+      "condominium": "Condominium",
+      "block": "Block",
+      "unit": "Unit",
+      "occupancyType": "Occupancy Type",
+      "acquisitionDate": "Acquisition Date",
+      "leaseStart": "Contract Start",
+      "leaseEnd": "Contract End",
+      "leaseUrl": "Contract URL",
+      "licensePlate": "License Plate",
+      "vehicleModel": "Vehicle Model",
+      "isSyndic": "Is Syndic",
+      "isCouncilMember": "Is Board Member",
+      "financialStatus": "Financial Status"
+    },
+    "filters": {
+      "type": "Filter by type",
+      "financialStatus": "Filter by financial status",
+      "condominium": "Filter by condominium",
+      "block": "Filter by block"
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "Manage condominium employees",
+    "new": "New Employee",
+    "edit": "Edit Employee",
+    "emptyState": "No employees found. Add your first employee.",
+    "columns": {
+      "name": "Name",
+      "role": "Role",
+      "condominium": "Condominium",
+      "contractType": "Contract Type",
+      "company": "Company",
+      "admissionDate": "Admission Date",
+      "schedule": "Schedule",
+      "status": "Status"
+    },
+    "role": {
+      "superintendent": "Superintendent",
+      "doorman": "Doorman",
+      "general_services": "General Services",
+      "guard": "Security Guard",
+      "receptionist": "Receptionist"
+    },
+    "contractType": {
+      "direct_clt": "CLT",
+      "outsourced": "Third-party"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "on_leave": "On Leave"
+    },
+    "schedule": {
+      "44h": "44h/week",
+      "12x36": "12×36",
+      "part_time": "Part-time"
+    },
+    "tabs": {
+      "personal": "Personal Data",
+      "contract": "Contract",
+      "documents": "Documents"
+    },
+    "fields": {
+      "name": "Name",
+      "cpf": "CPF",
+      "pisPasep": "PIS/PASEP",
+      "email": "Email",
+      "phone": "Phone",
+      "condominium": "Condominium",
+      "role": "Role",
+      "contractType": "Contract Type",
+      "outsourcingCompany": "Third-party Company",
+      "admissionDate": "Admission Date",
+      "schedule": "Schedule",
+      "baseSalary": "Base Salary (R$)",
+      "status": "Status",
+      "terminationDate": "Termination Date",
+      "asoUrl": "ASO URL",
+      "contractUrl": "Signed Contract URL",
+      "otherDocs": "Other Documents URL"
+    },
+    "filters": {
+      "role": "Filter by role",
+      "contractType": "Filter by contract type",
+      "status": "Filter by status",
+      "condominium": "Filter by condominium"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back!"
+  }
+}
