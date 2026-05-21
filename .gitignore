@@ -1,0 +1,29 @@
+# Claude Code
+.claude/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.*
+*.key
+
+# Cache / temp
+.cache/
+tmp/
+
+# IDE
+.idea/
+.vscode/
+
+# Coverage
+coverage/
+
+# Logs
+*.log
