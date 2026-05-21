@@ -51,6 +51,14 @@ This covers without exception:
 
 ---
 
+## Brand Identity
+
+- **Primary color:** teal
+- **Visual tone:** calm, trustworthy, professional ("zen" aesthetic)
+- Apply consistently across all UI work. Design tokens and component rules live in [`docs/architecture-guide.md` §4](docs/architecture-guide.md).
+
+---
+
 ## Ignore Files Policy
 
 Whenever Claude creates, moves, deletes, or modifies files or directories, it must evaluate whether `.gitignore` and `.dockerignore` need to be updated.
