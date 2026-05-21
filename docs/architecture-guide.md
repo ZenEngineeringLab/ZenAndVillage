@@ -4,8 +4,7 @@
 > **How to use this document**
 > Replace `{project}` with your project's short identifier (e.g. `myapp`, `acme`, `foobar`).
 > This document is the **single source of truth for engineering architecture**.
-> All UI theming, component behavior, visual tokens, and responsive decisions are
-> governed exclusively by the **Design System Scaffold Kiro Power** — not this document.
+> UI decisions (components, tokens, styling, icons) are governed by Section 4 of this document.
 
 ---
 
@@ -110,7 +109,7 @@ real-time requirements, file uploads, and offline support via PWA.
 | --- | --- | --- |
 | Framework | React 19 + TypeScript 5 (strict) | This document |
 | Bundler | Vite 8 | This document |
-| UI layer (tokens, components, styling, icons) | Design System Scaffold Power | **Design System Scaffold Power** |
+| UI layer (tokens, components, styling, icons) | shadcn/ui + Tailwind CSS v4 + Lucide React | This document (Section 4) |
 | Routing | React Router 7 | This document |
 | Server state | TanStack Query 5 | This document |
 | Client state | Zustand 5 | This document |
@@ -122,12 +121,8 @@ real-time requirements, file uploads, and offline support via PWA.
 | Testing | Vitest + React Testing Library + Playwright | This document |
 
 > **Read the Authority column before adding anything to a component.**
-> If the authority is the Power, the decision is not made here — it is looked up in
-> the Power and applied directly in code.
->
-> The Power declares its own build-time dependencies (e.g. Tailwind CSS, PostCSS).
-> Follow the Power's installation guide to configure the Vite pipeline accordingly.
-> The project does not make an independent styling-mechanism choice.
+> If the authority is "This document", the definition is in the referenced section below.
+> All UI decisions (styling, components, icons) are governed by Section 4.
 
 ---
 
@@ -153,12 +148,12 @@ Minimum patch versions marked below are required — do not use earlier patches.
 ### React 19 Breaking Changes Relevant to This Architecture
 
 These React 19 changes require attention when implementing features. They do not
-affect the engineering patterns in this document, but do affect how the Design
-System Power's components are built.
+affect the engineering patterns in this document, but do affect how UI components
+are built.
 
 | Change | Impact | Action |
 | --- | --- | --- |
-| `forwardRef` deprecated | Components wrapping `ref` must use the new `ref` prop instead | The Design System Power must use React 19 ref-as-prop pattern; no `forwardRef` in new components |
+| `forwardRef` deprecated | Components wrapping `ref` must use the new `ref` prop instead | All UI components must use React 19 ref-as-prop pattern; no `forwardRef` in new components |
 | `Context.Consumer` deprecated | Render-prop style context consumers removed | Use `useContext` hook only |
 | `ReactDOM.render` removed | Legacy render API gone | Already not used — `createRoot` is the standard |
 | `use()` hook (new) | Can read Context or Promises directly in render | Available to use in feature hooks if needed; does not replace TanStack Query for server state |
@@ -189,46 +184,29 @@ for the official peer dep update.
 
 ---
 
-## 4. Design System Authority — Design System Scaffold Power
+## 4. UI Stack
 
-### What the Power Governs
+### Stack
 
-The **Design System Scaffold** (`github.com/DAE-UX/design-system-scaffold`) is the
-installed Kiro Power for this project. It is the **exclusive authority** for every
-visual and interaction decision. This architecture document does not reproduce,
-summarize, or override any of its definitions.
+| Layer | Technology | Notes |
+| --- | --- | --- |
+| Component primitives | **shadcn/ui** (Radix UI) | Install via `npx shadcn@latest add <component>` |
+| Styling | **Tailwind CSS v4** | Single styling mechanism — no CSS Modules or plain CSS |
+| Icons | **Lucide React** | Single icon library — no mixing with other sets |
+| Dark mode | Tailwind CSS `dark:` variant | Toggle sets `dark` class on `<html>`; no parallel theming |
 
-The Power owns:
+### Rules
 
-| Domain | Examples |
-| --- | --- |
-| **Design tokens** | Color palette, typography scale, spacing scale, border radii, shadows, z-index |
-| **Component library** | Button, Input, Select, Modal, Drawer, DataTable, Toast, Badge, Avatar, Skeleton, and every other UI primitive |
-| **Component variants & states** | Sizes, visual variants, loading, disabled, error, focus states |
-| **Layout primitives** | AppShell, Sidebar, Topbar, PageContainer, Section, Grid |
-| **Breakpoints & responsiveness** | Viewport thresholds, mobile/tablet/desktop behavior per component |
-| **Dark mode strategy** | Toggle mechanism, CSS variable mapping, persistence approach |
-| **Icon set** | Icon library choice, usage rules, size conventions |
-| **Motion & animation** | Transition durations, easing curves, reduced-motion behavior |
-| **Accessibility patterns** | ARIA roles, keyboard navigation contracts, focus management |
-| **Form UX patterns** | Field layout, validation display timing, error message placement |
-| **Data display patterns** | Table vs. card switching strategy, empty states, pagination UI |
+- **Use shadcn/ui components as the foundation for all UI primitives.** Run `npx shadcn@latest add <component>` before rebuilding anything that already exists in the catalog (Button, Input, Select, Dialog, Sheet, Table, Toast, Badge, Avatar, Skeleton, etc.).
+- **All visual values come from Tailwind tokens.** Never use arbitrary values (`w-[137px]`, `text-[#ff0000]`). If a token is missing, add it to `tailwind.config.ts` and document the decision here.
+- **Icons are always from Lucide React.** `import { IconName } from 'lucide-react'` — never import from heroicons, react-icons, or other libraries.
+- **Dark mode is Tailwind-native.** The `dark` class on `<html>` is the single source of truth. Persist the user's preference in `localStorage` via a small hook; never implement a separate CSS variable strategy.
+- **Component location:** shadcn output lives in `src/shared/components/ui/`; custom composites in `src/shared/components/`. Never scatter UI primitives across feature folders.
+- **Extending shadcn components:** use `cva` (class-variance-authority) for new variants — never hardcode conditional class strings.
 
-### How to Consume the Power
+### What This Document Also Defines
 
-1. Install the Power in the project's Kiro workspace.
-2. When building any component that touches visual decisions, **ask Kiro** with the
-   Power active — never guess or invent token values.
-3. Import components exclusively from the path the Power establishes
-   (e.g. `@/shared/components` wired to the Power's output) — never rebuild what
-   the Power already provides.
-4. When the Power's output needs to be wired to a React hook or API result, write
-   that wiring in the feature layer — the Power provides the shell, the feature
-   layer provides the data.
-
-### Boundary: What This Document Still Defines
-
-This document defines everything that is **not UI behavior**:
+This document defines everything that is **not UI appearance**:
 
 - How components receive data (hooks, TanStack Query, props shape)
 - How components communicate state changes (mutations, Zustand)
@@ -236,9 +214,6 @@ This document defines everything that is **not UI behavior**:
 - How routing, auth guards, and error boundaries wrap pages
 - How forms connect to API services (React Hook Form + Zod + mutation)
 - Testing strategy (what to test, not how the component looks)
-
-If a decision could affect how the component renders visually, **stop — the Power
-decides that, not this document.**
 
 ---
 
@@ -1129,7 +1104,7 @@ export const {feature}Service = {
 export const useServiceWorkerUpdate = () => {
   useRegisterSW({
     onNeedRefresh() {
-      // Visual treatment of the update banner is defined by the Design System Power
+      // Style the UpdateBanner using shadcn/ui + Tailwind CSS
       toast.info(<UpdateBanner onConfirm={() => updateServiceWorker(true)} />, {
         duration: Infinity,
       });
@@ -1325,8 +1300,8 @@ PROD FRONTEND
 ```
 {project}-web/
 ├── public/
-│   ├── icons/                            # PWA icons — sizes per Design System Power
-│   ├── manifest.webmanifest              # theme_color from Power token
+│   ├── icons/                            # PWA icons (192×192, 512×512, maskable)
+│   ├── manifest.webmanifest              # theme_color from tailwind.config.ts token
 │   └── robots.txt
 │
 ├── src/
@@ -1340,7 +1315,7 @@ PROD FRONTEND
 │   │   ├── auth/
 │   │   ├── dashboard/
 │   │   ├── {feature}/
-│   │   │   ├── components/               # Feature components — use Power components
+│   │   │   ├── components/               # Feature components — compose from shadcn/ui
 │   │   │   ├── hooks/
 │   │   │   │   ├── use{Feature}Query.ts
 │   │   │   │   ├── use{Feature}Mutation.ts
@@ -1368,11 +1343,11 @@ PROD FRONTEND
 │       │   ├── useAuth.ts
 │       │   ├── useRequireRole.ts
 │       │   ├── useDebounce.ts
-│       │   ├── useMediaQuery.ts          # Wraps Power's breakpoint tokens
-│       │   ├── useBreakpoint.ts          # Wraps Power's breakpoint tokens
+│       │   ├── useMediaQuery.ts          # Wraps Tailwind breakpoint tokens
+│       │   ├── useBreakpoint.ts          # Wraps Tailwind breakpoint tokens
 │       │   ├── useOnlineStatus.ts
 │       │   └── useLocalStorage.ts
-│       ├── components/                   # ← Thin wrappers only; substance is in the Power
+│       ├── components/                   # shadcn/ui output + custom composites
 │       ├── constants/
 │       └── types/
 │           └── api.types.ts              # PaginatedResponse<T>, ApiError
@@ -1438,9 +1413,9 @@ VITE_SENTRY_DSN=              # optional — error tracking
 - [ ] Implement TanStack Query hooks (query + mutation) — never `useEffect + fetch`
 - [ ] Generate `X-Idempotency-Key` in the service — not in the hook
 - [ ] Register lazy-loaded routes with `React.lazy` + `Suspense` + `ErrorBoundary`
-- [ ] Build page and feature components using the **Design System Power** — ask Kiro with Power active
-- [ ] Do not define colors, spacing, or variants locally — all visual decisions come from the Power
-- [ ] Verify keyboard navigation and ARIA compliance — follow Power's accessibility contracts
+- [ ] Build page and feature components using **shadcn/ui** — run `npx shadcn@latest add <component>` before rebuilding any existing primitive
+- [ ] Do not use Tailwind arbitrary values — all colors, spacing, and radii from `tailwind.config.ts` tokens
+- [ ] Verify keyboard navigation and ARIA compliance — Radix UI primitives handle most contracts; validate with axe-core
 - [ ] Write RTL integration test covering the primary data flow (not visual appearance)
 - [ ] Write Playwright E2E test for the happy path
 - [ ] Verify offline behavior with cached data
@@ -1486,20 +1461,17 @@ VITE_SENTRY_DSN=              # optional — error tracking
 | Expired refresh token with no redirect to `/login` | Interceptor must catch, clear store, and redirect |
 | Routes without `ErrorBoundary` + `Suspense` | Every lazy route needs both fallbacks |
 
-### Frontend — Design System Violations
+### Frontend — UI Stack Violations
 
 | Anti-Pattern | Why It Is Forbidden |
 | --- | --- |
-| Defining color, spacing, or typography tokens locally | The Power is the single source of truth — local tokens create drift |
-| Adding entries to `theme.extend` in the project's build config | The project's build config is a passthrough to the Power — no local extensions |
-| Copying component variants from the Power into local files | Duplication creates maintenance debt and visual inconsistency |
-| Using CSS utility arbitrary values (e.g. hard-coded sizes, hex colors) | Use Power tokens — arbitrary values bypass the design system entirely |
-| Choosing a styling mechanism independently of the Power | The Power declares its own build-time dependencies; the project follows the Power's setup guide |
-| Writing responsive behavior rules in this document | Responsiveness is governed by the Power — reference it, don't redefine it |
-| Implementing dark mode logic outside the Power's mechanism | The Power owns the theming strategy; hooking into it is allowed, redefining it is not |
-| Overriding Power-provided component styles with local CSS | Ask the Power for a variant — don't patch over it |
-| Choosing an icon not in the Power's icon set | All icons come from the set the Power defines |
-| Building a component already provided by the Power | Check the Power's catalog before creating any new UI primitive |
+| Using Tailwind arbitrary values (`w-[137px]`, `text-[#ff0000]`) | All values must come from `tailwind.config.ts` tokens — arbitrary values create drift |
+| Adding CSS Modules or plain `.css` files for component styling | Tailwind CSS is the single styling mechanism; parallel systems diverge |
+| Rebuilding a component already in the shadcn/ui catalog | Run `npx shadcn@latest add <component>` — never rebuild Button, Input, Dialog, etc. |
+| Importing icons from any library other than Lucide React | Single icon set maintains visual and bundle consistency |
+| Implementing dark mode outside the Tailwind `dark:` class strategy | The `dark` class on `<html>` is the single theming source of truth |
+| Overriding shadcn component styles with inline styles or `!important` | Extend via `cva` variants in the component file — never patch from outside |
+| Adding tokens to `theme.extend` without documenting them here | Token additions must be recorded in this document to remain discoverable |
 
 ---
 

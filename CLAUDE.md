@@ -16,9 +16,7 @@ Never hardcode project identifiers in this file or in `docs/architecture-guide.m
 ## Architecture Reference
 
 The full engineering architecture is documented in [`docs/architecture-guide.md`](docs/architecture-guide.md).
-It is the **single source of truth for all engineering decisions** — stack, patterns, API contracts, auth, multi-tenancy, data strategy, CI/CD.
-
-The **Design System Scaffold** (`github.com/DAE-UX/design-system-scaffold`) is the exclusive authority for all visual and interaction decisions. Claude must consult it before making any UI decision. It governs: design tokens, component library, layout primitives, breakpoints, dark mode, icon set, motion, accessibility, and form/data-display patterns.
+It is the **single source of truth for all engineering decisions** — stack, patterns, API contracts, auth, multi-tenancy, data strategy, CI/CD, and UI stack.
 
 ---
 
