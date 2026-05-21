@@ -49,6 +49,20 @@
       "enUS": "English (US)",
       "auto": "Auto",
       "autoDesc": "Detectado automaticamente"
+    },
+    "colorTheme": "Tema de cor",
+    "colorThemeDesc": "Escolha a cor de destaque da interface.",
+    "themes": {
+      "teal": "Teal",
+      "blue": "Azul",
+      "violet": "Violeta",
+      "rose": "Rosa",
+      "amber": "Âmbar",
+      "emerald": "Esmeralda",
+      "indigo": "Índigo",
+      "coral": "Coral",
+      "sky": "Céu",
+      "fuchsia": "Fúcsia"
     }
   },
   "common": {

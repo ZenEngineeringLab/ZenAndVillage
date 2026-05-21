@@ -49,6 +49,20 @@
       "enUS": "English (US)",
       "auto": "Auto",
       "autoDesc": "Automatically detected"
+    },
+    "colorTheme": "Color theme",
+    "colorThemeDesc": "Choose the accent color for the interface.",
+    "themes": {
+      "teal": "Teal",
+      "blue": "Blue",
+      "violet": "Violet",
+      "rose": "Rose",
+      "amber": "Amber",
+      "emerald": "Emerald",
+      "indigo": "Indigo",
+      "coral": "Coral",
+      "sky": "Sky",
+      "fuchsia": "Fuchsia"
     }
   },
   "common": {

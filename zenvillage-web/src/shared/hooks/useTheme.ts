@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useAppStore } from '../store/app.store'
 
 export function useTheme() {
-  const { theme, setTheme } = useAppStore()
+  const { theme, setTheme, colorTheme, setColorTheme } = useAppStore()
 
   useEffect(() => {
     const root = document.documentElement
@@ -22,5 +22,9 @@ export function useTheme() {
     }
   }, [theme])
 
-  return { theme, setTheme }
+  useEffect(() => {
+    document.documentElement.setAttribute('data-color-theme', colorTheme)
+  }, [colorTheme])
+
+  return { theme, setTheme, colorTheme, setColorTheme }
 }
