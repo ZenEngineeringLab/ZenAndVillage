@@ -1,10 +1,10 @@
 {
   "$schema": "https://ui.shadcn.com/schema/v0-beta.json",
-  "style": "nova",
+  "style": "radix-nova",
   "tailwind": {
     "config": "",
     "css": "src/index.css",
-    "baseColor": "zinc",
+    "baseColor": "neutral",
     "cssVariables": true
   },
   "iconLibrary": "lucide",
@@ -18,7 +18,7 @@
   "rsc": false,
   "tsx": true,
   "rtl": false,
-  "menuColor": "inverted",
-  "menuAccent": "bold",
+  "menuColor": "default",
+  "menuAccent": "subtle",
   "registries": {}
 }

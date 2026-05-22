@@ -83,3 +83,47 @@ tests/
 README.md
 CHANGELOG.md
 ```
+
+---
+
+## Pull Request Policy
+
+Every pull request description must contain two sections: a **Code Changes Summary** and an **AI Productivity Analysis**.
+
+### Code Changes Summary
+
+Describe what changed, why, and any relevant architectural decisions. Follow the existing PR template in the repository if one exists.
+
+### AI Productivity Analysis
+
+Append this section to every PR body. Collect the data from git history and the diff; do not guess or omit fields.
+
+```
+## AI Productivity Analysis
+
+| Metric | Value |
+|---|---|
+| Lines of code manipulated (added + removed) | {loc_added + loc_removed} ({loc_added} added, {loc_removed} removed) |
+| Branch duration | {duration} (from `{branch_start_date}` to `{pr_date}`) |
+| Technologies involved | {comma-separated list} |
+
+### Estimated human effort (without AI assistance)
+
+| Seniority | Estimated time | Headcount |
+|---|---|---|
+| Junior | {hours}h | {n} |
+| Mid-level | {hours}h | {n} |
+| Senior | {hours}h | {n} |
+```
+
+**How to populate each field:**
+
+- **Lines of code manipulated** — run `git diff --stat origin/main...HEAD` and sum the insertions and deletions shown in the final totals line. Exclude lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) from the count.
+- **Branch duration** — use `git log --diff-filter=A --follow --format="%ad" --date=short -- .` on the first commit of the branch to get the start date; the PR date is today's date.
+- **Technologies involved** — list every language, framework, library, and toolchain touched by the diff (e.g. TypeScript, React, Next.js, Tailwind CSS, Prisma, PostgreSQL, Docker). Derive from changed file extensions and import statements; do not list technologies present in the repo but untouched by this PR.
+- **Estimated human effort** — reason from the scope of the diff (number of new components, API routes, schema changes, config files, test coverage) to produce a realistic estimate of how long a human engineer at each seniority level would need to deliver the same result working alone, without AI assistance. Use the following reference ranges:
+  - Junior: typically 3–5× longer than senior
+  - Mid-level: typically 1.5–2.5× longer than senior
+  - Senior: baseline — estimate the senior time first, then derive the others
+  - Express time in hours (e.g. `8h`, `2h`). If the scope is very small (< 1 h senior), use `< 1h`.
+  - Headcount should almost always be 1 per seniority tier unless the scope clearly requires parallel work.
