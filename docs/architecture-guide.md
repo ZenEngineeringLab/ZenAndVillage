@@ -1599,16 +1599,4 @@ Controls which code is running in AWS at any given moment, without SemVer overhe
 
 ### Version Bump Flow
 
-Execute these steps in order whenever a release is cut:
-
-```
-1. Update  docs/project-definition.md       ← bump "Base version"
-2. Update  zenvillage-web/package.json      ← set "version" to match
-3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
-4. Update  CHANGELOG.md                     ← add release section with date and summary
-5. Commit  "chore(release): bump version to vX.Y.Z"
-6. Tag     git tag vX.Y.Z
-7. Push    git push origin main --tags
-```
-
-Steps 1–4 must be in the same commit. The git tag is the canonical release marker; CI/CD pipelines key off it.
+The step-by-step release procedure is defined in `CLAUDE.md` under **Versioning Policy**. The git tag `vX.Y.Z` is the canonical release marker; CI/CD pipelines key off it.
