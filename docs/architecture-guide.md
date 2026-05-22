@@ -1550,3 +1550,65 @@ The custom `LanguageDetector` must implement the detection algorithm defined abo
 | Using locale format `en-US`, `en`, `pt`, `pt-br` anywhere in code | The only accepted formats are `en_US` and `pt_BR` (underscore separator) |
 | Storing locale preference outside `custom:locale` | Single source of truth — do not duplicate into other Cognito attributes or DynamoDB |
 | Changing the locale without persisting to `custom:locale` | Preference would reset on next login |
+
+---
+
+## 25. Versioning Strategy
+
+This project uses a **three-layer versioning model**. Each layer has a distinct purpose and a distinct owner. Do not conflate them.
+
+### Layer 1 — Product Version (SemVer)
+
+A single SemVer version represents a coordinated release of all components in the monorepo (frontend, all Lambda domains, infrastructure). It is the version the user sees, the changelog references, and CI/CD gates on.
+
+| Where | Role |
+| --- | --- |
+| `docs/project-definition.md` — `Base version` field | **Single source of truth** — change this first |
+| `zenvillage-web/package.json` — `version` field | Propagated copy — must stay in sync |
+| `{domain}-lambda/package.json` — `version` field (when created) | Propagated copy — must stay in sync |
+| `CHANGELOG.md` | Human-readable release history |
+| Git tag `vX.Y.Z` | Immutable release artifact — CI/CD gates on this |
+
+#### Bump Rules
+
+| Type of change | Bump | Examples |
+| --- | --- | --- |
+| Breaking API contract change, destructive schema migration | **Major** (`2.0.0`) | Removing a field from the API envelope, changing a PK pattern |
+| New user-visible feature, new Lambda domain, new API route | **Minor** (`1.1.0`) | New feature slice, new `/v1/{domain}` path |
+| Bug fix, config tweak, refactor with no external impact | **Patch** (`1.0.1`) | Fixing a Lambda response, adjusting a Tailwind token |
+
+### Layer 2 — API Contract Version
+
+The HTTP API prefix (`/v1/`, `/v2/`) decouples the frontend from breaking backend changes without requiring a product version bump. A new prefix is created only when an existing contract must change in a breaking way while the old contract must remain live for existing clients.
+
+- All routes start at `/v1/` (see Section 5).
+- A `/v2/` prefix is introduced only when a breaking contract change is needed and backward compatibility must be preserved during migration.
+- The prefix is **not** a SemVer — it is an integer that increments independently.
+
+### Layer 3 — Deployment Version
+
+Controls which code is running in AWS at any given moment, without SemVer overhead per function.
+
+| Mechanism | Purpose |
+| --- | --- |
+| Lambda aliases `LIVE` / `STAGING` | Point to a published Lambda version; instant rollback by updating the alias |
+| Lambda version number | Immutable snapshot created by CDK on each deploy — used only as an alias target |
+| Frontend build hash (`VITE_APP_VERSION`) | Commit SHA injected by CodeBuild — surfaced in error tracking (Sentry) and `X-App-Version` header |
+
+`VITE_APP_VERSION` is injected during the CodeBuild frontend build step and is never hardcoded in the repository.
+
+### Version Bump Flow
+
+Execute these steps in order whenever a release is cut:
+
+```
+1. Update  docs/project-definition.md       ← bump "Base version"
+2. Update  zenvillage-web/package.json      ← set "version" to match
+3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
+4. Update  CHANGELOG.md                     ← add release section with date and summary
+5. Commit  "chore(release): bump version to vX.Y.Z"
+6. Tag     git tag vX.Y.Z
+7. Push    git push origin main --tags
+```
+
+Steps 1–4 must be in the same commit. The git tag is the canonical release marker; CI/CD pipelines key off it.

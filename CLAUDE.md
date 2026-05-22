@@ -86,6 +86,41 @@ CHANGELOG.md
 
 ---
 
+## Versioning Policy
+
+This project uses a **three-layer versioning model** defined in full in Section 25 of [`docs/architecture-guide.md`](docs/architecture-guide.md). The summary below governs agent behavior.
+
+### Source of truth
+
+The canonical product version lives in `docs/project-definition.md` under `Base version`.
+It must be propagated to every `package.json` in the monorepo and to `CHANGELOG.md` before a release commit is made.
+
+### When to bump
+
+| Change type | Bump |
+|---|---|
+| Breaking API contract, destructive schema migration | Major (`2.0.0`) |
+| New user-visible feature, new Lambda domain, new API route | Minor (`1.1.0`) |
+| Bug fix, config tweak, refactor with no external impact | Patch (`1.0.1`) |
+
+### Version bump flow
+
+Execute in this exact order:
+
+```
+1. Update  docs/project-definition.md       ← bump "Base version"
+2. Update  zenvillage-web/package.json      ← set "version" to match
+3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
+4. Update  CHANGELOG.md                     ← add release section with date and summary
+5. Commit  "chore(release): bump version to vX.Y.Z"
+6. Tag     git tag vX.Y.Z
+7. Push    git push origin main --tags
+```
+
+Steps 1–4 must land in the same commit. Never tag before committing, never push the tag without pushing the commit first.
+
+---
+
 ## Incremental Commit Policy
 
 When working on a feature branch, commit and push incrementally — do not accumulate all changes into a single end-of-task commit.
