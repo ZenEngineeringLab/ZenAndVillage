@@ -399,6 +399,17 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Welcome back!"
+    "welcome": "Welcome back!",
+    "thisMonth": "this month",
+    "tenantGrowth": "Tenant Growth",
+    "tenantGrowthDesc": "Cumulative tenants registered over the last 6 months",
+    "planMix": "Plan Distribution",
+    "planMixDesc": "Active tenants by subscription plan",
+    "financialStatus": "Financial Status",
+    "financialStatusDesc": "Residents by payment standing",
+    "condoTypes": "Condominium Types",
+    "condoTypesDesc": "Distribution by condominium category",
+    "employeeRoles": "Employee Roles",
+    "employeeRolesDesc": "Headcount by role across all condominiums"
   }
 }

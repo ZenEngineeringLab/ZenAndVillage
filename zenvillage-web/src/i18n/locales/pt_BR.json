@@ -399,6 +399,17 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Bem-vindo de volta!"
+    "welcome": "Bem-vindo de volta!",
+    "thisMonth": "neste mês",
+    "tenantGrowth": "Crescimento de Tenants",
+    "tenantGrowthDesc": "Total acumulado de tenants cadastrados nos últimos 6 meses",
+    "planMix": "Distribuição por Plano",
+    "planMixDesc": "Tenants ativos por plano de assinatura",
+    "financialStatus": "Situação Financeira",
+    "financialStatusDesc": "Moradores por situação de pagamento",
+    "condoTypes": "Tipos de Condomínio",
+    "condoTypesDesc": "Distribuição por categoria de condomínio",
+    "employeeRoles": "Cargos de Funcionários",
+    "employeeRolesDesc": "Headcount por cargo em todos os condomínios"
   }
 }
