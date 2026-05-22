@@ -18,7 +18,7 @@ export function AppHeader() {
   const handleUserToggle = () => { setUserOpen((v) => !v); setNotifOpen(false) }
 
   return (
-    <header className="shrink-0 h-14 flex items-center border-b bg-background px-4 gap-3">
+    <header className="shrink-0 h-14 relative flex items-center border-b bg-background px-4 gap-3">
       {/* Hamburger */}
       <Button
         variant="ghost"
@@ -38,11 +38,9 @@ export function AppHeader() {
         <span className="font-semibold text-sm hidden sm:block">ZenAndVillage</span>
       </div>
 
-      <Separator orientation="vertical" className="h-6 shrink-0" />
-
-      {/* Search */}
-      <div className="flex-1 max-w-lg">
-        <div className="relative">
+      {/* Search — absolutely centered so it stays in the middle regardless of left/right widths */}
+      <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-sm px-4 pointer-events-none">
+        <div className="relative pointer-events-auto">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t('header.search')}
