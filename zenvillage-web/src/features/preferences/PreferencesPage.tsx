@@ -5,15 +5,76 @@ import { useTheme } from '@/shared/hooks/useTheme'
 import { useLocale } from '@/shared/hooks/useLocale'
 import { cn } from '@/shared/lib/utils'
 import { BUILTIN_PRESETS } from '@/shared/data/presets'
+import type { Preset } from '@/shared/data/presets'
 import { FONTS } from '@/shared/data/fonts'
 import type { FontChoice } from '@/shared/data/fonts'
 import type { Theme, Locale } from '@/shared/types/entities'
 
-const FONT_SAMPLES: Record<FontChoice, string> = {
-  inter:    'Aa — The quick brown fox',
-  oxanium:  'Aa — The quick brown fox',
-  lora:     'Aa — The quick brown fox',
+// ── Helpers ───────────────────────────────────────────────────────────
+
+const CHART_KEYS = [
+  '--chart-1', '--chart-2', '--chart-3', '--chart-4', '--chart-5',
+] as const
+
+/** Convert --radius value (e.g. "0.625rem" | "0") to a short display string */
+function getRadiusLabel(preset: Preset): string {
+  const r = preset.light['--radius']
+  if (!r || r === '0') return '0px'
+  const n = parseFloat(r)
+  return isNaN(n) ? r : `${Math.round(n * 16)}px`
 }
+
+const FONT_SAMPLES: Record<FontChoice, string> = {
+  inter:   'Aa — The quick brown fox',
+  oxanium: 'Aa — The quick brown fox',
+  lora:    'Aa — The quick brown fox',
+}
+
+// ── Sub-components ────────────────────────────────────────────────────
+
+function FontPicker({
+  selected,
+  onChange,
+}: {
+  selected: FontChoice
+  onChange: (f: FontChoice) => void
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {FONTS.map((font) => {
+        const active = selected === font.value
+        return (
+          <button
+            key={font.value}
+            onClick={() => onChange(font.value)}
+            className={cn(
+              'flex flex-col items-start gap-1 rounded-lg border p-3 transition-colors text-left',
+              active ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+            )}
+          >
+            <div className="flex w-full items-center justify-between">
+              <span
+                className={cn('text-base font-semibold', active && 'text-primary')}
+                style={{ fontFamily: font.family }}
+              >
+                {font.label}
+              </span>
+              {active && <Check className="h-4 w-4 text-primary shrink-0" />}
+            </div>
+            <span
+              className="text-sm text-muted-foreground"
+              style={{ fontFamily: font.family }}
+            >
+              {FONT_SAMPLES[font.value]}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────
 
 export function PreferencesPage() {
   const { t } = useTranslation()
@@ -36,48 +97,6 @@ export function PreferencesPage() {
     { value: 'en_US', labelKey: 'preferences.locale.enUS' },
     { value: 'auto',  labelKey: 'preferences.locale.auto', descKey: 'preferences.locale.autoDesc' },
   ]
-
-  function FontPicker({
-    selected,
-    onChange,
-  }: {
-    selected: FontChoice
-    onChange: (f: FontChoice) => void
-  }) {
-    return (
-      <div className="grid grid-cols-3 gap-3">
-        {FONTS.map((font) => {
-          const active = selected === font.value
-          return (
-            <button
-              key={font.value}
-              onClick={() => onChange(font.value)}
-              className={cn(
-                'flex flex-col items-start gap-1 rounded-lg border p-3 transition-colors text-left',
-                active ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-              )}
-            >
-              <div className="flex w-full items-center justify-between">
-                <span
-                  className={cn('text-base font-semibold', active && 'text-primary')}
-                  style={{ fontFamily: font.family }}
-                >
-                  {font.label}
-                </span>
-                {active && <Check className="h-4 w-4 text-primary shrink-0" />}
-              </div>
-              <span
-                className="text-sm text-muted-foreground"
-                style={{ fontFamily: font.family }}
-              >
-                {FONT_SAMPLES[font.value]}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
 
   return (
     <div className="max-w-2xl">
@@ -119,33 +138,125 @@ export function PreferencesPage() {
           <p className="text-sm text-muted-foreground">{t('preferences.colorThemeDesc')}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        {/* Comparison table */}
+        <div className="overflow-x-auto rounded-lg border">
+          {/* Header row */}
+          <div
+            className="grid items-center gap-x-3 px-4 py-2.5 bg-muted/40 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wide"
+            style={{ gridTemplateColumns: '1fr 36px 36px 90px 44px 36px 36px' }}
+          >
+            <span>{t('preferences.dimPreset')}</span>
+            <span className="text-center">{t('preferences.dimTheme')}</span>
+            <span className="text-center">{t('preferences.dimBase')}</span>
+            <span className="text-center">{t('preferences.dimCharts')}</span>
+            <span className="text-center">{t('preferences.dimRadius')}</span>
+            <span className="text-center">{t('preferences.dimMenu')}</span>
+            <span className="text-center">{t('preferences.dimAccent')}</span>
+          </div>
+
+          {/* Preset rows */}
           {BUILTIN_PRESETS.map((preset) => {
             const active = activePreset === preset.code
+            const radius = getRadiusLabel(preset)
             return (
               <button
                 key={preset.code}
                 onClick={() => setActivePreset(preset.code)}
                 className={cn(
-                  'flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors',
-                  active ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+                  'w-full grid items-center gap-x-3 px-4 py-3 text-left transition-colors border-b last:border-b-0',
+                  active ? 'bg-primary/5' : 'hover:bg-accent/40'
                 )}
+                style={{ gridTemplateColumns: '1fr 36px 36px 90px 44px 36px 36px' }}
               >
-                <div
-                  className="relative h-9 w-9 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: preset.swatch }}
-                >
-                  {active && <Check className="h-4 w-4 text-white drop-shadow" />}
+                {/* Preset name + radio */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className={cn(
+                      'h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center',
+                      active ? 'border-primary' : 'border-input'
+                    )}
+                  >
+                    {active && (
+                      <span className="h-2 w-2 rounded-full bg-primary block" />
+                    )}
+                  </span>
+                  <div className="min-w-0">
+                    <p className={cn('text-sm font-medium truncate', active && 'text-primary')}>
+                      {preset.name}
+                    </p>
+                    <p className="text-[10px] font-mono text-muted-foreground truncate">
+                      {preset.code}
+                    </p>
+                  </div>
                 </div>
-                <span className={cn('text-xs font-medium', active && 'text-primary')}>
-                  {preset.name}
-                </span>
-                <span className="text-[10px] text-muted-foreground font-mono">{preset.code}</span>
+
+                {/* Theme — primary color */}
+                <div className="flex justify-center">
+                  <span
+                    className="h-5 w-5 rounded-full ring-1 ring-black/10 block"
+                    style={{ backgroundColor: preset.light['--primary'] }}
+                  />
+                </div>
+
+                {/* Base — muted/neutral palette */}
+                <div className="flex justify-center">
+                  <span
+                    className="h-5 w-5 rounded ring-1 ring-black/10 block"
+                    style={{ backgroundColor: preset.light['--muted'] }}
+                  />
+                </div>
+
+                {/* Chart colors — 5 dots */}
+                <div className="flex justify-center gap-0.5">
+                  {CHART_KEYS.map((k) => (
+                    <span
+                      key={k}
+                      className="h-3.5 w-3.5 rounded-full block"
+                      style={{ backgroundColor: preset.light[k] }}
+                    />
+                  ))}
+                </div>
+
+                {/* Radius */}
+                <div className="flex justify-center">
+                  <span className="text-[11px] font-mono text-muted-foreground">{radius}</span>
+                </div>
+
+                {/* Menu — sidebar background */}
+                <div className="flex justify-center">
+                  <span
+                    className="h-5 w-5 rounded ring-1 ring-black/10 block"
+                    style={{ backgroundColor: preset.light['--sidebar'] }}
+                  />
+                </div>
+
+                {/* Menu Accent — sidebar-primary */}
+                <div className="flex justify-center">
+                  <span
+                    className="h-5 w-5 rounded-full ring-1 ring-black/10 block"
+                    style={{ backgroundColor: preset.light['--sidebar-primary'] }}
+                  />
+                </div>
               </button>
             )
           })}
         </div>
 
+        {/* Coverage legend */}
+        <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
+          <p>
+            <span className="font-semibold text-foreground">
+              {t('preferences.dimSeparate')}
+            </span>
+            {' '}{t('preferences.dimSeparateItems')}
+          </p>
+          <p>
+            <span className="font-semibold text-foreground">
+              {t('preferences.dimFixed')}
+            </span>
+            {' '}{t('preferences.dimFixedItems')}
+          </p>
+        </div>
       </section>
 
       <Separator />
