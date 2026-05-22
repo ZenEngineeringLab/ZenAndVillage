@@ -57,7 +57,11 @@
     "presetAdd": "Apply",
     "presetHint": "Preset codes are generated at ui.shadcn.com/create.",
     "presetInvalidCode": "Invalid preset code format. Codes start with \"b\".",
-    "presetNotFound": "This preset is not available yet. Built-in presets only for now."
+    "presetNotFound": "This preset is not available yet. Built-in presets only for now.",
+    "typography": "Typography",
+    "typographyDesc": "Choose the fonts used for headings and body text.",
+    "headingFont": "Heading Font",
+    "bodyFont": "Body Font"
   },
   "common": {
     "save": "Save",

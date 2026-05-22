@@ -6,12 +6,24 @@ import { useTheme } from '@/shared/hooks/useTheme'
 import { useLocale } from '@/shared/hooks/useLocale'
 import { cn } from '@/shared/lib/utils'
 import { BUILTIN_PRESETS } from '@/shared/data/presets'
-import type { Theme } from '@/shared/types/entities'
-import type { Locale } from '@/shared/types/entities'
+import { FONTS } from '@/shared/data/fonts'
+import type { FontChoice } from '@/shared/data/fonts'
+import type { Theme, Locale } from '@/shared/types/entities'
+
+const FONT_SAMPLES: Record<FontChoice, string> = {
+  inter:    'Aa — The quick brown fox',
+  oxanium:  'Aa — The quick brown fox',
+  lora:     'Aa — The quick brown fox',
+}
 
 export function PreferencesPage() {
   const { t } = useTranslation()
-  const { theme, setTheme, activePreset, setActivePreset } = useTheme()
+  const {
+    theme, setTheme,
+    activePreset, setActivePreset,
+    activeBodyFont, setActiveBodyFont,
+    activeHeadingFont, setActiveHeadingFont,
+  } = useTheme()
   const { locale, detectedLocale, changeLocale } = useLocale()
   const [customCode, setCustomCode] = useState('')
   const [customError, setCustomError] = useState('')
@@ -44,10 +56,53 @@ export function PreferencesPage() {
     setCustomError(t('preferences.presetNotFound'))
   }
 
+  function FontPicker({
+    selected,
+    onChange,
+  }: {
+    selected: FontChoice
+    onChange: (f: FontChoice) => void
+  }) {
+    return (
+      <div className="grid grid-cols-3 gap-3">
+        {FONTS.map((font) => {
+          const active = selected === font.value
+          return (
+            <button
+              key={font.value}
+              onClick={() => onChange(font.value)}
+              className={cn(
+                'flex flex-col items-start gap-1 rounded-lg border p-3 transition-colors text-left',
+                active ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+              )}
+            >
+              <div className="flex w-full items-center justify-between">
+                <span
+                  className={cn('text-base font-semibold', active && 'text-primary')}
+                  style={{ fontFamily: font.family }}
+                >
+                  {font.label}
+                </span>
+                {active && <Check className="h-4 w-4 text-primary shrink-0" />}
+              </div>
+              <span
+                className="text-sm text-muted-foreground"
+                style={{ fontFamily: font.family }}
+              >
+                {FONT_SAMPLES[font.value]}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-6">{t('preferences.title')}</h1>
 
+      {/* ── Appearance ───────────────────────────────────────────── */}
       <section className="space-y-4 mb-8">
         <div>
           <h2 className="text-lg font-semibold">{t('preferences.appearance')}</h2>
@@ -76,6 +131,7 @@ export function PreferencesPage() {
 
       <Separator />
 
+      {/* ── Color Scheme ─────────────────────────────────────────── */}
       <section className="space-y-4 my-8">
         <div>
           <h2 className="text-lg font-semibold">{t('preferences.colorTheme')}</h2>
@@ -98,9 +154,7 @@ export function PreferencesPage() {
                   className="relative h-9 w-9 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: preset.swatch }}
                 >
-                  {active && (
-                    <Check className="h-4 w-4 text-white drop-shadow" />
-                  )}
+                  {active && <Check className="h-4 w-4 text-white drop-shadow" />}
                 </div>
                 <span className={cn('text-xs font-medium', active && 'text-primary')}>
                   {preset.name}
@@ -130,15 +184,34 @@ export function PreferencesPage() {
               {t('preferences.presetAdd')}
             </button>
           </div>
-          {customError && (
-            <p className="text-sm text-destructive">{customError}</p>
-          )}
+          {customError && <p className="text-sm text-destructive">{customError}</p>}
           <p className="text-xs text-muted-foreground">{t('preferences.presetHint')}</p>
         </div>
       </section>
 
       <Separator />
 
+      {/* ── Typography ───────────────────────────────────────────── */}
+      <section className="space-y-6 my-8">
+        <div>
+          <h2 className="text-lg font-semibold">{t('preferences.typography')}</h2>
+          <p className="text-sm text-muted-foreground">{t('preferences.typographyDesc')}</p>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{t('preferences.headingFont')}</p>
+          <FontPicker selected={activeHeadingFont} onChange={setActiveHeadingFont} />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{t('preferences.bodyFont')}</p>
+          <FontPicker selected={activeBodyFont} onChange={setActiveBodyFont} />
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* ── Language ─────────────────────────────────────────────── */}
       <section className="space-y-4 mt-8">
         <div>
           <h2 className="text-lg font-semibold">{t('preferences.language')}</h2>

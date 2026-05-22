@@ -1,11 +1,17 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../store/app.store'
 import { BUILTIN_PRESETS, buildPresetCSS } from '../data/presets'
+import { FONTS } from '../data/fonts'
 
 const STYLE_ID = 'zen-preset-overrides'
 
 export function useTheme() {
-  const { theme, setTheme, activePreset, setActivePreset } = useAppStore()
+  const {
+    theme, setTheme,
+    activePreset, setActivePreset,
+    activeBodyFont, setActiveBodyFont,
+    activeHeadingFont, setActiveHeadingFont,
+  } = useAppStore()
 
   useEffect(() => {
     const root = document.documentElement
@@ -38,5 +44,24 @@ export function useTheme() {
     styleEl.textContent = buildPresetCSS(preset)
   }, [activePreset])
 
-  return { theme, setTheme, activePreset, setActivePreset }
+  useEffect(() => {
+    const font = FONTS.find((f) => f.value === activeBodyFont)
+    if (font) {
+      document.documentElement.style.setProperty('--font-body', font.family)
+    }
+  }, [activeBodyFont])
+
+  useEffect(() => {
+    const font = FONTS.find((f) => f.value === activeHeadingFont)
+    if (font) {
+      document.documentElement.style.setProperty('--font-heading-family', font.family)
+    }
+  }, [activeHeadingFont])
+
+  return {
+    theme, setTheme,
+    activePreset, setActivePreset,
+    activeBodyFont, setActiveBodyFont,
+    activeHeadingFont, setActiveHeadingFont,
+  }
 }

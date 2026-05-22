@@ -1,10 +1,14 @@
 import { create } from 'zustand'
 import type { Theme, Locale, Tenant, Notification } from '../types/entities'
+import type { FontChoice } from '../data/fonts'
+import { DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from '../data/fonts'
 import { seedTenants, seedNotifications } from '../data/seed'
 
 interface AppState {
   theme: Theme
   activePreset: string
+  activeBodyFont: FontChoice
+  activeHeadingFont: FontChoice
   locale: Locale
   activeTenantId: string
   tenants: Tenant[]
@@ -12,6 +16,8 @@ interface AppState {
 
   setTheme: (theme: Theme) => void
   setActivePreset: (code: string) => void
+  setActiveBodyFont: (font: FontChoice) => void
+  setActiveHeadingFont: (font: FontChoice) => void
   setLocale: (locale: Locale) => void
   setActiveTenant: (tenantId: string) => void
   markNotificationRead: (id: string) => void
@@ -22,6 +28,8 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   theme: 'auto',
   activePreset: 'b4gN9zgQ4',
+  activeBodyFont: DEFAULT_BODY_FONT,
+  activeHeadingFont: DEFAULT_HEADING_FONT,
   locale: 'auto',
   activeTenantId: seedTenants[0].id,
   tenants: seedTenants,
@@ -29,6 +37,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setTheme: (theme) => set({ theme }),
   setActivePreset: (code) => set({ activePreset: code }),
+  setActiveBodyFont: (font) => set({ activeBodyFont: font }),
+  setActiveHeadingFont: (font) => set({ activeHeadingFont: font }),
   setLocale: (locale) => set({ locale }),
   setActiveTenant: (tenantId) => set({ activeTenantId: tenantId }),
 

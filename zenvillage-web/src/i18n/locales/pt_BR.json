@@ -57,7 +57,11 @@
     "presetAdd": "Aplicar",
     "presetHint": "Códigos de preset são gerados em ui.shadcn.com/create.",
     "presetInvalidCode": "Formato de código inválido. Os códigos começam com \"b\".",
-    "presetNotFound": "Este preset ainda não está disponível. Apenas presets integrados por enquanto."
+    "presetNotFound": "Este preset ainda não está disponível. Apenas presets integrados por enquanto.",
+    "typography": "Tipografia",
+    "typographyDesc": "Escolha as fontes usadas nos títulos e no texto do corpo.",
+    "headingFont": "Fonte dos Títulos",
+    "bodyFont": "Fonte do Corpo"
   },
   "common": {
     "save": "Salvar",
