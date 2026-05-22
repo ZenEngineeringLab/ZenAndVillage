@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Sun, Moon, Monitor, Globe, Check, Plus } from 'lucide-react'
+import { Sun, Moon, Monitor, Globe, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Separator } from '@/shared/components/ui/separator'
 import { useTheme } from '@/shared/hooks/useTheme'
@@ -25,8 +24,6 @@ export function PreferencesPage() {
     activeHeadingFont, setActiveHeadingFont,
   } = useTheme()
   const { locale, detectedLocale, changeLocale } = useLocale()
-  const [customCode, setCustomCode] = useState('')
-  const [customError, setCustomError] = useState('')
 
   const themeOptions: { value: Theme; icon: React.ElementType; labelKey: string; descKey: string }[] = [
     { value: 'light', icon: Sun,     labelKey: 'preferences.theme.light', descKey: 'preferences.theme.lightDesc' },
@@ -39,22 +36,6 @@ export function PreferencesPage() {
     { value: 'en_US', labelKey: 'preferences.locale.enUS' },
     { value: 'auto',  labelKey: 'preferences.locale.auto', descKey: 'preferences.locale.autoDesc' },
   ]
-
-  function handleAddCustomCode() {
-    const code = customCode.trim()
-    if (!code) return
-    if (!code.startsWith('b')) {
-      setCustomError(t('preferences.presetInvalidCode'))
-      return
-    }
-    if (BUILTIN_PRESETS.some((p) => p.code === code)) {
-      setActivePreset(code)
-      setCustomCode('')
-      setCustomError('')
-      return
-    }
-    setCustomError(t('preferences.presetNotFound'))
-  }
 
   function FontPicker({
     selected,
@@ -165,28 +146,6 @@ export function PreferencesPage() {
           })}
         </div>
 
-        <div className="space-y-2 pt-2">
-          <p className="text-sm text-muted-foreground">{t('preferences.presetAddLabel')}</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={customCode}
-              onChange={(e) => { setCustomCode(e.target.value); setCustomError('') }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddCustomCode()}
-              placeholder={t('preferences.presetCodePlaceholder')}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-            <button
-              onClick={handleAddCustomCode}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-foreground shadow hover:opacity-90 transition-opacity"
-            >
-              <Plus className="h-4 w-4" />
-              {t('preferences.presetAdd')}
-            </button>
-          </div>
-          {customError && <p className="text-sm text-destructive">{customError}</p>}
-          <p className="text-xs text-muted-foreground">{t('preferences.presetHint')}</p>
-        </div>
       </section>
 
       <Separator />
