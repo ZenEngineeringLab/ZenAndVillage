@@ -86,6 +86,24 @@ CHANGELOG.md
 
 ---
 
+## Incremental Commit Policy
+
+When working on a feature branch, commit and push incrementally — do not accumulate all changes into a single end-of-task commit.
+
+**When to commit:**
+- After completing any self-contained unit of work (a component, an API route, a schema change, a config update, a passing test suite run).
+- Whenever a meaningful milestone is reached, even if the overall task is not yet finished.
+- Before switching context to a different area of the codebase within the same task.
+
+**Commit hygiene:**
+- Each commit must be buildable and must not break existing tests — never commit a half-implemented state that leaves the branch in a broken state.
+- Write a concise, descriptive commit message following the project's commit style (imperative mood, present tense, e.g. `feat(auth): add JWT refresh logic`).
+- Push to the remote branch after every commit, or at least after every two to three consecutive commits.
+
+**Why:** Frequent pushes protect in-progress work from local machine failures, make code review easier by providing a clear history of decisions, and allow collaborators to see progress without waiting for a final PR.
+
+---
+
 ## Pull Request Policy
 
 Every pull request description must contain two sections: a **Code Changes Summary** and an **AI Productivity Analysis**.
