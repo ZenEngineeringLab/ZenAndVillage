@@ -21,7 +21,7 @@ Connected Communities. Intelligent Operations. Peaceful Living.
 - Design tokens and component rules live in `docs/architecture-guide.md` §4.
 
 ## Base version
-0.1.0
+1.0.0
 
 ## Git remote
 github.com/ZenEngineeringLab/ZenAndVillage

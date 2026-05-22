@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info } from 'lucide-react'
+import { Plus, Search, Pencil, Info, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
 import { Progress } from '@/shared/components/ui/progress'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { seedTenants } from '@/shared/data/seed'
-import type { Tenant } from '@/shared/types/entities'
+import type { Tenant } from './types/tenant.types'
 import { TenantForm } from './TenantForm'
 import { TenantDetailPanel } from './TenantDetailPanel'
+import {
+  useTenantsQuery,
+  useCreateTenantMutation,
+  useUpdateTenantMutation,
+  useDeleteTenantMutation,
+} from './hooks/useTenantsQuery'
 
 function daysRemaining(dateStr?: string) {
   if (!dateStr) return 0
@@ -33,39 +39,46 @@ function statusColor(status: string): 'success' | 'warning' | 'destructive' | 's
 
 export function TenantsPage() {
   const { t, i18n } = useTranslation()
-  const [tenants, setTenants] = useState<Tenant[]>(seedTenants)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [editTarget, setEditTarget] = useState<Tenant | null>(null)
   const [detailTarget, setDetailTarget] = useState<Tenant | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
 
+  const { data, isLoading, isError } = useTenantsQuery({ search: debouncedSearch || undefined })
+  const createMutation = useCreateTenantMutation()
+  const updateMutation = useUpdateTenantMutation()
+  const deleteMutation = useDeleteTenantMutation()
+
+  const items = data?.items ?? []
+
+  // Simple client-side debounce for search
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout((window as any).__tenantSearchTimer)
+    ;(window as any).__tenantSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
+  }
+
   const fmt = (date: string) =>
     new Intl.DateTimeFormat(i18n.language.replace('_', '-'), { dateStyle: 'medium' }).format(new Date(date))
-
-  const filtered = tenants.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
 
   const handleNew = () => { setEditTarget(null); setDrawerOpen(true) }
   const handleEdit = (tenant: Tenant) => { setEditTarget(tenant); setDrawerOpen(true) }
   const handleDetail = (tenant: Tenant) => { setDetailTarget(tenant); setDetailOpen(true) }
 
-  const handleSave = (data: Partial<Tenant>) => {
-    if (editTarget) {
-      setTenants((prev) => prev.map((t) => (t.id === editTarget.id ? { ...t, ...data } : t)))
-    } else {
-      const newTenant: Tenant = {
-        id: `t${Date.now()}`,
-        condominiumsCount: 0,
-        condominiumsLimit: 1,
-        unitsCount: 0,
-        unitsLimit: 100,
-        joinDate: new Date().toISOString().split('T')[0],
-        ...data,
-      } as Tenant
-      setTenants((prev) => [...prev, newTenant])
+  const handleSave = async (data: Partial<Tenant>) => {
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, ...data })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDrawerOpen(false)
+      toast.success(t('toast.saved'))
+    } catch {
+      // error already toasted by mutation onError
     }
-    setDrawerOpen(false)
-    toast.success(t('toast.saved'))
   }
 
   const columns: Column<Tenant>[] = [
@@ -75,24 +88,20 @@ export function TenantsPage() {
     },
     {
       key: 'type', header: t('tenants.columns.type'),
-      render: (row) => (
-        <Badge variant="outline">{t(`tenants.type.${row.type}`)}</Badge>
-      ),
+      render: (row) => <Badge variant="outline">{t(`tenants.type.${row.type}`)}</Badge>,
     },
     {
       key: 'plan', header: t('tenants.columns.plan'),
-      render: (row) => (
-        <Badge variant={planColor(row.plan)}>{t(`tenants.plan.${row.plan}`)}</Badge>
-      ),
+      render: (row) => <Badge variant={planColor(row.planId)}>{t(`tenants.plan.${row.planId}`)}</Badge>,
     },
     {
       key: 'status', header: t('tenants.columns.status'),
       render: (row) => (
         <div className="flex flex-col gap-1">
-          <Badge variant={statusColor(row.status)}>{t(`tenants.status.${row.status}`)}</Badge>
-          {row.status === 'trial' && row.trialEnd && (
+          <Badge variant={statusColor(row.subscriptionStatus)}>{t(`tenants.status.${row.subscriptionStatus}`)}</Badge>
+          {row.subscriptionStatus === 'trial' && row.trialEndDate && (
             <span className="text-xs text-amber-600">
-              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEnd) })}
+              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEndDate) })}
             </span>
           )}
         </div>
@@ -102,14 +111,14 @@ export function TenantsPage() {
       key: 'condominiums', header: t('tenants.columns.condominiums'),
       render: (row) => (
         <div className="space-y-1 min-w-24">
-          <div className="text-xs">{row.condominiumsCount} / {row.condominiumsLimit}</div>
-          <Progress value={(row.condominiumsCount / row.condominiumsLimit) * 100} className="h-1" />
+          <div className="text-xs">{row.usageLimits?.activeCondos ?? 0} / {row.maxCondos}</div>
+          <Progress value={((row.usageLimits?.activeCondos ?? 0) / row.maxCondos) * 100} className="h-1" />
         </div>
       ),
     },
     {
-      key: 'joinDate', header: t('tenants.columns.joinDate'),
-      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.joinDate)}</span>,
+      key: 'createdAt', header: t('tenants.columns.joinDate'),
+      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.createdAt)}</span>,
     },
     {
       key: 'actions', header: t('common.actions'),
@@ -144,12 +153,23 @@ export function TenantsPage() {
         <Input
           placeholder={t('common.search')}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           className="pl-8"
         />
       </div>
 
-      <DataTable data={filtered} columns={columns} keyField="id" />
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      ) : isError ? (
+        <div className="flex items-center gap-2 text-destructive text-sm py-8 justify-center">
+          <AlertCircle className="h-4 w-4" />
+          {t('common.loadError')}
+        </div>
+      ) : (
+        <DataTable data={items} columns={columns} keyField="id" />
+      )}
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">

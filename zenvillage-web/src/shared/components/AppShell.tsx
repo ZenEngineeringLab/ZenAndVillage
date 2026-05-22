@@ -5,19 +5,25 @@ import { AlertTriangle } from 'lucide-react'
 import { AppHeader } from './AppHeader'
 import { AppSidebar } from './AppSidebar'
 import { useAppStore } from '../store/app.store'
+import { useAuthStore } from '@/features/auth/store/auth.store'
 import { useTheme } from '../hooks/useTheme'
 import { useLocale } from '../hooks/useLocale'
+import { useWebSocket } from '../hooks/useWebSocket'
+import { useServiceWorkerUpdate } from '../hooks/useServiceWorkerUpdate'
 
 const COLLAPSE_BREAKPOINT = 1024
 
 export function AppShell() {
   useTheme()
   useLocale()
+  useWebSocket()           // called once here, never in individual components
+  useServiceWorkerUpdate() // register PWA update listener
+
   const { t } = useTranslation()
-  const { tenants, activeTenantId, setSidebarExpanded } = useAppStore()
+  const { setSidebarExpanded } = useAppStore()
+  const { activeTenantId, tenants } = useAuthStore()
   const activeTenant = tenants.find((tn) => tn.id === activeTenantId)
 
-  // Auto-collapse when the viewport shrinks below the breakpoint
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth < COLLAPSE_BREAKPOINT) {
@@ -25,7 +31,6 @@ export function AppShell() {
       }
     }
     window.addEventListener('resize', handleResize)
-    // Run once on mount in case the initial size is already narrow
     handleResize()
     return () => window.removeEventListener('resize', handleResize)
   }, [setSidebarExpanded])

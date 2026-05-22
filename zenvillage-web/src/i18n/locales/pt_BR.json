@@ -106,7 +106,8 @@
     "of": "de",
     "rowsPerPage": "Linhas por página",
     "previous": "Anterior",
-    "deleteConfirm": "Tem certeza que deseja excluir este registro?"
+    "deleteConfirm": "Tem certeza que deseja excluir este registro?",
+    "loadError": "Falha ao carregar os dados. Tente novamente."
   },
   "toast": {
     "saved": "Registro salvo com sucesso.",
@@ -302,7 +303,8 @@
     },
     "financialStatus": {
       "current": "Em dia",
-      "defaulting": "Inadimplente"
+      "defaulting": "Inadimplente",
+      "delinquent": "Inadimplente"
     },
     "tabs": {
       "personal": "Dados Pessoais",
@@ -421,5 +423,13 @@
     "condoTypesDesc": "Distribuição por categoria de condomínio",
     "employeeRoles": "Cargos de Funcionários",
     "employeeRolesDesc": "Headcount por cargo em todos os condomínios"
+  },
+  "auth": {
+    "loginTitle": "Bem-vindo de volta",
+    "loginSubtitle": "Entre na sua conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "signIn": "Entrar",
+    "loginError": "E-mail ou senha inválidos."
   }
 }

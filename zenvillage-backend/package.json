@@ -1,0 +1,42 @@
+{
+  "name": "zenvillage-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ZenAndVillage serverless backend — AWS Lambda + CDK",
+  "scripts": {
+    "build": "tsc --build",
+    "watch": "tsc --build --watch",
+    "cdk": "cdk",
+    "deploy:staging": "cdk deploy --all --require-approval never --context env=staging",
+    "deploy:prod": "cdk deploy --all --require-approval broadening --context env=prod",
+    "seed": "ts-node --esm scripts/seed.ts"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.13.0",
+    "@aws-lambda-powertools/metrics": "^2.13.0",
+    "@aws-lambda-powertools/tracer": "^2.13.0",
+    "@aws-lambda-powertools/idempotency": "^2.13.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.782.0",
+    "@aws-sdk/client-dynamodb": "^3.782.0",
+    "@aws-sdk/lib-dynamodb": "^3.782.0",
+    "@aws-sdk/client-s3": "^3.782.0",
+    "@aws-sdk/s3-presigned-post": "^3.782.0",
+    "@aws-sdk/client-api-gateway-management-api": "^3.782.0",
+    "@aws-sdk/client-eventbridge": "^3.782.0",
+    "@middy/core": "^5.5.3",
+    "@middy/http-json-body-parser": "^5.5.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@aws-cdk/aws-lambda-nodejs": "^2.200.1",
+    "@types/aws-lambda": "^8.10.149",
+    "@types/node": "^22.15.21",
+    "@types/uuid": "^10.0.0",
+    "aws-cdk": "^2.200.1",
+    "aws-cdk-lib": "^2.200.1",
+    "constructs": "^10.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

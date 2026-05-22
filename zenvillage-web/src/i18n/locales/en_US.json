@@ -106,7 +106,8 @@
     "of": "of",
     "rowsPerPage": "Rows per page",
     "previous": "Previous",
-    "deleteConfirm": "Are you sure you want to delete this record?"
+    "deleteConfirm": "Are you sure you want to delete this record?",
+    "loadError": "Failed to load data. Please try again."
   },
   "toast": {
     "saved": "Record saved successfully.",
@@ -302,7 +303,8 @@
     },
     "financialStatus": {
       "current": "Current",
-      "defaulting": "Defaulting"
+      "defaulting": "Defaulting",
+      "delinquent": "Delinquent"
     },
     "tabs": {
       "personal": "Personal Data",
@@ -421,5 +423,13 @@
     "condoTypesDesc": "Distribution by condominium category",
     "employeeRoles": "Employee Roles",
     "employeeRolesDesc": "Headcount by role across all condominiums"
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to your account",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "loginError": "Invalid email or password."
   }
 }
