@@ -1,13 +1,12 @@
-import { useState } from 'react'
 import { NavLink } from 'react-router'
 import {
   LayoutDashboard, Building2, Users, Home, UserCheck,
-  Settings, HelpCircle, ChevronLeft, ChevronRight,
+  Settings, HelpCircle,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../lib/utils'
-import { Button } from './ui/button'
 import { Separator } from './ui/separator'
+import { useAppStore } from '../store/app.store'
 
 const mainNavItems = [
   { key: 'dashboard', href: '/', icon: LayoutDashboard },
@@ -25,19 +24,15 @@ const bottomNavItems = [
 
 export function AppSidebar() {
   const { t } = useTranslation()
-  const [collapsed, setCollapsed] = useState(false)
-  const [hoverExpanded, setHoverExpanded] = useState(false)
-
-  const isExpanded = !collapsed || hoverExpanded
+  const { sidebarExpanded } = useAppStore()
 
   return (
     <aside
       className={cn(
-        'fixed left-0 top-14 bottom-0 z-30 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200',
-        isExpanded ? 'w-56' : 'w-14'
+        'shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border',
+        'transition-[width] duration-200 overflow-hidden',
+        sidebarExpanded ? 'w-56' : 'w-14'
       )}
-      onMouseEnter={() => { if (collapsed) setHoverExpanded(true) }}
-      onMouseLeave={() => setHoverExpanded(false)}
     >
       <nav className="flex-1 py-2 overflow-hidden">
         <div className="space-y-0.5 px-2">
@@ -46,13 +41,12 @@ export function AppSidebar() {
               key={key}
               to={href}
               end={href === '/'}
-              aria-current={undefined}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
                   'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   isActive && 'bg-sidebar-primary/10 text-sidebar-primary font-semibold',
-                  !isExpanded && 'justify-center'
+                  !sidebarExpanded && 'justify-center'
                 )
               }
             >
@@ -60,9 +54,9 @@ export function AppSidebar() {
                 <>
                   <Icon
                     className={cn('h-4 w-4 shrink-0', isActive && 'text-sidebar-primary')}
-                    aria-label={!isExpanded ? t(`nav.${key}`) : undefined}
+                    aria-label={!sidebarExpanded ? t(`nav.${key}`) : undefined}
                   />
-                  {isExpanded && (
+                  {sidebarExpanded && (
                     <span className="truncate">{t(`nav.${key}`)}</span>
                   )}
                 </>
@@ -84,7 +78,7 @@ export function AppSidebar() {
                   'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
                   'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   isActive && 'bg-sidebar-primary/10 text-sidebar-primary font-semibold',
-                  !isExpanded && 'justify-center'
+                  !sidebarExpanded && 'justify-center'
                 )
               }
             >
@@ -92,26 +86,14 @@ export function AppSidebar() {
                 <>
                   <Icon
                     className={cn('h-4 w-4 shrink-0', isActive && 'text-sidebar-primary')}
-                    aria-label={!isExpanded ? t(`nav.${key}`) : undefined}
+                    aria-label={!sidebarExpanded ? t(`nav.${key}`) : undefined}
                   />
-                  {isExpanded && <span className="truncate">{t(`nav.${key}`)}</span>}
+                  {sidebarExpanded && <span className="truncate">{t(`nav.${key}`)}</span>}
                 </>
               )}
             </NavLink>
           ))}
         </div>
-
-        <Separator className="my-2" />
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn('h-7 w-7', !isExpanded && 'mx-auto')}
-          onClick={() => { setCollapsed((v) => !v); setHoverExpanded(false) }}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
       </div>
     </aside>
   )

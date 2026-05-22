@@ -10,6 +10,7 @@ interface AppState {
   activeBodyFont: FontChoice
   activeHeadingFont: FontChoice
   locale: Locale
+  sidebarExpanded: boolean
   activeTenantId: string
   tenants: Tenant[]
   notifications: Notification[]
@@ -19,6 +20,8 @@ interface AppState {
   setActiveBodyFont: (font: FontChoice) => void
   setActiveHeadingFont: (font: FontChoice) => void
   setLocale: (locale: Locale) => void
+  setSidebarExpanded: (v: boolean) => void
+  toggleSidebar: () => void
   setActiveTenant: (tenantId: string) => void
   markNotificationRead: (id: string) => void
   markAllNotificationsRead: () => void
@@ -31,6 +34,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeBodyFont: DEFAULT_BODY_FONT,
   activeHeadingFont: DEFAULT_HEADING_FONT,
   locale: 'auto',
+  sidebarExpanded: window.innerWidth >= 1024,
   activeTenantId: seedTenants[0].id,
   tenants: seedTenants,
   notifications: seedNotifications,
@@ -41,6 +45,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveHeadingFont: (font) => set({ activeHeadingFont: font }),
   setLocale: (locale) => set({ locale }),
   setActiveTenant: (tenantId) => set({ activeTenantId: tenantId }),
+  setSidebarExpanded: (v) => set({ sidebarExpanded: v }),
+  toggleSidebar: () => set((s) => ({ sidebarExpanded: !s.sidebarExpanded })),
 
   markNotificationRead: (id) =>
     set((state) => ({
