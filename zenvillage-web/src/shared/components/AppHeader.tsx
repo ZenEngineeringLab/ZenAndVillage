@@ -109,14 +109,6 @@ export function AppHeader() {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Logo */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground text-xs font-bold">Z</span>
-        </div>
-        <span className="font-semibold text-sm hidden sm:block">ZenAndVillage</span>
-      </div>
-
       {/* Spacer */}
       <div className="flex-1" />
 
