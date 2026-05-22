@@ -114,6 +114,8 @@ Append this section to every PR body. Collect the data from git history and the 
 | Junior | {hours}h | {n} |
 | Mid-level | {hours}h | {n} |
 | Senior | {hours}h | {n} |
+
+> **Total estimated effort:** {total_hours}h across all seniority levels — equivalent to approximately {total_days} work days (8h/day) or {total_weeks} work weeks (40h/week).
 ```
 
 **How to populate each field:**
@@ -127,3 +129,7 @@ Append this section to every PR body. Collect the data from git history and the 
   - Senior: baseline — estimate the senior time first, then derive the others
   - Express time in hours (e.g. `8h`, `2h`). If the scope is very small (< 1 h senior), use `< 1h`.
   - Headcount should almost always be 1 per seniority tier unless the scope clearly requires parallel work.
+- **Total estimated effort** — sum the estimated hours for all three seniority tiers (Junior + Mid-level + Senior). Then compute:
+  - `{total_days}` = `{total_hours}` ÷ 8, rounded to one decimal place
+  - `{total_weeks}` = `{total_hours}` ÷ 40, rounded to one decimal place
+  - If any tier uses `< 1h`, treat it as `0.5h` for arithmetic purposes and note the approximation inline.
