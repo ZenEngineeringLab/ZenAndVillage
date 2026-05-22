@@ -1,0 +1,425 @@
+{
+  "app": {
+    "name": "ZenAndVillage",
+    "slogan": "Comunidades Conectadas. Operações Inteligentes. Vida em Paz."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "tenants": "Tenants",
+    "propertyManagers": "Administradoras",
+    "condominiums": "Condomínios",
+    "residents": "Moradores",
+    "employees": "Funcionários",
+    "settings": "Configurações",
+    "help": "Ajuda"
+  },
+  "header": {
+    "search": "Pesquisar...",
+    "searchHint": "⌘ K"
+  },
+  "userMenu": {
+    "preferences": "Preferências",
+    "tenantSelector": "Trocar de Tenant",
+    "signOut": "Sair"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "markAllRead": "Marcar todas como lidas",
+    "viewAll": "Ver todas as notificações",
+    "empty": "Sem notificações"
+  },
+  "preferences": {
+    "title": "Preferências",
+    "appearance": "Aparência",
+    "appearanceDesc": "Personalize como o ZenAndVillage aparece no seu dispositivo.",
+    "language": "Idioma",
+    "languageDesc": "Escolha o idioma utilizado na interface.",
+    "theme": {
+      "label": "Tema",
+      "light": "Claro",
+      "dark": "Escuro",
+      "auto": "Auto",
+      "lightDesc": "Usar sempre o tema claro.",
+      "darkDesc": "Usar sempre o tema escuro.",
+      "autoDesc": "Acompanha automaticamente a preferência do sistema."
+    },
+    "locale": {
+      "label": "Idioma",
+      "ptBR": "Português (BR)",
+      "enUS": "English (US)",
+      "auto": "Auto",
+      "autoDesc": "Detectado automaticamente"
+    },
+    "colorPreset": "Preset de Cor",
+    "colorPresetDesc": "Escolha a cor de destaque e a paleta dos gráficos.",
+    "radius": "Raio",
+    "radiusDesc": "Controla o raio de borda dos elementos de interface.",
+    "radiusNone": "Nenhum",
+    "radiusSmall": "Pequeno",
+    "radiusDefault": "Padrão",
+    "radiusLarge": "Grande",
+    "menuColor": "Menu",
+    "menuColorDesc": "Controla o estilo de fundo da barra lateral.",
+    "menuColorDefault": "Padrão",
+    "menuColorInverted": "Invertido",
+    "menuAccent": "Destaque do Menu",
+    "menuAccentDesc": "Controla o realce do item ativo na barra lateral.",
+    "menuAccentSubtle": "Sutil",
+    "menuAccentBold": "Destaque",
+    "dimFixed": "Fixos (não alteráveis):",
+    "dimFixedItems": "Cor Base: Neutral · Estilo: Nova · Biblioteca de Ícones: Lucide",
+    "typography": "Tipografia",
+    "typographyDesc": "Escolha as fontes usadas nos títulos e no texto do corpo.",
+    "headingFont": "Fonte dos Títulos",
+    "bodyFont": "Fonte do Corpo"
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "details": "Detalhes",
+    "search": "Pesquisar",
+    "new": "Novo",
+    "actions": "Ações",
+    "loading": "Carregando...",
+    "noResults": "Nenhum resultado encontrado.",
+    "emptyState": "Nenhum registro encontrado.",
+    "required": "Este campo é obrigatório.",
+    "yes": "Sim",
+    "no": "Não",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "status": "Status",
+    "name": "Nome",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "address": "Endereço",
+    "city": "Cidade",
+    "state": "Estado",
+    "zipCode": "CEP",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "page": "Página",
+    "of": "de",
+    "rowsPerPage": "Linhas por página",
+    "previous": "Anterior",
+    "deleteConfirm": "Tem certeza que deseja excluir este registro?"
+  },
+  "toast": {
+    "saved": "Registro salvo com sucesso.",
+    "deleted": "Registro excluído com sucesso.",
+    "error": "Ocorreu um erro. Tente novamente."
+  },
+  "tenants": {
+    "title": "Tenants",
+    "subtitle": "Gerenciar tenants da plataforma",
+    "new": "Novo Tenant",
+    "edit": "Editar Tenant",
+    "emptyState": "Nenhum tenant encontrado. Crie seu primeiro tenant.",
+    "columns": {
+      "name": "Nome do Tenant",
+      "type": "Tipo",
+      "plan": "Plano",
+      "status": "Status",
+      "condominiums": "Condomínios",
+      "joinDate": "Data de Entrada"
+    },
+    "type": {
+      "property_manager": "Administradora",
+      "independent_condominium": "Condomínio Independente"
+    },
+    "plan": {
+      "starter": "Starter",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "status": {
+      "active": "Ativo",
+      "trial": "Trial",
+      "suspended": "Suspenso",
+      "inactive": "Inativo"
+    },
+    "fields": {
+      "name": "Nome",
+      "type": "Tipo",
+      "cnpj": "CNPJ",
+      "contactEmail": "E-mail de Contato",
+      "phone": "Telefone",
+      "responsibleName": "Nome do Responsável",
+      "responsibleEmail": "E-mail do Responsável",
+      "plan": "Plano",
+      "billingCycle": "Ciclo de Cobrança",
+      "status": "Status",
+      "billingCycleMonthly": "Mensal",
+      "billingCycleAnnual": "Anual"
+    },
+    "trial": {
+      "daysRemaining": "{{count}} dias restantes",
+      "expired": "Trial expirado"
+    },
+    "suspended": {
+      "banner": "Este tenant está suspenso. O acesso às funcionalidades está restrito."
+    },
+    "usage": {
+      "condominiums": "Condomínios",
+      "units": "Unidades"
+    }
+  },
+  "propertyManagers": {
+    "title": "Administradoras",
+    "subtitle": "Gerenciar administradoras de condomínios",
+    "new": "Nova Administradora",
+    "edit": "Editar Administradora",
+    "emptyState": "Nenhuma administradora encontrada. Crie sua primeira administradora.",
+    "columns": {
+      "name": "Nome Fantasia",
+      "cnpj": "CNPJ",
+      "location": "Cidade/Estado",
+      "condominiums": "Condomínios",
+      "status": "Status",
+      "whiteLabel": "White-Label"
+    },
+    "tabs": {
+      "general": "Geral",
+      "address": "Endereço",
+      "whiteLabel": "White-Label"
+    },
+    "fields": {
+      "legalName": "Razão Social",
+      "tradeName": "Nome Fantasia",
+      "cnpj": "CNPJ",
+      "creci": "CRECI",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "website": "Site",
+      "zip": "CEP",
+      "street": "Rua",
+      "number": "Número",
+      "complement": "Complemento",
+      "neighborhood": "Bairro",
+      "city": "Cidade",
+      "state": "Estado",
+      "whiteLabelEnabled": "Ativar White-Label",
+      "platformName": "Nome da Plataforma",
+      "primaryColor": "Cor Primária",
+      "secondaryColor": "Cor Secundária",
+      "customDomain": "Domínio Personalizado",
+      "customSenderEmail": "E-mail de Envio Personalizado"
+    },
+    "detail": {
+      "title": "Detalhes da Administradora",
+      "totalCondominiums": "Total de Condomínios",
+      "totalUnits": "Total de Unidades",
+      "totalResidents": "Total de Moradores",
+      "avgDefaultRate": "Taxa Média de Inadimplência"
+    }
+  },
+  "condominiums": {
+    "title": "Condomínios",
+    "subtitle": "Gerenciar condomínios",
+    "new": "Novo Condomínio",
+    "edit": "Editar Condomínio",
+    "emptyState": "Nenhum condomínio encontrado. Crie seu primeiro condomínio.",
+    "columns": {
+      "name": "Nome",
+      "type": "Tipo",
+      "location": "Cidade/Estado",
+      "propertyManager": "Administradora",
+      "units": "Unidades",
+      "syndic": "Síndico",
+      "status": "Status"
+    },
+    "type": {
+      "residential": "Residencial",
+      "commercial": "Comercial",
+      "mixed": "Misto"
+    },
+    "tabs": {
+      "identification": "Identificação",
+      "address": "Endereço",
+      "characteristics": "Características",
+      "management": "Gestão"
+    },
+    "fields": {
+      "name": "Nome",
+      "cnpj": "CNPJ",
+      "type": "Tipo",
+      "status": "Status",
+      "zip": "CEP",
+      "street": "Rua",
+      "number": "Número",
+      "complement": "Complemento",
+      "neighborhood": "Bairro",
+      "city": "Cidade",
+      "state": "Estado",
+      "numUnits": "Número de Unidades",
+      "numBlocks": "Número de Blocos",
+      "numFloors": "Andares",
+      "totalArea": "Área Total (m²)",
+      "inauguratedAt": "Data de Inauguração",
+      "propertyManager": "Administradora",
+      "syndic": "Síndico",
+      "bylawsUrl": "URL da Convenção",
+      "regulationsUrl": "URL do Regimento Interno"
+    },
+    "filters": {
+      "type": "Filtrar por tipo",
+      "status": "Filtrar por status",
+      "propertyManager": "Filtrar por administradora"
+    },
+    "detail": {
+      "tabs": {
+        "blocks": "Blocos",
+        "units": "Unidades",
+        "documents": "Documentos"
+      },
+      "totalUnits": "Total de Unidades",
+      "occupancyRate": "Taxa de Ocupação",
+      "defaultRate": "Taxa de Inadimplência",
+      "activeEmployees": "Funcionários Ativos"
+    }
+  },
+  "residents": {
+    "title": "Moradores",
+    "subtitle": "Gerenciar moradores e proprietários",
+    "new": "Novo Morador",
+    "edit": "Editar Morador",
+    "emptyState": "Nenhum morador encontrado. Adicione seu primeiro morador.",
+    "columns": {
+      "name": "Nome",
+      "cpf": "CPF",
+      "type": "Tipo",
+      "unit": "Unidade / Bloco",
+      "condominium": "Condomínio",
+      "financialStatus": "Situação Financeira"
+    },
+    "type": {
+      "owner": "Proprietário",
+      "tenant": "Inquilino"
+    },
+    "financialStatus": {
+      "current": "Em dia",
+      "defaulting": "Inadimplente"
+    },
+    "tabs": {
+      "personal": "Dados Pessoais",
+      "unit": "Unidade",
+      "vehicle": "Veículo",
+      "profile": "Perfil"
+    },
+    "fields": {
+      "name": "Nome",
+      "cpf": "CPF",
+      "rg": "RG",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "secondaryPhone": "Telefone Secundário",
+      "birthdate": "Data de Nascimento",
+      "condominium": "Condomínio",
+      "block": "Bloco",
+      "unit": "Unidade",
+      "occupancyType": "Tipo de Ocupação",
+      "acquisitionDate": "Data de Aquisição",
+      "leaseStart": "Início do Contrato",
+      "leaseEnd": "Fim do Contrato",
+      "leaseUrl": "URL do Contrato",
+      "licensePlate": "Placa",
+      "vehicleModel": "Modelo do Veículo",
+      "isSyndic": "É síndico",
+      "isCouncilMember": "É membro do conselho",
+      "financialStatus": "Situação Financeira"
+    },
+    "filters": {
+      "type": "Filtrar por tipo",
+      "financialStatus": "Filtrar por situação",
+      "condominium": "Filtrar por condomínio",
+      "block": "Filtrar por bloco"
+    }
+  },
+  "employees": {
+    "title": "Funcionários",
+    "subtitle": "Gerenciar funcionários dos condomínios",
+    "new": "Novo Funcionário",
+    "edit": "Editar Funcionário",
+    "emptyState": "Nenhum funcionário encontrado. Adicione seu primeiro funcionário.",
+    "columns": {
+      "name": "Nome",
+      "role": "Cargo",
+      "condominium": "Condomínio",
+      "contractType": "Tipo de Contrato",
+      "company": "Empresa",
+      "admissionDate": "Admissão",
+      "schedule": "Jornada",
+      "status": "Status"
+    },
+    "role": {
+      "superintendent": "Zelador",
+      "doorman": "Porteiro",
+      "general_services": "ASG",
+      "guard": "Vigilante",
+      "receptionist": "Recepcionista"
+    },
+    "contractType": {
+      "direct_clt": "CLT",
+      "outsourced": "Terceirizado"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo",
+      "on_leave": "Afastado"
+    },
+    "schedule": {
+      "44h": "44h/semana",
+      "12x36": "12×36",
+      "part_time": "Meio período"
+    },
+    "tabs": {
+      "personal": "Dados Pessoais",
+      "contract": "Contrato",
+      "documents": "Documentos"
+    },
+    "fields": {
+      "name": "Nome",
+      "cpf": "CPF",
+      "pisPasep": "PIS/PASEP",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "condominium": "Condomínio",
+      "role": "Cargo",
+      "contractType": "Tipo de Contrato",
+      "outsourcingCompany": "Empresa Terceirizada",
+      "admissionDate": "Data de Admissão",
+      "schedule": "Jornada",
+      "baseSalary": "Salário Base (R$)",
+      "status": "Status",
+      "terminationDate": "Data de Demissão",
+      "asoUrl": "URL do ASO",
+      "contractUrl": "URL do Contrato Assinado",
+      "otherDocs": "URL de Outros Documentos"
+    },
+    "filters": {
+      "role": "Filtrar por cargo",
+      "contractType": "Filtrar por contrato",
+      "status": "Filtrar por status",
+      "condominium": "Filtrar por condomínio"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Bem-vindo de volta!",
+    "thisMonth": "neste mês",
+    "tenantGrowth": "Crescimento de Tenants",
+    "tenantGrowthDesc": "Total acumulado de tenants cadastrados nos últimos 6 meses",
+    "planMix": "Distribuição por Plano",
+    "planMixDesc": "Tenants ativos por plano de assinatura",
+    "financialStatus": "Situação Financeira",
+    "financialStatusDesc": "Moradores por situação de pagamento",
+    "condoTypes": "Tipos de Condomínio",
+    "condoTypesDesc": "Distribuição por categoria de condomínio",
+    "employeeRoles": "Cargos de Funcionários",
+    "employeeRolesDesc": "Headcount por cargo em todos os condomínios"
+  }
+}
