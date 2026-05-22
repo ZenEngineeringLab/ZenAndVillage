@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Theme, Locale, Tenant, Notification } from '../types/entities'
+import type { Theme, Locale, RadiusOption, MenuColorOption, MenuAccentOption, Tenant, Notification } from '../types/entities'
 import type { FontChoice } from '../data/fonts'
 import { DEFAULT_BODY_FONT, DEFAULT_HEADING_FONT } from '../data/fonts'
 import { seedTenants, seedNotifications } from '../data/seed'
@@ -7,6 +7,9 @@ import { seedTenants, seedNotifications } from '../data/seed'
 interface AppState {
   theme: Theme
   activePreset: string
+  activeRadius: RadiusOption
+  activeMenuColor: MenuColorOption
+  activeMenuAccent: MenuAccentOption
   activeBodyFont: FontChoice
   activeHeadingFont: FontChoice
   locale: Locale
@@ -17,6 +20,9 @@ interface AppState {
 
   setTheme: (theme: Theme) => void
   setActivePreset: (code: string) => void
+  setActiveRadius: (r: RadiusOption) => void
+  setActiveMenuColor: (c: MenuColorOption) => void
+  setActiveMenuAccent: (a: MenuAccentOption) => void
   setActiveBodyFont: (font: FontChoice) => void
   setActiveHeadingFont: (font: FontChoice) => void
   setLocale: (locale: Locale) => void
@@ -30,7 +36,10 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   theme: 'auto',
-  activePreset: 'b4gN9zgQ4',
+  activePreset: 'b1Ymqvgiu',
+  activeRadius: 'default',
+  activeMenuColor: 'default',
+  activeMenuAccent: 'subtle',
   activeBodyFont: DEFAULT_BODY_FONT,
   activeHeadingFont: DEFAULT_HEADING_FONT,
   locale: 'auto',
@@ -41,6 +50,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setTheme: (theme) => set({ theme }),
   setActivePreset: (code) => set({ activePreset: code }),
+  setActiveRadius: (r) => set({ activeRadius: r }),
+  setActiveMenuColor: (c) => set({ activeMenuColor: c }),
+  setActiveMenuAccent: (a) => set({ activeMenuAccent: a }),
   setActiveBodyFont: (font) => set({ activeBodyFont: font }),
   setActiveHeadingFont: (font) => set({ activeHeadingFont: font }),
   setLocale: (locale) => set({ locale }),

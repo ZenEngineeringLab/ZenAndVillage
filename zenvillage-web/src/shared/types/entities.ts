@@ -1,5 +1,8 @@
 export type Theme = 'light' | 'dark' | 'auto'
 export type Locale = 'en_US' | 'pt_BR' | 'auto'
+export type RadiusOption = 'none' | 'small' | 'default' | 'large'
+export type MenuColorOption = 'default' | 'inverted'
+export type MenuAccentOption = 'subtle' | 'bold'
 
 export interface Tenant {
   id: string

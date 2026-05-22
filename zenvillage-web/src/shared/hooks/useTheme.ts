@@ -9,10 +9,14 @@ export function useTheme() {
   const {
     theme, setTheme,
     activePreset, setActivePreset,
+    activeRadius, setActiveRadius,
+    activeMenuColor, setActiveMenuColor,
+    activeMenuAccent, setActiveMenuAccent,
     activeBodyFont, setActiveBodyFont,
     activeHeadingFont, setActiveHeadingFont,
   } = useAppStore()
 
+  // ── Dark/light class ────────────────────────────────────────────────
   useEffect(() => {
     const root = document.documentElement
     if (theme === 'dark') {
@@ -31,6 +35,7 @@ export function useTheme() {
     }
   }, [theme])
 
+  // ── Preset + radius + menu vars ─────────────────────────────────────
   useEffect(() => {
     const preset = BUILTIN_PRESETS.find((p) => p.code === activePreset)
     if (!preset) return
@@ -41,9 +46,10 @@ export function useTheme() {
       styleEl.id = STYLE_ID
       document.head.appendChild(styleEl)
     }
-    styleEl.textContent = buildPresetCSS(preset)
-  }, [activePreset])
+    styleEl.textContent = buildPresetCSS(preset, activeRadius, activeMenuColor, activeMenuAccent)
+  }, [activePreset, activeRadius, activeMenuColor, activeMenuAccent])
 
+  // ── Body font ───────────────────────────────────────────────────────
   useEffect(() => {
     const font = FONTS.find((f) => f.value === activeBodyFont)
     if (font) {
@@ -51,6 +57,7 @@ export function useTheme() {
     }
   }, [activeBodyFont])
 
+  // ── Heading font ────────────────────────────────────────────────────
   useEffect(() => {
     const font = FONTS.find((f) => f.value === activeHeadingFont)
     if (font) {
@@ -61,6 +68,9 @@ export function useTheme() {
   return {
     theme, setTheme,
     activePreset, setActivePreset,
+    activeRadius, setActiveRadius,
+    activeMenuColor, setActiveMenuColor,
+    activeMenuAccent, setActiveMenuAccent,
     activeBodyFont, setActiveBodyFont,
     activeHeadingFont, setActiveHeadingFont,
   }
