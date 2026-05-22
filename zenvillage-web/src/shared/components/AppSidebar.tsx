@@ -34,6 +34,38 @@ export function AppSidebar() {
         sidebarExpanded ? 'w-56' : 'w-14'
       )}
     >
+      {/* ── Logo ──────────────────────────────────────────────── */}
+      <div
+        className={cn(
+          'shrink-0 flex items-center h-14 px-3 border-b border-sidebar-border overflow-hidden',
+          !sidebarExpanded && 'justify-center px-2',
+        )}
+      >
+        {sidebarExpanded ? (
+          <>
+            <img
+              src="/logo-light.svg"
+              alt="ZenAndVillage"
+              className="h-8 w-auto dark:hidden"
+              draggable={false}
+            />
+            <img
+              src="/logo-dark.svg"
+              alt="ZenAndVillage"
+              className="h-8 w-auto hidden dark:block"
+              draggable={false}
+            />
+          </>
+        ) : (
+          <img
+            src="/logo-icon.svg"
+            alt="ZenAndVillage"
+            className="h-8 w-8 shrink-0"
+            draggable={false}
+          />
+        )}
+      </div>
+
       <nav className="flex-1 py-2 overflow-hidden">
         <div className="space-y-0.5 px-2">
           {mainNavItems.map(({ key, href, icon: Icon }) => (
