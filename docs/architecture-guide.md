@@ -82,23 +82,27 @@ real-time requirements, file uploads, and offline support via PWA.
 > a second runtime surface — use it only when the domain team has a strong Python-first reason.
 > Node.js 20 reaches EOL on 30 April 2026 — do not use for new projects.
 
-| Role | Service |
-| --- | --- |
-| REST API | Amazon API Gateway HTTP API |
-| Real-time API | Amazon API Gateway WebSocket API |
-| Compute | AWS Lambda (Node.js 22 / TypeScript) |
-| Identity | Amazon Cognito User Pool + Identity Pool |
-| Primary data store | Amazon DynamoDB |
-| Change streams | DynamoDB Streams → Lambda |
-| Object storage | Amazon S3 |
-| Analytics / reporting | Amazon Athena (queries S3 exports) |
-| Async events | Amazon EventBridge + SQS + SNS |
-| Observability | CloudWatch Logs + Metrics + X-Ray + Dashboards |
-| Secrets | AWS Secrets Manager + Parameter Store (SSM) |
-| Middleware | middy (Lambda middleware engine for Powertools) |
-| IaC | AWS CDK (TypeScript) |
-| CI/CD | AWS CodePipeline + CodeBuild |
-| CDN + Hosting | Amazon CloudFront + S3 |
+| Role | Service | MVP status |
+| --- | --- | --- |
+| REST API | Amazon API Gateway HTTP API | ✅ Implemented |
+| Real-time API | Amazon API Gateway WebSocket API | ✅ Implemented |
+| Compute | AWS Lambda (Node.js 22 / TypeScript) | ✅ Implemented |
+| Identity | Amazon Cognito User Pool | ✅ Implemented |
+| Identity Pool (direct S3 access) | Amazon Cognito Identity Pool | 🔜 Post-MVP |
+| Primary data store | Amazon DynamoDB | ✅ Implemented |
+| Change streams | DynamoDB Streams → Lambda | 🔜 Post-MVP |
+| Object storage | Amazon S3 | ✅ Implemented |
+| Analytics / reporting | Amazon Athena (queries S3 exports) | 🔜 Post-MVP |
+| Async events | SQS + SNS | ✅ Implemented |
+| Async events (domain pub/sub) | Amazon EventBridge | 🔜 Post-MVP |
+| Observability | CloudWatch Logs + Metrics + X-Ray | ✅ Implemented |
+| Observability dashboards | CloudWatch Dashboards | 🔜 Post-MVP |
+| Secrets | AWS Secrets Manager | 🔜 Post-MVP (VAPID key manual) |
+| Config | AWS SSM Parameter Store | ✅ Implemented |
+| Middleware | middy v7 (Lambda middleware engine for Powertools) | ✅ Implemented |
+| IaC | AWS CDK (TypeScript) | ✅ Implemented |
+| CI/CD | AWS CodePipeline + CodeBuild | 🔜 Post-MVP |
+| CDN + Hosting | Amazon CloudFront + S3 | ✅ Implemented |
 
 ### Frontend (PWA)
 
@@ -107,7 +111,7 @@ real-time requirements, file uploads, and offline support via PWA.
 
 | Role | Technology | Authority |
 | --- | --- | --- |
-| Framework | React 19 + TypeScript 5 (strict) | This document |
+| Framework | React 19 + TypeScript 6 (strict) | This document |
 | Bundler | Vite 8 | This document |
 | UI layer (tokens, components, styling, icons) | shadcn/ui + Tailwind CSS v4 + Lucide React | This document (Section 4) |
 | Routing | React Router 7 | This document |
@@ -142,7 +146,7 @@ Minimum patch versions marked below are required — do not use earlier patches.
 | React 19 + React Hook Form | ✅ | `react-hook-form@7.0.0` | Compatible for SPA use. Does not integrate with `useActionState` (React 19 Server Action feature — not used in this architecture) |
 | React 19 + Amplify Auth v6 | ✅ | `aws-amplify@6.0.0` | Function-based API — no dependency on React's render cycle |
 | Vite 8 + vite-plugin-pwa | ✅ | **`vite-plugin-pwa@1.3.0`** | v1.2.0 had peer dep capped at `^7.0.0`. v1.3.0 (May 2026) added `^8.0.0` — do not use earlier versions with Vite 8 |
-| Vite 8 + TypeScript 5 | ✅ | `typescript@5.0.0` | Native support |
+| Vite 8 + TypeScript 6 | ✅ | `typescript@6.0.0` | Native support |
 | Vite 8 + Node.js | ✅ | Node.js 20.19+ or **22.12+** | Vite 8 ESM-only distribution requires `require(esm)` support without a flag |
 
 ### React 19 Breaking Changes Relevant to This Architecture
@@ -165,7 +169,7 @@ are built.
 | --- | --- | --- |
 | Node.js 22 + AWS CDK | ✅ | CDK TypeScript fully supports Node.js 22 |
 | Node.js 22 + Lambda Powertools | ✅ | Powertools for AWS Lambda (TypeScript) supports Node.js 22 |
-| Node.js 22 + middy | ✅ | middy v5+ supports Node.js 22 |
+| Node.js 22 + middy | ✅ | middy v7 supports Node.js 22 |
 | DynamoDB + Lambda (no VPC) | ✅ | DynamoDB is a VPC-free managed service — no network config needed |
 | S3 + Athena (analytics) | ✅ | Athena queries S3 directly — serverless, no infrastructure to provision |
 
@@ -226,20 +230,19 @@ every new feature.
 **Both sides must reference this table. Never define a route name in the frontend
 without registering it here first.**
 
-| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store |
-| --- | --- | --- | --- |
-| `auth` | `auth` | `/v1/auth` | DynamoDB |
-| `dashboard` | `dashboard` | `/v1/dashboard` | DynamoDB |
-| `{feature-a}` | `{domain-a}` | `/v1/{domain-a}` | DynamoDB |
-| `{feature-b}` | `{domain-b}` | `/v1/{domain-b}` | DynamoDB |
-| `{feature-c}` | `{domain-c}` | `/v1/{domain-c}` | DynamoDB + S3 |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB |
-| `settings` | `settings` | `/v1/settings` | DynamoDB |
-
-> **Feature examples by product category:**
-> - B2B SaaS: `organizations`, `members`, `billing`, `reports`, `audit-log`
-> - E-commerce: `products`, `orders`, `inventory`, `payments`, `shipments`
-> - Field management: `assets`, `work-orders`, `inspections`, `schedules`
+| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store | Status |
+| --- | --- | --- | --- | --- |
+| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`zenvillage-users`) | ✅ MVP |
+| `dashboard` | — | *(client-side only — no backend)* | — | ✅ MVP |
+| `tenants` | `tenants` | `/v1/tenants` | DynamoDB (`zenvillage-tenants`) | ✅ MVP |
+| `property-managers` | `property-managers` | `/v1/property-managers` | DynamoDB (`zenvillage-property-managers`) | ✅ MVP |
+| `condominiums` | `condominiums` | `/v1/condominiums` | DynamoDB (`zenvillage-condominiums`) | ✅ MVP |
+| `residents` | `residents` | `/v1/residents` | DynamoDB (`zenvillage-residents`) | ✅ MVP |
+| `employees` | `employees` | `/v1/employees` | DynamoDB (`zenvillage-employees`) | ✅ MVP |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`zenvillage-notifications`) | ✅ MVP |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`zenvillage-files`) + S3 | ✅ MVP |
+| `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
+| `settings` | `settings` | `/v1/settings` | DynamoDB | 🔜 Post-MVP |
 
 > **Note:** React Router v7 merged `react-router-dom` into `react-router`.
 > Import everything from `"react-router"` — `react-router-dom` is no longer needed as a separate dependency.
@@ -257,17 +260,23 @@ shapes. Never add fields outside this envelope without updating this document fi
 
 ```json
 {
-  "data": [
-    { "id": "uuid", "...": "..." }
-  ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "total": 150,
-    "totalPages": 8
+  "data": {
+    "items": [
+      { "id": "uuid", "...": "..." }
+    ],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "total": 150,
+      "totalPages": 8
+    }
   }
 }
 ```
+
+> The `data` field wraps a `{ items, pagination }` object — not a bare array.
+> Frontend reads it as `response.data.data` (Axios outer envelope + API inner `data` key).
+> `PaginatedResponse<T>` in `shared/types/api.types.ts` represents the inner shape.
 
 ### Detail — GET `/v1/{resource}/{id}`
 
@@ -392,21 +401,30 @@ userPool.addTrigger(UserPoolOperation.PRE_TOKEN_GENERATION, preTokenGenerationFn
 
 ### Lambda Authorizer — Tenant Validation
 
+Uses `HttpLambdaResponseType.SIMPLE` — returns `{ isAuthorized, context }`, not an IAM policy document.
+
 ```typescript
 // lambda/shared/tenant-authorizer.handler.ts
-export const handler = async (event: APIGatewayRequestAuthorizerEvent) => {
-  const headerTenantId = event.headers?.['x-tenant-id'];
-  const claims         = extractClaims(event.headers?.authorization!);
-  const tokenTenantId  = claims['custom:tenantId'];
+export const handler = async (
+  event: APIGatewayRequestAuthorizerEventV2
+): Promise<APIGatewaySimpleAuthorizerWithContextResult<AuthorizerContext>> => {
+  const authHeader    = event.headers?.authorization ?? '';
+  const headerTenantId = event.headers?.['x-tenant-id'] ?? '';
 
-  if (!headerTenantId)              throw new Error('X-Tenant-Id header missing');
-  if (headerTenantId !== tokenTenantId) throw new Error('Tenant mismatch');
+  if (!authHeader.startsWith('Bearer ')) throw new Error('Unauthorized');
 
-  return allowPolicy(event.methodArn, {
-    userId:   claims['custom:userId'],
-    tenantId: tokenTenantId,
-    roles:    JSON.parse(claims['custom:roles'] ?? '[]'),
-  });
+  const claims        = extractClaims(authHeader.slice(7));
+  const tokenTenantId = claims['custom:tenantId'];
+  const userId        = claims['custom:userId'] ?? claims['sub'];
+  const roles         = claims['custom:roles'] ?? '[]';
+
+  if (!headerTenantId)                      throw new Error('Unauthorized');
+  if (headerTenantId !== tokenTenantId)     throw new Error('Unauthorized');
+
+  return {
+    isAuthorized: true,
+    context: { tenantId: tokenTenantId, userId, roles },
+  };
 };
 ```
 
@@ -508,15 +526,19 @@ const api = new HttpApi(this, `{project}-api-${props.env}`, {
   corsPreflight: {
     allowOrigins: props.env === 'prod'
       ? ['https://app.{project}.com']
-      : ['https://app.{project}.com', 'http://localhost:3000', 'http://localhost:4173'],
+      : ['http://localhost:3000', 'http://localhost:4173'],
     allowMethods: [
       CorsHttpMethod.GET, CorsHttpMethod.POST, CorsHttpMethod.PUT,
       CorsHttpMethod.PATCH, CorsHttpMethod.DELETE, CorsHttpMethod.OPTIONS,
     ],
-    allowHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-Idempotency-Key'],
+    allowHeaders: [
+      'Content-Type', 'Authorization', 'X-Tenant-Id',
+      'X-Idempotency-Key',       // sent by Axios interceptor on POST/PUT/PATCH
+      'X-Amz-Date', 'X-Api-Key', 'X-Amz-Security-Token',
+    ],
     exposeHeaders: ['X-Request-Id', 'X-Trace-Id'],
-    allowCredentials: true,
-    maxAge: Duration.days(1),
+    allowCredentials: false,     // JWT in Authorization header — cookies not used
+    maxAge: Duration.seconds(300),
   },
 });
 ```
@@ -602,7 +624,7 @@ export const useWebSocket = () => {
       const token = await authAdapter.getAccessToken();
       if (destroyed) return;
 
-      ws = new WebSocket(`${env.VITE_WS_URL}?token=${token}`);
+      ws = new WebSocket(`${env.VITE_WS_ENDPOINT}?token=${token}&tenantId=${tenantId}`);
 
       ws.onmessage = ({ data }) => {
         const event: RealtimeEvent = JSON.parse(data);
@@ -785,6 +807,11 @@ export const usePushSubscription = () => {
 
 DynamoDB is the **only primary data store** in this architecture. Every domain owns its
 own table. No VPC, no connection pools, no migration scripts, no provisioned servers.
+
+> **MVP trade-off — ScanCommand:** All MVP `list` handlers use `ScanCommand` with a
+> `FilterExpression` on the tenant prefix. This is acceptable for small data sets during
+> early product phases. At scale (> 10 k items per tenant per table), replace with
+> `QueryCommand` using a GSI with `tenantId` as the partition key and `SK` as the sort key.
 
 ### Partition Key Pattern — Universal Rule
 
@@ -1198,7 +1225,7 @@ phases:
   build:
     commands:
       - >
-        VITE_API_BASE_URL=$API_URL VITE_WS_URL=$WS_URL
+        VITE_API_BASE_URL=$API_URL VITE_WS_ENDPOINT=$WS_URL
         VITE_COGNITO_USER_POOL_ID=$POOL_ID VITE_COGNITO_CLIENT_ID=$CLIENT_ID
         npm run build
   post_build:
@@ -1258,41 +1285,40 @@ PROD FRONTEND
 ├── infra/
 │   ├── bin/app.ts
 │   ├── stacks/
-│   │   ├── pipeline.stack.ts
+│   │   ├── users.stack.ts              # DynamoDB users table (Pre-Token Lambda)
 │   │   ├── cognito.stack.ts
 │   │   ├── api-gateway.stack.ts
-│   │   └── {domain}.stack.ts
+│   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
+│   │   ├── {domain}.stack.ts           # one per domain (tenants, condominiums, …)
+│   │   └── pipeline.stack.ts           # 🔜 Post-MVP — CodePipeline CI/CD
 │   └── constructs/
 │       ├── lambda-with-powertools.ts
-│       ├── sqs-with-dlq.ts
-│       └── aurora-with-proxy.ts
+│       └── sqs-with-dlq.ts
 │
 └── lambda/
     ├── shared/
-    │   ├── tenant-authorizer.handler.ts
+    │   ├── tenant-authorizer.handler.ts  # HttpLambdaResponseType.SIMPLE
     │   ├── extract-context.ts
-    │   └── response-helpers.ts           # ok(), created(), noContent(), error()
+    │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
     ├── auth/
     │   └── pre-token-generation.handler.ts
-    ├── {domain}/
-    │   ├── list.handler.ts
+    ├── {domain}/                         # tenants | property-managers | condominiums
+    │   ├── list.handler.ts               # residents | employees
     │   ├── get-by-id.handler.ts
     │   ├── create.handler.ts
     │   ├── update.handler.ts
     │   ├── delete.handler.ts
-    │   ├── domain/                       # Entities, Value Objects, Domain Services
-    │   ├── application/                  # Use Cases, Ports
-    │   └── infrastructure/               # DynamoDB / S3 adapters
+    │   ├── domain/                       # Entities, Value Objects
+    │   └── infrastructure/               # DynamoDB repository
     ├── uploads/
-    │   ├── presign.handler.ts
-    │   └── post-upload-processor.handler.ts
+    │   └── presign.handler.ts
     └── notifications/
         ├── ws-connect.handler.ts
         ├── ws-disconnect.handler.ts
-        ├── notifier.handler.ts
-        ├── register-push.handler.ts
-        ├── unregister-push.handler.ts
-        └── push-sender.handler.ts
+        ├── notifier.handler.ts           # SQS trigger → WebSocket push
+        ├── list.handler.ts
+        ├── mark-read.handler.ts
+        └── mark-all-read.handler.ts
 ```
 
 ### Frontend
@@ -1300,63 +1326,70 @@ PROD FRONTEND
 ```
 {project}-web/
 ├── public/
-│   ├── icons/                            # PWA icons (192×192, 512×512, maskable)
-│   ├── manifest.webmanifest              # theme_color from tailwind.config.ts token
-│   └── robots.txt
+│   ├── pwa-192x192.png                   # PWA icons
+│   ├── pwa-512x512.png
+│   └── favicon.svg
 │
 ├── src/
+│   ├── App.tsx
+│   ├── main.tsx                          # Amplify.configure() + i18n init here
+│   ├── index.css
+│   │
 │   ├── app/
-│   │   ├── App.tsx
-│   │   ├── router.tsx                    # Lazy-loaded per feature
-│   │   ├── providers.tsx
+│   │   ├── router.tsx                    # Lazy-loaded per feature (React.lazy + Suspense)
 │   │   └── query-client.ts
 │   │
-│   ├── features/
+│   ├── features/                         # One folder per domain — flat structure
 │   │   ├── auth/
-│   │   ├── dashboard/
+│   │   │   ├── pages/LoginPage.tsx
+│   │   │   └── store/auth.store.ts       # Zustand — user, activeTenantId, tenants
+│   │   ├── dashboard/DashboardPage.tsx
 │   │   ├── {feature}/
-│   │   │   ├── components/               # Feature components — compose from shadcn/ui
+│   │   │   ├── {Feature}Page.tsx         # Page component (lazy-loaded route target)
+│   │   │   ├── {Feature}Form.tsx         # Create / edit form
+│   │   │   ├── {Feature}Detail.tsx       # Detail / side-panel (optional)
 │   │   │   ├── hooks/
-│   │   │   │   ├── use{Feature}Query.ts
-│   │   │   │   ├── use{Feature}Mutation.ts
-│   │   │   │   └── use{Feature}Form.ts
+│   │   │   │   └── use{Feature}Query.ts  # TanStack Query hooks + key factory
 │   │   │   ├── services/
-│   │   │   │   └── {feature}.service.ts
-│   │   │   ├── schemas/
-│   │   │   ├── types/
-│   │   │   ├── pages/
-│   │   │   └── index.ts                  # Explicit public exports only
+│   │   │   │   └── {feature}.service.ts  # Axios calls — idempotency key generated here
+│   │   │   └── types/
+│   │   │       └── {feature}.types.ts
 │   │   ├── notifications/
-│   │   └── settings/
+│   │   │   ├── hooks/useNotificationsQuery.ts
+│   │   │   └── services/notifications.service.ts
+│   │   └── preferences/PreferencesPage.tsx
+│   │
+│   ├── i18n/
+│   │   ├── index.ts                      # i18next init (no LanguageDetector plugin)
+│   │   └── locales/
+│   │       ├── en_US.json                # canonical
+│   │       └── pt_BR.json
 │   │
 │   └── shared/
 │       ├── api/
-│       │   ├── http-client.ts
+│       │   ├── http-client.ts            # Axios instance + request/response interceptors
 │       │   └── error-mapper.ts
 │       ├── auth/
-│       │   └── auth.adapter.ts           # Amplify Auth wrapper
+│       │   └── auth.adapter.ts           # Single file that imports aws-amplify
+│       ├── components/
+│       │   ├── AppShell.tsx              # useWebSocket called once here
+│       │   ├── AppHeader.tsx
+│       │   ├── AppSidebar.tsx
+│       │   ├── AuthGuard.tsx
+│       │   ├── DataTable.tsx
+│       │   ├── NotificationPanel.tsx
+│       │   └── ui/                       # shadcn/ui output (button, input, dialog, …)
 │       ├── hooks/
-│       │   ├── useWebSocket.ts
-│       │   ├── useFileUpload.ts
-│       │   ├── usePushSubscription.ts
+│       │   ├── useWebSocket.ts           # called once in AppShell
 │       │   ├── useServiceWorkerUpdate.ts
-│       │   ├── useAuth.ts
-│       │   ├── useRequireRole.ts
-│       │   ├── useDebounce.ts
-│       │   ├── useMediaQuery.ts          # Wraps Tailwind breakpoint tokens
-│       │   ├── useBreakpoint.ts          # Wraps Tailwind breakpoint tokens
-│       │   ├── useOnlineStatus.ts
-│       │   └── useLocalStorage.ts
-│       ├── components/                   # shadcn/ui output + custom composites
-│       ├── constants/
+│       │   ├── useTheme.ts
+│       │   └── useLocale.ts
+│       ├── store/
+│       │   └── app.store.ts              # Zustand — sidebar, theme, locale
 │       └── types/
-│           └── api.types.ts              # PaginatedResponse<T>, ApiError
+│           ├── api.types.ts              # PaginatedResponse<T>, ApiError
+│           └── entities.ts
 │
-├── tailwind.config.ts                    # imports powerPreset — no custom tokens here
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -1368,7 +1401,7 @@ PROD FRONTEND
 ```bash
 # .env.example — values injected by CodeBuild from SSM (never hardcoded)
 VITE_API_BASE_URL=
-VITE_WS_URL=
+VITE_WS_ENDPOINT=
 VITE_COGNITO_USER_POOL_ID=
 VITE_COGNITO_CLIENT_ID=
 VITE_COGNITO_REGION=          # fixed per project  (e.g. us-east-1)

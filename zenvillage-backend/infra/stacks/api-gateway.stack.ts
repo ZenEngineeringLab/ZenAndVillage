@@ -50,8 +50,10 @@ export class ApiGatewayStack extends Stack {
       handler: 'handler',
     })
 
+    // SIMPLE response type matches the handler's { isAuthorized, context } return shape.
+    // IAM would require a full policy document — not used here.
     this.defaultAuthorizer = new HttpLambdaAuthorizer('TenantAuthorizer', authorizerFn, {
-      responseTypes: [HttpLambdaResponseType.IAM],
+      responseTypes: [HttpLambdaResponseType.SIMPLE],
       identitySource: [
         '$request.header.Authorization',
         '$request.header.X-Tenant-Id',
@@ -76,11 +78,13 @@ export class ApiGatewayStack extends Stack {
           'Content-Type',
           'Authorization',
           'X-Tenant-Id',
+          'X-Idempotency-Key',  // sent by Axios interceptor on POST/PUT/PATCH — must be allowed
           'X-Amz-Date',
           'X-Api-Key',
           'X-Amz-Security-Token',
         ],
-        allowCredentials: false,
+        exposeHeaders: ['X-Request-Id', 'X-Trace-Id'],  // set by Lambda on every response
+        allowCredentials: false,  // JWT in Authorization header — cookies not used
         maxAge: Duration.seconds(300),
       },
       defaultAuthorizer: this.defaultAuthorizer,

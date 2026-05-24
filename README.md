@@ -205,7 +205,7 @@ DIST_ID=$(aws ssm get-parameter --name /zenvillage/staging/cloudfront-dist-id  -
 
 # Build — all runtime config injected at build time, nothing hardcoded
 VITE_API_BASE_URL=$API_URL \
-VITE_WS_URL=$WS_URL \
+VITE_WS_ENDPOINT=$WS_URL \
 VITE_COGNITO_USER_POOL_ID=$POOL_ID \
 VITE_COGNITO_CLIENT_ID=$CLIENT_ID \
 VITE_COGNITO_REGION=us-east-1 \
@@ -300,7 +300,7 @@ If all nine checks pass, the staging environment is healthy. ✅
 | Variable | Description |
 |---|---|
 | `VITE_API_BASE_URL` | HTTP API base URL |
-| `VITE_WS_URL` | WebSocket API endpoint |
+| `VITE_WS_ENDPOINT` | WebSocket API endpoint |
 | `VITE_COGNITO_USER_POOL_ID` | Cognito User Pool ID |
 | `VITE_COGNITO_CLIENT_ID` | Cognito App Client ID |
 | `VITE_COGNITO_REGION` | AWS region |
