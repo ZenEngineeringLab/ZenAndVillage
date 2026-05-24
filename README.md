@@ -329,35 +329,18 @@ aws secretsmanager delete-secret \
 
 > ⚠️ Only do this if you are **completely done with CDK in this AWS account and region**. The Bootstrap stack is shared — removing it will break any other CDK project targeting the same account/region.
 
-The bootstrap bucket has versioning enabled, so `--force` alone leaves old versions and delete markers behind. Use the Python snippet below to remove all of them first:
+The bootstrap bucket has **versioning enabled**, which means the AWS CLI `--force` flag and `list-object-versions` do not reliably enumerate all versions (objects uploaded before versioning was enabled have a `null` VersionId and are silently skipped). The safest approach is to empty the bucket via the **AWS Console**:
+
+1. Open [https://s3.console.aws.amazon.com](https://s3.console.aws.amazon.com)
+2. Click the bucket `cdk-hnb659fds-assets-<account-id>-us-east-1`
+3. Enable **Show versions** (toggle above the object list)
+4. Select all objects using the header checkbox
+5. Click **Delete** → confirm by typing `permanently delete`
+6. Return to the bucket list → select the now-empty bucket → **Delete bucket**
+
+Then delete the Bootstrap CloudFormation stack:
 
 ```bash
-BUCKET=cdk-hnb659fds-assets-$(aws sts get-caller-identity --query Account --output text)-us-east-1
-
-# Delete all versions and delete markers (versioned bucket — --force is not enough)
-python3 - <<'EOF'
-import subprocess, json, os
-
-bucket = os.environ['BUCKET']
-result = subprocess.run(
-    ['aws', 's3api', 'list-object-versions', '--bucket', bucket],
-    capture_output=True, text=True
-)
-data = json.loads(result.stdout) if result.stdout else {}
-objects = [
-    {'Key': v['Key'], 'VersionId': v['VersionId']}
-    for v in data.get('Versions', []) + data.get('DeleteMarkers', [])
-]
-if objects:
-    subprocess.run(['aws', 's3api', 'delete-objects', '--bucket', bucket,
-                    '--delete', json.dumps({'Objects': objects, 'Quiet': True})])
-    print(f"Deleted {len(objects)} versions/markers")
-else:
-    print("Bucket already empty")
-EOF
-
-# Remove the now-empty bucket and the Bootstrap stack
-aws s3 rb s3://$BUCKET
 aws cloudformation delete-stack --stack-name CDKToolkit
 ```
 
