@@ -88,7 +88,6 @@ function SearchPopover() {
 
 // ── Header ────────────────────────────────────────────────────────────
 export function AppHeader() {
-  const { t } = useTranslation()
   const { toggleSidebar } = useAppStore()
   const [notifOpen, setNotifOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)

@@ -38,7 +38,7 @@ type FormData = z.infer<typeof schema>
 
 interface Props {
   initialData?: Partial<Resident>
-  onSave: (data: Partial<Resident>) => void
+  onSave: (data: Partial<Resident>) => void | Promise<void>
   onCancel: () => void
 }
 

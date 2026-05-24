@@ -1,18 +1,23 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info, Shield, Star } from 'lucide-react'
+import { Plus, Search, Pencil, Info, Shield, Star, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { seedResidents } from '@/shared/data/seed'
 import type { Resident } from '@/shared/types/entities'
 import { ResidentForm } from './ResidentForm'
 import { ResidentDetail } from './ResidentDetail'
+import {
+  useResidentsQuery,
+  useCreateResidentMutation,
+  useUpdateResidentMutation,
+} from './hooks/useResidentsQuery'
 
 function maskCpf(cpf: string) {
   return cpf.replace(/(\d{3}\.)(\d{3}\.)(\d{3}-\d{2})/, '***.$2***-**')
@@ -20,8 +25,8 @@ function maskCpf(cpf: string) {
 
 export function ResidentsPage() {
   const { t } = useTranslation()
-  const [residents, setResidents] = useState<Resident[]>(seedResidents)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [editTarget, setEditTarget] = useState<Resident | null>(null)
@@ -29,23 +34,34 @@ export function ResidentsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const filtered = residents.filter((r) => {
-    const matchSearch =
-      r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.cpf.includes(search)
-    const matchType = filterType === 'all' || r.occupancyType === filterType
-    const matchStatus = filterStatus === 'all' || r.financialStatus === filterStatus
-    return matchSearch && matchType && matchStatus
+  const { data, isLoading, isError } = useResidentsQuery({
+    search: debouncedSearch || undefined,
+    occupancyType: filterType !== 'all' ? filterType : undefined,
+    financialStatus: filterStatus !== 'all' ? filterStatus : undefined,
   })
+  const createMutation = useCreateResidentMutation()
+  const updateMutation = useUpdateResidentMutation()
 
-  const handleSave = (data: Partial<Resident>) => {
-    if (editTarget) {
-      setResidents((prev) => prev.map((r) => (r.id === editTarget.id ? { ...r, ...data } : r)))
-    } else {
-      setResidents((prev) => [...prev, { id: `r${Date.now()}`, ...data } as Resident])
+  const items = data?.items ?? []
+
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout((window as any).__residentSearchTimer)
+    ;(window as any).__residentSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
+  }
+
+  const handleSave = async (data: Partial<Resident>) => {
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, ...data })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDrawerOpen(false)
+      toast.success(t('toast.saved'))
+    } catch {
+      // error already toasted by mutation onError
     }
-    setDrawerOpen(false)
-    toast.success(t('toast.saved'))
   }
 
   const columns: Column<Resident>[] = [
@@ -80,11 +96,7 @@ export function ResidentsPage() {
     },
     {
       key: 'unit', header: t('residents.columns.unit'),
-      render: (row) => <span className="text-sm">{row.block} - Apt {row.unit}</span>,
-    },
-    {
-      key: 'condominium', header: t('residents.columns.condominium'),
-      render: (row) => <span className="text-sm">{row.condominiumName}</span>,
+      render: (row) => <span className="text-sm">{row.block ? `${row.block} - ` : ''}Apt {row.unit}</span>,
     },
     {
       key: 'financialStatus', header: t('residents.columns.financialStatus'),
@@ -125,7 +137,12 @@ export function ResidentsPage() {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+          <Input
+            placeholder={t('common.search')}
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-8"
+          />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-44"><SelectValue placeholder={t('residents.filters.type')} /></SelectTrigger>
@@ -145,7 +162,18 @@ export function ResidentsPage() {
         </Select>
       </div>
 
-      <DataTable data={filtered} columns={columns} keyField="id" />
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      ) : isError ? (
+        <div className="flex items-center gap-2 text-destructive text-sm py-8 justify-center">
+          <AlertCircle className="h-4 w-4" />
+          {t('common.loadError')}
+        </div>
+      ) : (
+        <DataTable data={items} columns={columns} keyField="id" />
+      )}
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">

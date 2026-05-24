@@ -1,29 +1,54 @@
-# Claude Code
+# ─── AI / tooling ────────────────────────────────────────────────────────────
 .claude/
+.kiro/
 
-# Dependencies
+# ─── Dependencies ────────────────────────────────────────────────────────────
 node_modules/
 vendor/
 
-# Build output
+# ─── Build output ────────────────────────────────────────────────────────────
 dist/
+dist-ssr/
 build/
+cdk.out/
 
-# Environment / secrets
+# ─── Environment / secrets ───────────────────────────────────────────────────
 .env
 .env.*
+!.env.example
 *.key
+*.local
 
-# Cache / temp
+# ─── Cache / temp ────────────────────────────────────────────────────────────
 .cache/
+.vite/
 tmp/
 
-# IDE
-.idea/
-.vscode/
-
-# Coverage
+# ─── Coverage ────────────────────────────────────────────────────────────────
 coverage/
 
-# Logs
+# ─── Logs ────────────────────────────────────────────────────────────────────
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── IDE / editor ────────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+
+# ─── Windows ─────────────────────────────────────────────────────────────────
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ─── Vim / Emacs swap files ──────────────────────────────────────────────────
+*.sw?

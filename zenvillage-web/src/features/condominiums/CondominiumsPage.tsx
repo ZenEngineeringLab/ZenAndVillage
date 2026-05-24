@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info } from 'lucide-react'
+import { Plus, Search, Pencil, Info, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { seedCondominiums } from '@/shared/data/seed'
 import type { Condominium } from '@/shared/types/entities'
 import { CondominiumForm } from './CondominiumForm'
 import { CondominiumDetail } from './CondominiumDetail'
+import {
+  useCondominiumsQuery,
+  useCreateCondoMutation,
+  useUpdateCondoMutation,
+} from './hooks/useCondominiumsQuery'
 
 function typeColor(type: string): 'default' | 'secondary' | 'info' {
   if (type === 'residential') return 'default'
@@ -21,8 +26,8 @@ function typeColor(type: string): 'default' | 'secondary' | 'info' {
 
 export function CondominiumsPage() {
   const { t } = useTranslation()
-  const [condos, setCondos] = useState<Condominium[]>(seedCondominiums)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [editTarget, setEditTarget] = useState<Condominium | null>(null)
@@ -30,21 +35,34 @@ export function CondominiumsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const filtered = condos.filter((c) => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase())
-    const matchType = filterType === 'all' || c.type === filterType
-    const matchStatus = filterStatus === 'all' || c.status === filterStatus
-    return matchSearch && matchType && matchStatus
+  const { data, isLoading, isError } = useCondominiumsQuery({
+    search: debouncedSearch || undefined,
+    type: filterType !== 'all' ? filterType : undefined,
+    status: filterStatus !== 'all' ? filterStatus : undefined,
   })
+  const createMutation = useCreateCondoMutation()
+  const updateMutation = useUpdateCondoMutation()
 
-  const handleSave = (data: Partial<Condominium>) => {
-    if (editTarget) {
-      setCondos((prev) => prev.map((c) => (c.id === editTarget.id ? { ...c, ...data } : c)))
-    } else {
-      setCondos((prev) => [...prev, { id: `c${Date.now()}`, ...data } as Condominium])
+  const items = data?.items ?? []
+
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout((window as any).__condoSearchTimer)
+    ;(window as any).__condoSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
+  }
+
+  const handleSave = async (data: Partial<Condominium>) => {
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, ...data })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDrawerOpen(false)
+      toast.success(t('toast.saved'))
+    } catch {
+      // error already toasted by mutation onError
     }
-    setDrawerOpen(false)
-    toast.success(t('toast.saved'))
   }
 
   const columns: Column<Condominium>[] = [
@@ -68,14 +86,16 @@ export function CondominiumsPage() {
       render: (row) => <span className="text-sm">{row.address.city}/{row.address.state}</span>,
     },
     {
-      key: 'propertyManager', header: t('condominiums.columns.propertyManager'),
-      render: (row) => <span className="text-sm">{row.propertyManagerName}</span>,
+      key: 'units', header: t('condominiums.columns.units'),
+      render: (row) => <span>{row.numUnits}</span>,
     },
-    { key: 'units', header: t('condominiums.columns.units'), render: (row) => <span>{row.numUnits}</span> },
-    { key: 'syndic', header: t('condominiums.columns.syndic'), render: (row) => <span className="text-sm">{row.syndic}</span> },
     {
       key: 'status', header: t('condominiums.columns.status'),
-      render: (row) => <Badge variant={row.status === 'active' ? 'success' : 'secondary'}>{t(`common.${row.status}`)}</Badge>,
+      render: (row) => (
+        <Badge variant={row.status === 'active' ? 'success' : 'secondary'}>
+          {t(`common.${row.status}`)}
+        </Badge>
+      ),
     },
     {
       key: 'actions', header: t('common.actions'),
@@ -108,7 +128,12 @@ export function CondominiumsPage() {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+          <Input
+            placeholder={t('common.search')}
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-8"
+          />
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-44"><SelectValue placeholder={t('condominiums.filters.type')} /></SelectTrigger>
@@ -129,7 +154,18 @@ export function CondominiumsPage() {
         </Select>
       </div>
 
-      <DataTable data={filtered} columns={columns} keyField="id" />
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      ) : isError ? (
+        <div className="flex items-center gap-2 text-destructive text-sm py-8 justify-center">
+          <AlertCircle className="h-4 w-4" />
+          {t('common.loadError')}
+        </div>
+      ) : (
+        <DataTable data={items} columns={columns} keyField="id" />
+      )}
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">

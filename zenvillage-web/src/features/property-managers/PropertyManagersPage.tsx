@@ -1,42 +1,56 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info } from 'lucide-react'
+import { Plus, Search, Pencil, Info, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { seedPropertyManagers } from '@/shared/data/seed'
 import type { PropertyManager } from '@/shared/types/entities'
 import { PropertyManagerForm } from './PropertyManagerForm'
 import { PropertyManagerDetail } from './PropertyManagerDetail'
+import {
+  usePropertyManagersQuery,
+  useCreatePMMutation,
+  useUpdatePMMutation,
+} from './hooks/usePropertyManagersQuery'
 
 export function PropertyManagersPage() {
   const { t } = useTranslation()
-  const [managers, setManagers] = useState<PropertyManager[]>(seedPropertyManagers)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [editTarget, setEditTarget] = useState<PropertyManager | null>(null)
   const [detailTarget, setDetailTarget] = useState<PropertyManager | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const filtered = managers.filter(
-    (m) =>
-      m.tradeName.toLowerCase().includes(search.toLowerCase()) ||
-      m.legalName.toLowerCase().includes(search.toLowerCase()) ||
-      m.cnpj.includes(search)
-  )
+  const { data, isLoading, isError } = usePropertyManagersQuery({ search: debouncedSearch || undefined })
+  const createMutation = useCreatePMMutation()
+  const updateMutation = useUpdatePMMutation()
 
-  const handleSave = (data: Partial<PropertyManager>) => {
-    if (editTarget) {
-      setManagers((prev) => prev.map((m) => (m.id === editTarget.id ? { ...m, ...data } : m)))
-    } else {
-      setManagers((prev) => [...prev, { id: `pm${Date.now()}`, condominiumsCount: 0, ...data } as PropertyManager])
+  const items = data?.items ?? []
+
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout((window as any).__pmSearchTimer)
+    ;(window as any).__pmSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
+  }
+
+  const handleSave = async (data: Partial<PropertyManager>) => {
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, ...data })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDrawerOpen(false)
+      toast.success(t('toast.saved'))
+    } catch {
+      // error already toasted by mutation onError
     }
-    setDrawerOpen(false)
-    toast.success(t('toast.saved'))
   }
 
   const columns: Column<PropertyManager>[] = [
@@ -53,14 +67,13 @@ export function PropertyManagersPage() {
         </div>
       ),
     },
-    { key: 'cnpj', header: t('propertyManagers.columns.cnpj'), render: (row) => <span className="text-sm font-mono">{row.cnpj}</span> },
+    {
+      key: 'taxId', header: t('propertyManagers.columns.cnpj'),
+      render: (row) => <span className="text-sm font-mono">{row.cnpj}</span>,
+    },
     {
       key: 'location', header: t('propertyManagers.columns.location'),
       render: (row) => <span className="text-sm">{row.address.city}/{row.address.state}</span>,
-    },
-    {
-      key: 'condos', header: t('propertyManagers.columns.condominiums'),
-      render: (row) => <span className="text-sm">{row.condominiumsCount}</span>,
     },
     {
       key: 'status', header: t('propertyManagers.columns.status'),
@@ -108,10 +121,26 @@ export function PropertyManagersPage() {
 
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+        <Input
+          placeholder={t('common.search')}
+          value={search}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-8"
+        />
       </div>
 
-      <DataTable data={filtered} columns={columns} keyField="id" />
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      ) : isError ? (
+        <div className="flex items-center gap-2 text-destructive text-sm py-8 justify-center">
+          <AlertCircle className="h-4 w-4" />
+          {t('common.loadError')}
+        </div>
+      ) : (
+        <DataTable data={items} columns={columns} keyField="id" />
+      )}
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">

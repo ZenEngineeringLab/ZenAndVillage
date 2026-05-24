@@ -1,10 +1,14 @@
 import { useRef, useEffect } from 'react'
 import { Bell } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useAppStore } from '../store/app.store'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { cn } from '../lib/utils'
+import {
+  useNotificationsQuery,
+  useMarkReadMutation,
+  useMarkAllReadMutation,
+} from '@/features/notifications/hooks/useNotificationsQuery'
 
 interface NotificationPanelProps {
   open: boolean
@@ -14,9 +18,14 @@ interface NotificationPanelProps {
 
 export function NotificationPanel({ open, onToggle, onClose }: NotificationPanelProps) {
   const { t } = useTranslation()
-  const { notifications, markNotificationRead, markAllNotificationsRead, unreadCount } = useAppStore()
   const panelRef = useRef<HTMLDivElement>(null)
-  const count = unreadCount()
+
+  const { data } = useNotificationsQuery()
+  const markReadMutation = useMarkReadMutation()
+  const markAllReadMutation = useMarkAllReadMutation()
+
+  const notifications = data?.items ?? []
+  const count = notifications.filter((n) => !n.read).length
 
   useEffect(() => {
     if (!open) return
@@ -63,7 +72,13 @@ export function NotificationPanel({ open, onToggle, onClose }: NotificationPanel
         <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-popover shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b">
             <span className="font-semibold text-sm">{t('notifications.title')}</span>
-            <Button variant="ghost" size="sm" className="text-xs h-7" onClick={markAllNotificationsRead}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => markAllReadMutation.mutate()}
+              disabled={markAllReadMutation.isPending}
+            >
               {t('notifications.markAllRead')}
             </Button>
           </div>
@@ -76,13 +91,13 @@ export function NotificationPanel({ open, onToggle, onClose }: NotificationPanel
                   <button
                     key={n.id}
                     className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex gap-2"
-                    onClick={() => markNotificationRead(n.id)}
+                    onClick={() => markReadMutation.mutate(n.id)}
                   >
                     <span className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-primary')} />
                     <div className="flex-1 min-w-0">
                       <p className={cn('text-sm truncate', !n.read && 'font-medium')}>{n.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{n.description}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{formatRelative(n.timestamp)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatRelative(n.createdAt)}</p>
                     </div>
                   </button>
                 ))}

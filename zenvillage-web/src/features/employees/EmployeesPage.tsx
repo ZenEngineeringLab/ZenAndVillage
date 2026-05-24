@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil } from 'lucide-react'
+import { Plus, Search, Pencil, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
+import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { seedEmployees } from '@/shared/data/seed'
-import type { Employee } from '@/shared/types/entities'
+import type { Employee } from './types/employee.types'
 import { EmployeeForm } from './EmployeeForm'
+import {
+  useEmployeesQuery,
+  useCreateEmployeeMutation,
+  useUpdateEmployeeMutation,
+} from './hooks/useEmployeesQuery'
 
 function statusColor(status: string): 'success' | 'secondary' | 'warning' {
   if (status === 'active') return 'success'
@@ -21,33 +26,46 @@ function statusColor(status: string): 'success' | 'secondary' | 'warning' {
 
 export function EmployeesPage() {
   const { t, i18n } = useTranslation()
-  const [employees, setEmployees] = useState<Employee[]>(seedEmployees)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterRole, setFilterRole] = useState('all')
   const [filterContract, setFilterContract] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [editTarget, setEditTarget] = useState<Employee | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  const { data, isLoading, isError } = useEmployeesQuery({
+    search: debouncedSearch || undefined,
+    role: filterRole !== 'all' ? filterRole : undefined,
+    contractType: filterContract !== 'all' ? filterContract : undefined,
+    status: filterStatus !== 'all' ? filterStatus : undefined,
+  })
+  const createMutation = useCreateEmployeeMutation()
+  const updateMutation = useUpdateEmployeeMutation()
+
+  const items = data?.items ?? []
+
   const fmt = (date: string) =>
     new Intl.DateTimeFormat(i18n.language.replace('_', '-'), { dateStyle: 'medium' }).format(new Date(date))
 
-  const filtered = employees.filter((e) => {
-    const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || e.cpf.includes(search)
-    const matchRole = filterRole === 'all' || e.role === filterRole
-    const matchContract = filterContract === 'all' || e.contractType === filterContract
-    const matchStatus = filterStatus === 'all' || e.status === filterStatus
-    return matchSearch && matchRole && matchContract && matchStatus
-  })
+  const handleSearch = (val: string) => {
+    setSearch(val)
+    clearTimeout((window as any).__employeeSearchTimer)
+    ;(window as any).__employeeSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
+  }
 
-  const handleSave = (data: Partial<Employee>) => {
-    if (editTarget) {
-      setEmployees((prev) => prev.map((e) => (e.id === editTarget.id ? { ...e, ...data } : e)))
-    } else {
-      setEmployees((prev) => [...prev, { id: `e${Date.now()}`, ...data } as Employee])
+  const handleSave = async (data: Partial<Employee>) => {
+    try {
+      if (editTarget) {
+        await updateMutation.mutateAsync({ id: editTarget.id, ...data })
+      } else {
+        await createMutation.mutateAsync(data as any)
+      }
+      setDrawerOpen(false)
+      toast.success(t('toast.saved'))
+    } catch {
+      // error already toasted by mutation onError
     }
-    setDrawerOpen(false)
-    toast.success(t('toast.saved'))
   }
 
   const columns: Column<Employee>[] = [
@@ -68,7 +86,6 @@ export function EmployeesPage() {
       key: 'role', header: t('employees.columns.role'),
       render: (row) => <Badge variant="outline">{t(`employees.role.${row.role}`)}</Badge>,
     },
-    { key: 'condo', header: t('employees.columns.condominium'), render: (row) => <span className="text-sm">{row.condominiumName}</span> },
     {
       key: 'contractType', header: t('employees.columns.contractType'),
       render: (row) => (
@@ -85,7 +102,10 @@ export function EmployeesPage() {
       key: 'admissionDate', header: t('employees.columns.admissionDate'),
       render: (row) => <span className="text-sm">{fmt(row.admissionDate)}</span>,
     },
-    { key: 'schedule', header: t('employees.columns.schedule'), render: (row) => <span className="text-sm">{t(`employees.schedule.${row.schedule}`)}</span> },
+    {
+      key: 'schedule', header: t('employees.columns.schedule'),
+      render: (row) => <span className="text-sm">{t(`employees.schedule.${row.schedule}`)}</span>,
+    },
     {
       key: 'status', header: t('employees.columns.status'),
       render: (row) => <Badge variant={statusColor(row.status)}>{t(`employees.status.${row.status}`)}</Badge>,
@@ -116,7 +136,12 @@ export function EmployeesPage() {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder={t('common.search')} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+          <Input
+            placeholder={t('common.search')}
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-8"
+          />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
           <SelectTrigger className="w-44"><SelectValue placeholder={t('employees.filters.role')} /></SelectTrigger>
@@ -146,7 +171,18 @@ export function EmployeesPage() {
         </Select>
       </div>
 
-      <DataTable data={filtered} columns={columns} keyField="id" />
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+        </div>
+      ) : isError ? (
+        <div className="flex items-center gap-2 text-destructive text-sm py-8 justify-center">
+          <AlertCircle className="h-4 w-4" />
+          {t('common.loadError')}
+        </div>
+      ) : (
+        <DataTable data={items} columns={columns} keyField="id" />
+      )}
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
