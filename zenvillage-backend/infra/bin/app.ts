@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import 'source-map-support/register'
 import * as cdk from 'aws-cdk-lib'
 import { Topic } from 'aws-cdk-lib/aws-sns'
 import { UsersStack } from '../stacks/users.stack.js'
