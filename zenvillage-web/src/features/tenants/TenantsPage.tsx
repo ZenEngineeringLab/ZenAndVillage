@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info, Loader2, AlertCircle } from 'lucide-react'
+import { Plus, Search, Pencil, Info, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -9,14 +9,13 @@ import { Progress } from '@/shared/components/ui/progress'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import type { Tenant } from './types/tenant.types'
+import type { Tenant } from '@/shared/types/entities'
 import { TenantForm } from './TenantForm'
 import { TenantDetailPanel } from './TenantDetailPanel'
 import {
   useTenantsQuery,
   useCreateTenantMutation,
   useUpdateTenantMutation,
-  useDeleteTenantMutation,
 } from './hooks/useTenantsQuery'
 
 function daysRemaining(dateStr?: string) {
@@ -49,7 +48,6 @@ export function TenantsPage() {
   const { data, isLoading, isError } = useTenantsQuery({ search: debouncedSearch || undefined })
   const createMutation = useCreateTenantMutation()
   const updateMutation = useUpdateTenantMutation()
-  const deleteMutation = useDeleteTenantMutation()
 
   const items = data?.items ?? []
 
@@ -92,16 +90,16 @@ export function TenantsPage() {
     },
     {
       key: 'plan', header: t('tenants.columns.plan'),
-      render: (row) => <Badge variant={planColor(row.planId)}>{t(`tenants.plan.${row.planId}`)}</Badge>,
+      render: (row) => <Badge variant={planColor(row.plan)}>{t(`tenants.plan.${row.plan}`)}</Badge>,
     },
     {
       key: 'status', header: t('tenants.columns.status'),
       render: (row) => (
         <div className="flex flex-col gap-1">
-          <Badge variant={statusColor(row.subscriptionStatus)}>{t(`tenants.status.${row.subscriptionStatus}`)}</Badge>
-          {row.subscriptionStatus === 'trial' && row.trialEndDate && (
+          <Badge variant={statusColor(row.status)}>{t(`tenants.status.${row.status}`)}</Badge>
+          {row.status === 'trial' && row.trialEnd && (
             <span className="text-xs text-amber-600">
-              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEndDate) })}
+              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEnd) })}
             </span>
           )}
         </div>
@@ -111,14 +109,14 @@ export function TenantsPage() {
       key: 'condominiums', header: t('tenants.columns.condominiums'),
       render: (row) => (
         <div className="space-y-1 min-w-24">
-          <div className="text-xs">{row.usageLimits?.activeCondos ?? 0} / {row.maxCondos}</div>
-          <Progress value={((row.usageLimits?.activeCondos ?? 0) / row.maxCondos) * 100} className="h-1" />
+          <div className="text-xs">{row.condominiumsCount} / {row.condominiumsLimit}</div>
+          <Progress value={(row.condominiumsCount / row.condominiumsLimit) * 100} className="h-1" />
         </div>
       ),
     },
     {
       key: 'createdAt', header: t('tenants.columns.joinDate'),
-      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.createdAt)}</span>,
+      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.joinDate)}</span>,
     },
     {
       key: 'actions', header: t('common.actions'),

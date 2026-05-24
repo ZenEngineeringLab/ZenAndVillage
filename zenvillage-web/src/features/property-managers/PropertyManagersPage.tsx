@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Pencil, Info, Loader2, AlertCircle } from 'lucide-react'
+import { Plus, Search, Pencil, Info, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import type { PropertyManager } from './types/property-manager.types'
+import type { PropertyManager } from '@/shared/types/entities'
 import { PropertyManagerForm } from './PropertyManagerForm'
 import { PropertyManagerDetail } from './PropertyManagerDetail'
 import {
@@ -69,7 +69,7 @@ export function PropertyManagersPage() {
     },
     {
       key: 'taxId', header: t('propertyManagers.columns.cnpj'),
-      render: (row) => <span className="text-sm font-mono">{row.taxId}</span>,
+      render: (row) => <span className="text-sm font-mono">{row.cnpj}</span>,
     },
     {
       key: 'location', header: t('propertyManagers.columns.location'),
@@ -86,8 +86,8 @@ export function PropertyManagersPage() {
     {
       key: 'whiteLabel', header: t('propertyManagers.columns.whiteLabel'),
       render: (row) => (
-        <Badge variant={row.whiteLabelEnabled ? 'info' : 'outline'}>
-          {row.whiteLabelEnabled ? t('common.yes') : t('common.no')}
+        <Badge variant={row.whiteLabel ? 'info' : 'outline'}>
+          {row.whiteLabel ? t('common.yes') : t('common.no')}
         </Badge>
       ),
     },

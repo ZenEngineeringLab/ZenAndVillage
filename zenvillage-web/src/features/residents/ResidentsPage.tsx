@@ -10,7 +10,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import type { Resident } from './types/resident.types'
+import type { Resident } from '@/shared/types/entities'
 import { ResidentForm } from './ResidentForm'
 import { ResidentDetail } from './ResidentDetail'
 import {
@@ -77,7 +77,7 @@ export function ResidentsPage() {
           <div className="flex items-center gap-1">
             <span className="font-medium text-sm">{row.name}</span>
             {row.isSyndic && <Shield className="h-3.5 w-3.5 text-primary" aria-label="Syndic" />}
-            {row.isBoardMember && <Star className="h-3.5 w-3.5 text-amber-500" aria-label="Board member" />}
+            {row.isCouncilMember && <Star className="h-3.5 w-3.5 text-amber-500" aria-label="Council member" />}
           </div>
         </div>
       ),
@@ -157,7 +157,7 @@ export function ResidentsPage() {
           <SelectContent>
             <SelectItem value="all">{t('residents.filters.financialStatus')}</SelectItem>
             <SelectItem value="current">{t('residents.financialStatus.current')}</SelectItem>
-            <SelectItem value="delinquent">{t('residents.financialStatus.delinquent')}</SelectItem>
+            <SelectItem value="defaulting">{t('residents.financialStatus.defaulting')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

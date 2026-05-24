@@ -25,7 +25,7 @@ type FormData = z.infer<typeof schema>
 
 interface TenantFormProps {
   initialData?: Partial<Tenant>
-  onSave: (data: Partial<Tenant>) => void
+  onSave: (data: Partial<Tenant>) => void | Promise<void>
   onCancel: () => void
 }
 

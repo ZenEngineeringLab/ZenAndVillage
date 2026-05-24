@@ -9,7 +9,7 @@ import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import type { Condominium } from './types/condominium.types'
+import type { Condominium } from '@/shared/types/entities'
 import { CondominiumForm } from './CondominiumForm'
 import { CondominiumDetail } from './CondominiumDetail'
 import {
