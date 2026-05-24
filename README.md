@@ -332,6 +332,78 @@ npm run seed -- --env=prod          # prod (use with care)
 
 ---
 
+## AWS cost estimate
+
+Monthly cost estimate for a production deployment in **us-east-1** across three scale tiers.
+All figures are derived from [AWS public pricing](https://aws.amazon.com/pricing/) as of May 2026 and cover the services provisioned by the CDK stacks.
+Actual costs vary with traffic patterns, data transfer destinations, and log volumes.
+
+> **AWS Free Tier note:** a new AWS account includes 12-month free-tier credits (e.g. 1 TB CloudFront egress, 5 GB S3) and always-free allowances (1 M Lambda requests/month, 400K GB-seconds/month, 25 GB DynamoDB storage, 1 M SQS requests/month, first 100K X-Ray traces/month). The estimates below do **not** apply free-tier credits so they remain accurate after the first year.
+
+---
+
+### Deployment tiers and assumptions
+
+| | MVP | Small Production | Medium Scale |
+|---|---|---|---|
+| Monthly Active Users | 100 | 1,000 | 10,000 |
+| Tenants | 3 | 20 | 100 |
+| API requests / month | 300 K | 1.5 M | 6 M |
+| WebSocket messages / month | 150 K | 750 K | 3 M |
+| Async Lambda invocations / month | 60 K | 300 K | 1 M |
+| Total Lambda invocations / month | 510 K | 2.55 M | 10 M |
+| S3 storage (assets + uploads) | 5 GB | 50 GB | 500 GB |
+| CloudFront egress | 5 GB | 50 GB | 500 GB |
+| CloudWatch log ingestion | 0.5 GB | 2 GB | 10 GB |
+| Lambda memory / avg duration | 512 MB / 200 ms | 512 MB / 200 ms | 512 MB / 200 ms |
+| X-Ray sampling rate | 5 % | 5 % | 5 % |
+
+---
+
+### Per-service cost breakdown (USD / month)
+
+| Service | MVP | Small Production | Medium Scale | Pricing basis |
+|---|---|---|---|---|
+| **AWS Lambda** | $0.00 | $0.31 | $11.80 | $0.20 / 1M requests; $0.0000166667 / GB-s |
+| **API Gateway HTTP API** | $0.30 | $1.50 | $6.00 | $1.00 / 1M requests |
+| **API Gateway WebSocket API** | $0.15 | $0.79 | $3.38 | $1.00 / 1M messages; $0.25 / 1M connection-minutes |
+| **Amazon DynamoDB (on-demand)** | $0.40 | $2.50 | $25.00 | $1.25 / 1M WCU; $0.25 / 1M RCU; $0.25 / GB storage |
+| **Amazon Cognito** | $0.00 | $0.00 | $0.00 | Free up to 50K MAU |
+| **Amazon S3** | $0.20 | $1.85 | $18.50 | $0.023 / GB storage; $0.005 / 1K PUT; $0.0004 / 1K GET |
+| **Amazon CloudFront** | $0.73 | $5.75 | $48.50 | $0.085 / GB egress (US); $0.010 / 10K HTTPS requests |
+| **Amazon SQS** | $0.00 | $0.00 | $0.80 | $0.40 / 1M requests after 1M free |
+| **Amazon CloudWatch** (logs + alarms) | $2.25 | $5.00 | $13.00 | $0.50 / GB ingested; $0.10 / alarm / month |
+| **AWS X-Ray** | $0.00 | $0.00 | $1.00 | $5.00 / 1M traces after 100K free |
+| **AWS SSM Parameter Store** | $0.00 | $0.00 | $0.00 | Standard parameters are free |
+| **Total** | **~$4 / mo** | **~$18 / mo** | **~$128 / mo** | |
+
+---
+
+### Cost growth summary
+
+```
+$4 / mo  ───────  MVP           (100 MAU,    3 tenants)
+$18 / mo ──────── Small Prod    (1 K MAU,   20 tenants)
+$128 / mo ─────── Medium Scale  (10 K MAU, 100 tenants)
+```
+
+The largest cost driver at medium scale is **CloudFront egress** (~38 %) followed by **DynamoDB** (~20 %) and **Lambda compute** (~9 %). At MVP and small-production scale, **CloudWatch alarms** are the dominant line item — the architecture provisions ~20–80 alarms depending on the number of active Lambda domains.
+
+---
+
+### Cost optimization levers
+
+| Lever | Applicable tier | Expected saving |
+|---|---|---|
+| Enable DynamoDB provisioned capacity (+ auto-scaling) once traffic is predictable | Medium Scale | 20–50 % on DynamoDB |
+| Add CloudFront caching for API GET responses (stale-while-revalidate) | Small Prod + | 30–60 % on API Gateway + Lambda |
+| Use CloudWatch Log Groups with 7-day retention for non-audit logs | All tiers | 40–60 % on CloudWatch storage |
+| Reduce X-Ray sampling to 1 % in production (adjust in CDK) | Medium Scale | Keeps traces within free tier |
+| Compress S3 assets with Brotli/gzip + use S3 Intelligent-Tiering for uploads | Small Prod + | 10–30 % on S3 + CloudFront |
+| Reserve Lambda concurrency + use Graviton2 (`arm64`) runtime | Medium Scale | ~20 % on Lambda compute |
+
+---
+
 ## Architecture
 
 The full architecture — stack, patterns, API contracts, auth, multi-tenancy, data strategy, CI/CD, and UI stack — is documented in [`docs/architecture-guide.md`](docs/architecture-guide.md).
