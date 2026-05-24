@@ -428,7 +428,6 @@ async function seedCognitoUsers(userPoolId: string): Promise<void> {
             { Name: 'name', Value: config.label },
             { Name: 'custom:tenantId', Value: config.tenantId },
             { Name: 'custom:roles', Value: JSON.stringify(['tenant_admin']) },
-            { Name: 'custom:locale', Value: 'auto' },
           ],
         }),
       )
