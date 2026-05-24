@@ -58,8 +58,12 @@ export function TenantsPage() {
     ;(window as any).__tenantSearchTimer = setTimeout(() => setDebouncedSearch(val), 350)
   }
 
-  const fmt = (date: string) =>
-    new Intl.DateTimeFormat(i18n.language.replace('_', '-'), { dateStyle: 'medium' }).format(new Date(date))
+  const fmt = (date?: string) => {
+    if (!date) return '—'
+    const d = new Date(date)
+    if (isNaN(d.getTime())) return '—'
+    return new Intl.DateTimeFormat(i18n.language.replace('_', '-'), { dateStyle: 'medium' }).format(d)
+  }
 
   const handleNew = () => { setEditTarget(null); setDrawerOpen(true) }
   const handleEdit = (tenant: Tenant) => { setEditTarget(tenant); setDrawerOpen(true) }
