@@ -278,6 +278,85 @@ If all nine checks pass, the staging environment is healthy. ✅
 
 ---
 
+### Phase 10 — Tear down the environment
+
+> ⚠️ **Destructive and irreversible.** All DynamoDB data, Cognito users, S3 files, and CloudWatch logs will be permanently deleted. Only proceed when you are certain the environment is no longer needed.
+
+#### 10a — Empty S3 buckets
+
+CDK cannot delete buckets that still contain objects. Empty them first:
+
+```bash
+# Frontend assets bucket
+BUCKET=$(aws ssm get-parameter --name /zenvillage/staging/frontend-bucket-name --query Parameter.Value --output text)
+aws s3 rm s3://$BUCKET --recursive
+
+# Uploads bucket (created by the notifications stack)
+UPLOADS_BUCKET=$(aws cloudformation describe-stack-resource \
+  --stack-name zenvillage-notifications-staging \
+  --logical-resource-id UploadsBucket \
+  --query StackResourceDetail.PhysicalResourceId \
+  --output text)
+aws s3 rm s3://$UPLOADS_BUCKET --recursive
+```
+
+#### 10b — Destroy all CDK stacks
+
+```bash
+# From zenvillage-backend/
+npm run cdk -- destroy --all --context env=staging --force
+```
+
+CDK destroys stacks in reverse dependency order. **Estimated time:** 10–20 minutes.
+
+> **Note:** in `staging` all resources have `RemovalPolicy.DESTROY`, so DynamoDB tables, the Cognito User Pool, and the CloudFront distribution are all deleted automatically. In `prod`, the Cognito User Pool has `RemovalPolicy.RETAIN` and must be deleted manually from the AWS Console or CLI after the stack is destroyed.
+
+#### 10c — Delete orphaned CloudWatch Log Groups (optional)
+
+CDK stacks do not manage Lambda Log Groups — CloudWatch creates them automatically on first invocation and leaves them behind after a destroy. Clean them up manually if needed:
+
+```bash
+# List all Log Groups for this environment
+aws logs describe-log-groups \
+  --log-group-name-prefix "/aws/lambda/zenvillage-" \
+  --query 'logGroups[*].logGroupName' \
+  --output text | tr '\t' '\n' | grep staging
+
+# Delete each one (repeat for every group listed above)
+aws logs delete-log-group --log-group-name "/aws/lambda/zenvillage-<function-name>-staging"
+```
+
+Or delete all staging Lambda Log Groups in one pass:
+
+```bash
+aws logs describe-log-groups \
+  --log-group-name-prefix "/aws/lambda/zenvillage-" \
+  --query 'logGroups[*].logGroupName' \
+  --output text \
+| tr '\t' '\n' \
+| grep staging \
+| xargs -I {} aws logs delete-log-group --log-group-name {}
+```
+
+#### 10d — Delete the VAPID secret (optional)
+
+```bash
+aws secretsmanager delete-secret \
+  --secret-id "/zenvillage/staging/vapid-private-key" \
+  --force-delete-without-recovery
+```
+
+#### What is NOT deleted
+
+| Resource | Reason | How to remove |
+|---|---|---|
+| CDK Bootstrap stack (`CDKToolkit`) | Shared by all CDK deployments in the account — do not delete unless you are done with CDK entirely | `cdk bootstrap` creates it; delete via CloudFormation console if needed |
+| CloudWatch Log Groups | Not managed by CDK stacks | Phase 10c above |
+| VAPID secret | Not part of any CDK stack | Phase 10d above |
+| Cognito User Pool (prod only) | `RemovalPolicy.RETAIN` | AWS Console → Cognito → Delete user pool |
+
+---
+
 ## Environment variables reference
 
 ### Backend (set by CDK on each Lambda — never configured manually)
