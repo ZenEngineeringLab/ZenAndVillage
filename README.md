@@ -282,22 +282,13 @@ If all nine checks pass, the staging environment is healthy. ✅
 
 > ⚠️ **Destructive and irreversible.** All DynamoDB data, Cognito users, S3 files, and CloudWatch logs will be permanently deleted. Only proceed when you are certain the environment is no longer needed.
 
-#### 10a — Empty S3 buckets
+#### 10a — Empty the frontend S3 bucket
 
-CDK cannot delete buckets that still contain objects. Empty them first:
+CDK cannot delete buckets that still contain objects. The **uploads bucket** (`zenvillage-uploads-staging`) is configured with `autoDeleteObjects: true`, so CDK handles it automatically. Only the frontend bucket needs to be emptied manually:
 
 ```bash
-# Frontend assets bucket
 BUCKET=$(aws ssm get-parameter --name /zenvillage/staging/frontend-bucket-name --query Parameter.Value --output text)
 aws s3 rm s3://$BUCKET --recursive
-
-# Uploads bucket (created by the notifications stack)
-UPLOADS_BUCKET=$(aws cloudformation describe-stack-resource \
-  --stack-name zenvillage-notifications-staging \
-  --logical-resource-id UploadsBucket \
-  --query StackResourceDetail.PhysicalResourceId \
-  --output text)
-aws s3 rm s3://$UPLOADS_BUCKET --recursive
 ```
 
 #### 10b — Destroy all CDK stacks
