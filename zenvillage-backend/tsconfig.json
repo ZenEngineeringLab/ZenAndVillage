@@ -17,5 +17,8 @@
     "emitDecoratorMetadata": true,
   },
   "include": ["lambda/**/*", "infra/**/*", "scripts/**/*"],
-  "exclude": ["node_modules", "dist", "cdk.out"]
+  "exclude": ["node_modules", "dist", "cdk.out"],
+  "ts-node": {
+    "esm": true
+  }
 }
