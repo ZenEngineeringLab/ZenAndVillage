@@ -6,6 +6,7 @@ import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions'
 import { Topic, ITopic } from 'aws-cdk-lib/aws-sns'
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
 import { Bucket, CorsRule, HttpMethods } from 'aws-cdk-lib/aws-s3'
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam'
 import { Construct } from 'constructs'
 import * as path from 'path'
 import * as url from 'url'
@@ -110,9 +111,6 @@ export class NotificationsStack extends Stack {
       autoDeleteObjects: !isProd,
     })
 
-    // WebSocket endpoint for notifier
-    const wsEndpoint = `${apiStack.wsApi.apiEndpoint}/${env}`
-
     // Lambda functions
     const listNotificationsFn = new LambdaWithPowertools(this, 'ListNotificationsFn', {
       serviceName: `zenvillage-notifications-list-${env}`,
@@ -172,7 +170,10 @@ export class NotificationsStack extends Stack {
       environment: {
         NOTIFICATIONS_TABLE: notificationsTable.tableName,
         CONNECTIONS_TABLE: connectionsTable.tableName,
-        WS_ENDPOINT: wsEndpoint,
+        // WS_ENDPOINT is read from SSM at Lambda runtime to avoid a CDK cross-stack
+        // circular dependency (NotificationsStack ↔ ApiGatewayStack).
+        WS_SSM_PATH: `/zenvillage/${env}/ws-url`,
+        WS_STAGE: env,
       },
     })
 
@@ -208,8 +209,21 @@ export class NotificationsStack extends Stack {
     uploadsBucket.grantPut(presignFn)
     uploadsBucket.grantReadWrite(presignFn)
 
-    // Allow notifier to post to WebSocket connections
-    apiStack.wsApi.grantManageConnections(notifierFn)
+    // Allow notifier to post to WebSocket connections.
+    // Wildcard on api-id breaks the CDK cross-stack reference that would otherwise
+    // create a circular dependency between NotificationsStack and ApiGatewayStack.
+    notifierFn.addToRolePolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['execute-api:ManageConnections'],
+      resources: [`arn:aws:execute-api:${this.region}:${this.account}:*/${env}/POST/@connections/*`],
+    }))
+
+    // Allow notifier to read the WebSocket endpoint URL from SSM at runtime.
+    notifierFn.addToRolePolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['ssm:GetParameter'],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/zenvillage/${env}/ws-url`],
+    }))
 
     // CloudWatch Alarms
     addLambdaAlarms(this, listNotificationsFn, `zenvillage-notifications-list-${env}`, alarmTopic)
