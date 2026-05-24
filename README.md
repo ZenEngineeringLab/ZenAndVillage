@@ -304,20 +304,9 @@ CDK destroys stacks in reverse dependency order. **Estimated time:** 10–20 min
 
 #### 10c — Delete orphaned CloudWatch Log Groups (optional)
 
-CDK stacks do not manage Lambda Log Groups — CloudWatch creates them automatically on first invocation and leaves them behind after a destroy. Clean them up manually if needed:
+CDK stacks do not manage Lambda Log Groups — CloudWatch creates them on first invocation and leaves them behind after a destroy. CloudFormation also truncates function names beyond 64 characters, so log group names may not contain the word `staging` literally.
 
-```bash
-# List all Log Groups for this environment
-aws logs describe-log-groups \
-  --log-group-name-prefix "/aws/lambda/zenvillage-" \
-  --query 'logGroups[*].logGroupName' \
-  --output text | tr '\t' '\n' | grep staging
-
-# Delete each one (repeat for every group listed above)
-aws logs delete-log-group --log-group-name "/aws/lambda/zenvillage-<function-name>-staging"
-```
-
-Or delete all staging Lambda Log Groups in one pass:
+List everything under the `zenvillage-` prefix and delete in one pass:
 
 ```bash
 aws logs describe-log-groups \
@@ -325,7 +314,6 @@ aws logs describe-log-groups \
   --query 'logGroups[*].logGroupName' \
   --output text \
 | tr '\t' '\n' \
-| grep staging \
 | xargs -I {} aws logs delete-log-group --log-group-name {}
 ```
 
@@ -337,13 +325,28 @@ aws secretsmanager delete-secret \
   --force-delete-without-recovery
 ```
 
-#### What is NOT deleted
+#### 10e — Remove the CDK Bootstrap stack (optional)
+
+> ⚠️ Only do this if you are **completely done with CDK in this AWS account and region**. The Bootstrap stack is shared — removing it will break any other CDK project targeting the same account/region.
+
+```bash
+# Empty the bootstrap assets bucket first
+aws s3 rb s3://cdk-hnb659fds-assets-$(aws sts get-caller-identity --query Account --output text)-us-east-1 --force
+
+# Delete the Bootstrap stack
+aws cloudformation delete-stack --stack-name CDKToolkit
+```
+
+> **CloudWatch metrics** cannot be deleted via API — they expire automatically (standard 5-minute resolution: 63 days; 1-minute detailed: 15 days). No action needed.
+
+#### What is NOT deleted automatically
 
 | Resource | Reason | How to remove |
 |---|---|---|
-| CDK Bootstrap stack (`CDKToolkit`) | Shared by all CDK deployments in the account — do not delete unless you are done with CDK entirely | `cdk bootstrap` creates it; delete via CloudFormation console if needed |
 | CloudWatch Log Groups | Not managed by CDK stacks | Phase 10c above |
 | VAPID secret | Not part of any CDK stack | Phase 10d above |
+| CDK Bootstrap stack (`CDKToolkit`) | Shared across all CDK projects in the account | Phase 10e above — only if done with CDK entirely |
+| CloudWatch metrics | AWS does not expose a delete API for metrics | Expire automatically (15 days for 1-min resolution) |
 | Cognito User Pool (prod only) | `RemovalPolicy.RETAIN` | AWS Console → Cognito → Delete user pool |
 
 ---
