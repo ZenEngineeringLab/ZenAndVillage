@@ -70,7 +70,7 @@ export class ResidentsStack extends Stack {
       partitionKey: { name: 'PK', type: AttributeType.STRING },
       sortKey: { name: 'SK', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
-      pointInTimeRecovery: true,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     })
 

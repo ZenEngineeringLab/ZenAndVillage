@@ -40,7 +40,7 @@ export class UsersStack extends Stack {
       partitionKey: { name: 'PK', type: AttributeType.STRING },
       sortKey: { name: 'SK', type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
-      pointInTimeRecovery: true,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       // RETAIN in prod — never destroyed by cdk destroy
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     })
