@@ -1,4 +1,10 @@
-import type { APIGatewayProxyWebsocketHandlerV2 } from 'aws-lambda'
+import type { APIGatewayProxyWebsocketEventV2 } from 'aws-lambda'
+
+// queryStringParameters is present on $connect events but missing from the
+// @types/aws-lambda type definition for WebSocket events — extend it locally.
+type WsConnectEvent = APIGatewayProxyWebsocketEventV2 & {
+  queryStringParameters?: Record<string, string>
+}
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb'
 
@@ -13,7 +19,7 @@ const decodeJwtPayload = (token: string): Record<string, string> => {
   return JSON.parse(Buffer.from(padded, 'base64').toString('utf-8'))
 }
 
-export const handler: APIGatewayProxyWebsocketHandlerV2 = async (event) => {
+export const handler = async (event: WsConnectEvent) => {
   const token = event.queryStringParameters?.['token']
   if (!token) {
     return { statusCode: 401 }

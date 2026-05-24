@@ -3,7 +3,7 @@ import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb'
 import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2'
 import { Alarm, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch'
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions'
-import { Topic } from 'aws-cdk-lib/aws-sns'
+import { Topic, ITopic } from 'aws-cdk-lib/aws-sns'
 import { Construct } from 'constructs'
 import * as path from 'path'
 import * as url from 'url'
@@ -26,7 +26,7 @@ function addLambdaAlarms(
   scope: Construct,
   fn: LambdaWithPowertools,
   id: string,
-  alarmTopic: Topic,
+  alarmTopic: ITopic,
 ): void {
   const errorsAlarm = new Alarm(scope, `${id}ErrorsAlarm`, {
     alarmName: `${id}-errors`,

@@ -15,9 +15,6 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "paths": {
-      "@shared/*": ["lambda/shared/*"]
-    }
   },
   "include": ["lambda/**/*", "infra/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist", "cdk.out"]

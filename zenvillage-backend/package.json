@@ -1,6 +1,7 @@
 {
   "name": "zenvillage-backend",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "description": "ZenAndVillage serverless backend — AWS Lambda + CDK",
   "scripts": {
@@ -21,14 +22,14 @@
     "@aws-sdk/lib-dynamodb": "^3.782.0",
     "@aws-sdk/client-s3": "^3.782.0",
     "@aws-sdk/s3-presigned-post": "^3.782.0",
-    "@aws-sdk/client-api-gateway-management-api": "^3.782.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.782.0",
     "@aws-sdk/client-eventbridge": "^3.782.0",
-    "@middy/core": "^5.5.3",
-    "@middy/http-json-body-parser": "^5.5.3",
+    "@aws-sdk/client-ssm": "^3.782.0",
+    "@middy/core": "^7.0.0",
+    "@middy/http-json-body-parser": "^7.0.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@aws-cdk/aws-lambda-nodejs": "^2.200.1",
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22.15.21",
     "@types/uuid": "^10.0.0",
