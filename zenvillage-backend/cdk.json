@@ -42,7 +42,6 @@
     "@aws-cdk/core:enableCfnOutput": true,
     "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
     "@aws-cdk/aws-iam:minimizePolicies": true,
-    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
-    "@aws-cdk/aws-s3:grantWriteWithoutAcl": true
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true
   }
 }
