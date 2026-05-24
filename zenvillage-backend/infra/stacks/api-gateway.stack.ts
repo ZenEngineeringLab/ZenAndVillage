@@ -109,7 +109,7 @@ export class ApiGatewayStack extends Stack {
 
     new StringParameter(this, 'WsUrlParam', {
       parameterName: `/zenvillage/${env}/ws-url`,
-      stringValue: this.wsApi.apiEndpoint,
+      stringValue: `${this.wsApi.apiEndpoint}/${env}`,
     })
   }
 

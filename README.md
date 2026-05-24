@@ -197,7 +197,7 @@ npm install --legacy-peer-deps
 
 # Read backend outputs from SSM
 API_URL=$(aws ssm get-parameter --name /zenvillage/staging/api-url    --query Parameter.Value --output text)
-WS_URL=$(aws ssm get-parameter  --name /zenvillage/staging/ws-url     --query Parameter.Value --output text)
+WS_URL=$(aws ssm get-parameter  --name /zenvillage/staging/ws-url     --query Parameter.Value --output text | sed 's|^https://|wss://|')
 POOL_ID=$(aws ssm get-parameter --name /zenvillage/staging/cognito-pool-id   --query Parameter.Value --output text)
 CLIENT_ID=$(aws ssm get-parameter --name /zenvillage/staging/cognito-client-id --query Parameter.Value --output text)
 BUCKET=$(aws ssm get-parameter  --name /zenvillage/staging/frontend-bucket-name --query Parameter.Value --output text)

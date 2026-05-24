@@ -172,8 +172,8 @@ export class NotificationsStack extends Stack {
         CONNECTIONS_TABLE: connectionsTable.tableName,
         // WS_ENDPOINT is read from SSM at Lambda runtime to avoid a CDK cross-stack
         // circular dependency (NotificationsStack ↔ ApiGatewayStack).
+        // The SSM value includes the stage path, e.g. https://id.execute-api.region.amazonaws.com/staging
         WS_SSM_PATH: `/zenvillage/${env}/ws-url`,
-        WS_STAGE: env,
       },
     })
 

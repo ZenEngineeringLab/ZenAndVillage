@@ -8,15 +8,15 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}))
 const ssm = new SSMClient({})
 const CONNECTIONS_TABLE = process.env.CONNECTIONS_TABLE!
 const WS_SSM_PATH = process.env.WS_SSM_PATH!
-const WS_STAGE = process.env.WS_STAGE!
 
 // Cached at cold-start to avoid SSM lookup on every invocation.
+// SSM value already includes the stage path, e.g. https://id.execute-api.region.amazonaws.com/staging
 let wsEndpoint: string | undefined
 
 async function getWsEndpoint(): Promise<string> {
   if (wsEndpoint) return wsEndpoint
   const result = await ssm.send(new GetParameterCommand({ Name: WS_SSM_PATH }))
-  wsEndpoint = `${result.Parameter!.Value!}/${WS_STAGE}`
+  wsEndpoint = result.Parameter!.Value!
   return wsEndpoint
 }
 

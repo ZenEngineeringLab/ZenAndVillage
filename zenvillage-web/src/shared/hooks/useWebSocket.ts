@@ -3,7 +3,10 @@ import { useQueryClient } from '@tanstack/react-query'
 import { authAdapter } from '@/shared/auth/auth.adapter'
 import { useAuthStore } from '@/features/auth/store/auth.store'
 
-const WS_ENDPOINT = import.meta.env.VITE_WS_ENDPOINT as string | undefined
+// SSM stores the endpoint as https://, but WebSocket connections require wss://.
+// Normalize here so the env var works whether set to https:// or wss://.
+const _rawWsEndpoint = import.meta.env.VITE_WS_ENDPOINT as string | undefined
+const WS_ENDPOINT = _rawWsEndpoint?.replace(/^https:\/\//, 'wss://')
 
 // Domain → TanStack Query cache key prefix mapping
 const DOMAIN_KEY_MAP: Record<string, string[]> = {
