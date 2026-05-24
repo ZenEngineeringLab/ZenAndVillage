@@ -40,7 +40,7 @@ export class ApiGatewayStack extends Stack {
 
     const allowOrigins = isProd
       ? ['https://app.zenvillage.com']
-      : ['http://localhost:3000', 'http://localhost:4173']
+      : ['*']  // staging: allow all origins (CloudFront URL not known at synth time)
 
     // Lambda Authorizer
     const authorizerFn = new LambdaWithPowertools(this, 'TenantAuthorizerFn', {
