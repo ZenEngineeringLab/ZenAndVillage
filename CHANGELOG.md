@@ -9,7 +9,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-05-22
+## [0.2.0] - 2026-05-22
 
 ### Added
 - **Full serverless backend** — AWS CDK v2 infrastructure: Cognito User Pool (MFA optional, pre-token-generation trigger), HTTP API Gateway + WebSocket API, per-domain DynamoDB tables (PAY_PER_REQUEST, PITR enabled), SNS alarms for errors and throttles
@@ -40,6 +40,6 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Domain knowledge base (en-US and pt-BR)
 - Agent behavior rules: incremental commit policy, PR policy with AI Productivity Analysis, versioning strategy
 
-[Unreleased]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.1.0...v1.0.0
+[Unreleased]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/releases/tag/v0.1.0

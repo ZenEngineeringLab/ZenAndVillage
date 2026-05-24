@@ -1,6 +1,6 @@
 {
   "name": "zenvillage-backend",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "private": true,
   "description": "ZenAndVillage serverless backend — AWS Lambda + CDK",
