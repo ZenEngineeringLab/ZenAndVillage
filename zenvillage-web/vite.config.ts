@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'favicon.svg', 'logo-icon.svg', 'apple-touch-icon-180x180.png'],
+      includeAssets: ['favicon.ico', 'logo-icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'ZenAndVillage',
         short_name: 'ZenAndVillage',
