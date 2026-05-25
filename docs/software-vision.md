@@ -1,7 +1,7 @@
 # Software Vision: ZenAndVillage Platform
 
 > **Canonical version.** This document defines the ZenAndVillage platform in American English (en-US): product vision, multi-tenancy business model, user roles, plans, data entities, and platform business rules.
-> Every change made here must be reflected in [`software-vision-pt_BR.md`](software-vision-pt_BR.md).
+> Every change made here must be reflected in [`software-vision.pt_BR.md`](software-vision.pt_BR.md).
 > For condominium domain knowledge (Brazilian law, roles, processes), refer to [`knowledge-base.md`](knowledge-base.md).
 > For technical implementation decisions (stack, API contracts, infrastructure), refer to [`architecture-guide.md`](architecture-guide.md).
 

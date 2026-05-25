@@ -3,7 +3,7 @@
 > **Versão pt_BR.** Este documento é a tradução em Português Brasileiro (pt_BR) de [`software-vision.md`](software-vision.md).
 > Toda edição feita em `software-vision.md` deve ser refletida neste arquivo, e vice-versa.
 > Em caso de conflito de conteúdo, a versão em inglês (`software-vision.md`) é a canônica.
-> Para conhecimento de domínio condominial, consulte [`knowledge-base-pt_BR.md`](knowledge-base-pt_BR.md).
+> Para conhecimento de domínio condominial, consulte [`knowledge-base.pt_BR.md`](knowledge-base.pt_BR.md).
 > Para decisões técnicas de implementação, consulte [`architecture-guide.md`](architecture-guide.md).
 
 ---

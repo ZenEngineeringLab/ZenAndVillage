@@ -1,7 +1,7 @@
 # Knowledge Base: Condominium Management in Brazil
 
 > **Canonical version.** This document is the authoritative reference in American English (en-US) for **domain knowledge** about condominium management in Brazil — legislation, roles, processes, and concepts as they exist in the real world.
-> Every change made here must be reflected in [`knowledge-base-pt_BR.md`](knowledge-base-pt_BR.md).
+> Every change made here must be reflected in [`knowledge-base.pt_BR.md`](knowledge-base.pt_BR.md).
 > For software requirements, data entities, and platform business rules, refer to [`software-vision.md`](software-vision.md).
 
 ---

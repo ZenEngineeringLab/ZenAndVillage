@@ -3,7 +3,7 @@
 > **Versão pt_BR.** Este documento é a tradução em Português Brasileiro (pt_BR) de [`knowledge-base.md`](knowledge-base.md).
 > Toda edição feita em `knowledge-base.md` deve ser refletida neste arquivo, e vice-versa.
 > Em caso de conflito de conteúdo, a versão em inglês (`knowledge-base.md`) é a canônica.
-> Para requisitos de software, entidades e regras de negócio da plataforma, consulte [`software-vision-pt_BR.md`](software-vision-pt_BR.md).
+> Para requisitos de software, entidades e regras de negócio da plataforma, consulte [`software-vision.pt_BR.md`](software-vision.pt_BR.md).
 
 ---
 
@@ -1124,4 +1124,4 @@ Ponto de Pedido = Consumo Médio Diário × Prazo de Entrega (dias) + Estoque M�
 
 ---
 
-*Documento para uso interno de desenvolvimento. Revisar periodicamente para manter atualização com alterações legislativas e normativas. Última revisão: Maio 2026 — v2.0 (reestruturado: apenas domínio; requisitos de software e entidades movidos para `software-vision-pt_BR.md`).*
+*Documento para uso interno de desenvolvimento. Revisar periodicamente para manter atualização com alterações legislativas e normativas. Última revisão: Maio 2026 — v2.0 (reestruturado: apenas domínio; requisitos de software e entidades movidos para `software-vision.pt_BR.md`).*

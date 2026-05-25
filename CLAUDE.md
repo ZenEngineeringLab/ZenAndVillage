@@ -29,7 +29,7 @@ Project documentation is split into two concerns — domain knowledge and softwa
 | File | Language | Role |
 |---|---|---|
 | [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — domain definitions, legal framework, real-world roles and processes |
-| [`docs/knowledge-base-pt_BR.md`](docs/knowledge-base-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+| [`docs/knowledge-base.pt_BR.md`](docs/knowledge-base.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
 
 Contains **only domain facts**: Brazilian condo law, actor/role definitions, governance processes, financial concepts, HR/labor rules, building operations, LGPD obligations. No entity schemas, no RN-XXX business rule codes, no software architecture.
 
@@ -38,7 +38,7 @@ Contains **only domain facts**: Brazilian condo law, actor/role definitions, gov
 | File | Language | Role |
 |---|---|---|
 | [`docs/software-vision.md`](docs/software-vision.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
-| [`docs/software-vision-pt_BR.md`](docs/software-vision-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+| [`docs/software-vision.pt_BR.md`](docs/software-vision.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
 
 Contains: product vision, multi-tenancy **business model** (hierarchy, plans, tenant lifecycle), user roles and permissions, platform modules, data domain entities (with field definitions), and business rules (RN-XXX codes). For technical implementation details (DynamoDB patterns, Lambda Authorizer, Cognito flows), always defer to `docs/architecture-guide.md` — software-vision.md must not duplicate that content.
 

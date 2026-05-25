@@ -15,8 +15,10 @@ ZenAndVillage/
 ├── docs/
 │   ├── architecture-guide.md     # Single source of truth for all engineering decisions
 │   ├── project-definition.md     # Project identity, version, git remote
-│   ├── knowledge-base.md         # Domain knowledge (en-US — canonical)
-│   └── knowledge-base-pt_BR.md  # Domain knowledge (pt-BR — translation)
+│   ├── knowledge-base.md            # Domain knowledge (en-US — canonical)
+│   ├── knowledge-base.pt_BR.md     # Domain knowledge (pt-BR — translation)
+│   ├── software-vision.md          # Platform requirements & business rules (en-US — canonical)
+│   └── software-vision.pt_BR.md   # Platform requirements & business rules (pt-BR — translation)
 ├── CHANGELOG.md
 └── CLAUDE.md               # Agent behavior rules (read by Claude Code on every session)
 ```
