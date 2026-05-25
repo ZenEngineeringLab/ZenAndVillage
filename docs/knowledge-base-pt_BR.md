@@ -3,6 +3,7 @@
 > **Versão pt_BR.** Este documento é a tradução em Português Brasileiro (pt_BR) de [`knowledge-base.md`](knowledge-base.md).
 > Toda edição feita em `knowledge-base.md` deve ser refletida neste arquivo, e vice-versa.
 > Em caso de conflito de conteúdo, a versão em inglês (`knowledge-base.md`) é a canônica.
+> Para requisitos de software, entidades e regras de negócio da plataforma, consulte [`software-vision-pt_BR.md`](software-vision-pt_BR.md).
 
 ---
 
@@ -18,12 +19,9 @@
 8. [Conformidade com LGPD](#8-conformidade-com-lgpd)
 9. [Comunicação e Relacionamento com Moradores](#9-comunicação-e-relacionamento-com-moradores)
 10. [Tecnologia e Digitalização](#10-tecnologia-e-digitalização)
-11. [Domínio de Dados — Entidades e Atributos](#11-domínio-de-dados--entidades-e-atributos)
-12. [Regras de Negócio Críticas](#12-regras-de-negócio-críticas)
+11. [Gestão de Patrimônio Condominial](#11-gestão-de-patrimônio-condominial)
+12. [Gestão de Estoque de Itens de Consumo](#12-gestão-de-estoque-de-itens-de-consumo)
 13. [Glossário Condominial](#13-glossário-condominial)
-14. [Arquitetura Multi-Tenancy](#14-arquitetura-multi-tenancy)
-15. [Gestão de Patrimônio Condominial](#15-gestão-de-patrimônio-condominial)
-16. [Gestão de Estoque de Itens de Consumo](#16-gestão-de-estoque-de-itens-de-consumo)
 
 ---
 
@@ -31,16 +29,16 @@
 
 ### 1.1 Legislação Principal
 
-|Lei / Norma                                 |Descrição                                                                                                                                            |Âmbito  |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|--------|
-|**Lei nº 4.591/1964**                       |Lei de Condomínios e Incorporações Imobiliárias. Marco fundador. Regula constituição, incorporação e aspectos estruturais do condomínio.             |Nacional|
-|**Lei nº 10.406/2002 — Código Civil**       |Arts. 1.331 a 1.358: "Condomínio Edilício". Regula o dia a dia condominial — direitos, deveres, assembleias, síndico, convenção. Em vigor desde 2003.|Nacional|
-|**Lei nº 8.245/1991 (Lei do Inquilinato)**  |Regula relações locatícias. Define quais despesas condominiais são de responsabilidade do inquilino vs. proprietário.                                |Nacional|
-|**Lei nº 13.709/2018 (LGPD)**               |Lei Geral de Proteção de Dados Pessoais. Impacta todo tratamento de dados de moradores, visitantes e funcionários.                                   |Nacional|
-|**CLT — Decreto-Lei nº 5.452/1943**         |Regula a relação de emprego do condomínio com seus funcionários.                                                                                     |Nacional|
-|**Reforma Trabalhista — Lei nº 13.467/2017**|Atualiza a CLT: contratos intermitentes, banco de horas individual, jornada 12x36 por acordo escrito, terceirização ampla.                           |Nacional|
-|**Decreto nº 11.905/2024**                  |Atualiza obrigações trabalhistas; consolida uso do eSocial e do DET (Domicílio Eletrônico Trabalhista) para condomínios.                             |Nacional|
-|**ABNT NBR 5674:2024**                      |Requisitos para gestão de manutenção de edificações. Referência técnica central.                                                                     |Técnica |
+| Lei / Norma | Descrição | Âmbito |
+|---|---|---|
+| **Lei nº 4.591/1964** | Lei de Condomínios e Incorporações Imobiliárias. Marco fundador. Regula constituição, incorporação e aspectos estruturais do condomínio. | Nacional |
+| **Lei nº 10.406/2002 — Código Civil** | Arts. 1.331 a 1.358: "Condomínio Edilício". Regula o dia a dia condominial — direitos, deveres, assembleias, síndico, convenção. Em vigor desde 2003. | Nacional |
+| **Lei nº 8.245/1991 (Lei do Inquilinato)** | Regula relações locatícias. Define quais despesas condominiais são de responsabilidade do inquilino vs. proprietário. | Nacional |
+| **Lei nº 13.709/2018 (LGPD)** | Lei Geral de Proteção de Dados Pessoais. Impacta todo tratamento de dados de moradores, visitantes e funcionários. | Nacional |
+| **CLT — Decreto-Lei nº 5.452/1943** | Regula a relação de emprego do condomínio com seus funcionários. | Nacional |
+| **Reforma Trabalhista — Lei nº 13.467/2017** | Atualiza a CLT: contratos intermitentes, banco de horas individual, jornada 12×36 por acordo escrito, terceirização ampla. | Nacional |
+| **Decreto nº 11.905/2024** | Atualiza obrigações trabalhistas; consolida uso do eSocial e do DET (Domicílio Eletrônico Trabalhista) para condomínios. | Nacional |
+| **ABNT NBR 5674:2024** | Requisitos para gestão de manutenção de edificações. Referência técnica central. | Técnica |
 
 ### 1.2 Hierarquia Normativa Condominial
 
@@ -51,7 +49,7 @@ Constituição Federal
        ↓
    Lei 4.591/64 (complementar para incorporações)
        ↓
-  Convenção de Condomínio (registrada em Cartório de Imóveis)
+  Convenção de Condomínio (registrada em Cartório de Registro de Imóveis)
        ↓
   Regimento Interno
        ↓
@@ -141,7 +139,7 @@ Constituição Federal
 
 **Deveres:**
 
-- Pagar a taxa condominial em dia (cota condominial).
+- Pagar a taxa condominial em dia.
 - Cumprir a convenção e o regimento interno.
 - Não realizar reformas sem comunicação ao síndico (NBR 16280).
 - Contribuir para o fundo de reserva conforme convenção.
@@ -157,13 +155,13 @@ Constituição Federal
 
 Cargos típicos (variação por porte):
 
-|Cargo                            |Função Principal                                                      |
-|---------------------------------|----------------------------------------------------------------------|
-|Zelador                          |Supervisão geral, manutenção de primeiro nível, coordenação de equipes|
-|Porteiro                         |Controle de acesso, recepção, atendimento                             |
-|Auxiliar de Serviços Gerais (ASG)|Limpeza e conservação das áreas comuns                                |
-|Vigia / Segurança                |Monitoramento e ronda                                                 |
-|Recepcionista                    |Atendimento em condomínios de alto padrão                             |
+| Cargo | Função Principal |
+|---|---|
+| Zelador | Supervisão geral, manutenção de primeiro nível, coordenação de equipes |
+| Porteiro | Controle de acesso, recepção, atendimento |
+| Auxiliar de Serviços Gerais (ASG) | Limpeza e conservação das áreas comuns |
+| Vigia / Segurança | Monitoramento e ronda |
+| Recepcionista | Atendimento em condomínios de alto padrão |
 
 ---
 
@@ -196,18 +194,18 @@ Cargos típicos (variação por porte):
 
 ### 3.3 Tabela de Quóruns
 
-|Assunto                                    |1ª Convocação                      |Votação Necessária                             |
-|-------------------------------------------|-----------------------------------|-----------------------------------------------|
-|Aprovação de contas / Previsão orçamentária|Metade dos condôminos              |Maioria dos presentes                          |
-|Eleição / Destituição do síndico           |Metade dos condôminos              |Maioria dos presentes (50%+1 dos presentes)    |
-|Destituição do síndico por condôminos      |1/4 convoca; qualquer número aprova|Maioria simples dos presentes                  |
-|Transferência de poderes do síndico        |—                                  |Maioria absoluta (50%+1 de TODOS os condôminos)|
-|Obras voluptuárias (melhoria)              |Metade dos condôminos              |Maioria absoluta (todos os condôminos)         |
-|Obras úteis (portaria remota, hidrômetros) |Metade dos condôminos              |Maioria absoluta (todos os condôminos)         |
-|Obras necessárias urgentes                 |Qualquer número                    |Maioria dos presentes                          |
-|Alteração da Convenção                     |Qualquer número                    |2/3 de todos os condôminos                     |
-|Alteração do Regimento Interno             |Qualquer número                    |Maioria simples dos presentes                  |
-|2ª Convocação (regra geral)                |Qualquer número                    |Maioria dos presentes                          |
+| Assunto | 1ª Convocação | Votação Necessária |
+|---|---|---|
+| Aprovação de contas / Previsão orçamentária | Metade dos condôminos | Maioria dos presentes |
+| Eleição / Destituição do síndico | Metade dos condôminos | Maioria dos presentes (50%+1 dos presentes) |
+| Destituição do síndico por condôminos | 1/4 convoca; qualquer número aprova | Maioria simples dos presentes |
+| Transferência de poderes do síndico | — | Maioria absoluta (50%+1 de TODOS os condôminos) |
+| Obras voluptuárias (melhoria) | Metade dos condôminos | Maioria absoluta (todos os condôminos) |
+| Obras úteis (portaria remota, hidrômetros) | Metade dos condôminos | Maioria absoluta (todos os condôminos) |
+| Obras necessárias urgentes | Qualquer número | Maioria dos presentes |
+| Alteração da Convenção | Qualquer número | 2/3 de todos os condôminos |
+| Alteração do Regimento Interno | Qualquer número | Maioria simples dos presentes |
+| 2ª Convocação (regra geral) | Qualquer número | Maioria dos presentes |
 
 > **Observação:** Em 2ª convocação, a assembleia delibera com a maioria dos votos dos presentes, salvo quórum especial previsto em lei ou convenção (Art. 1.352 CC). Se quórum especial não for atingido, pode-se converter em sessão permanente, com nova data em até 60 dias.
 
@@ -259,7 +257,7 @@ Cargos típicos (variação por porte):
 
 ### 4.3 Fundo de Reserva
 
-**Base legal:** Art. 1.336 do Código Civil (obrigação de contribuir conforme convenção); Convenção deve definir percentual e finalidade.
+**Base legal:** Art. 1.336 do Código Civil; convenção deve definir percentual e finalidade.
 
 **Características:**
 
@@ -348,14 +346,14 @@ Cargos típicos (variação por porte):
 
 ### 5.2 Cargos e Jornadas Típicas
 
-|Cargo            |Jornada Comum                             |
-|-----------------|------------------------------------------|
-|Zelador          |8h/dia, 44h/semana; ou 12x36 conforme CCT |
-|Porteiro         |12x36 horas (previsto na maioria das CCTs)|
-|Vigia / Segurança|12x36 horas                               |
-|ASG / Faxineiro  |8h/dia, 44h/semana; ou contrato parcial   |
+| Cargo | Jornada Comum |
+|---|---|
+| Zelador | 8h/dia, 44h/semana; ou 12×36 conforme CCT |
+| Porteiro | 12×36 horas (previsto na maioria das CCTs) |
+| Vigia / Segurança | 12×36 horas |
+| ASG / Faxineiro | 8h/dia, 44h/semana; ou contrato parcial |
 
-**Jornada 12x36:** 12 horas de trabalho seguidas por 36 horas de descanso. Pode ser estabelecida por **acordo escrito individual** desde a Reforma Trabalhista de 2017 (antes exigia convenção sindical).
+**Jornada 12×36:** 12 horas de trabalho seguidas por 36 horas de descanso. Pode ser estabelecida por **acordo escrito individual** desde a Reforma Trabalhista de 2017 (antes exigia convenção sindical).
 
 ### 5.3 Encargos e Obrigações Trabalhistas
 
@@ -486,45 +484,45 @@ A manutenção predial é obrigação do síndico (Art. 1.348 CC) e é regida pr
 
 Existem mais de 100 normas ABNT que impactam condomínios. As mais críticas:
 
-|Norma         |Tema                                                    |
-|--------------|--------------------------------------------------------|
-|NBR 5674:2024 |Gestão de manutenção de edificações — referência central|
-|NBR 5410      |Instalações elétricas de baixa tensão                   |
-|NBR 5419      |Proteção contra descargas atmosféricas (SPDA)           |
-|NBR 5626      |Instalações prediais de água fria                       |
-|NBR 8160      |Instalação predial de esgoto sanitário                  |
-|NBR 9050      |Acessibilidade a edificações e espaços                  |
-|NBR 9077      |Saídas de emergência em edifícios                       |
-|NBR 9441      |Sistemas de detecção e alarme de incêndio               |
-|NBR 10818     |Qualidade da água de piscinas                           |
-|NBR 12693     |Sistemas de proteção por sprinklers                     |
-|NBR 13752     |Perícias de engenharia na construção civil              |
-|NBR 14037     |Manual de uso, operação e manutenção da edificação      |
-|NBR 15527     |Reaproveitamento de águas pluviais                      |
-|NBR 15575-1   |Desempenho de edificações habitacionais                 |
-|NBR 16042     |Inspeção semestral de elevadores                        |
-|NBR 16071     |Playgrounds — projeto, instalação e manutenção          |
-|NBR 16280:2024|Reformas em edificações — sistema de gestão             |
-|NBR 16537:2024|Sinalização tátil no piso                               |
-|NBR 16747     |Inspeção predial (NBR de vistoria predial)              |
-|NBR 16858     |Elevadores de passageiros — segurança                   |
+| Norma | Tema |
+|---|---|
+| NBR 5674:2024 | Gestão de manutenção de edificações — referência central |
+| NBR 5410 | Instalações elétricas de baixa tensão |
+| NBR 5419 | Proteção contra descargas atmosféricas (SPDA) |
+| NBR 5626 | Instalações prediais de água fria |
+| NBR 8160 | Instalação predial de esgoto sanitário |
+| NBR 9050 | Acessibilidade a edificações e espaços |
+| NBR 9077 | Saídas de emergência em edifícios |
+| NBR 9441 | Sistemas de detecção e alarme de incêndio |
+| NBR 10818 | Qualidade da água de piscinas |
+| NBR 12693 | Sistemas de proteção por sprinklers |
+| NBR 13752 | Perícias de engenharia na construção civil |
+| NBR 14037 | Manual de uso, operação e manutenção da edificação |
+| NBR 15527 | Reaproveitamento de águas pluviais |
+| NBR 15575-1 | Desempenho de edificações habitacionais |
+| NBR 16042 | Inspeção semestral de elevadores |
+| NBR 16071 | Playgrounds — projeto, instalação e manutenção |
+| NBR 16280:2024 | Reformas em edificações — sistema de gestão |
+| NBR 16537:2024 | Sinalização tátil no piso |
+| NBR 16747 | Inspeção predial |
+| NBR 16858 | Elevadores de passageiros — segurança |
 
 ### 7.3 Documentos e Certificações Obrigatórios
 
-|Documento / Certificado                                              |Periodicidade                                       |Responsável                  |
-|---------------------------------------------------------------------|----------------------------------------------------|-----------------------------|
-|**AVCB** (Auto de Vistoria do Corpo de Bombeiros)                    |3 anos (SP — Decreto 69.118/2024 e IT-01/2025)      |Síndico                      |
-|**RIA** (Relatório de Inspeção Anual de Elevadores)                  |Anual (lei municipal em muitas cidades)             |Empresa de manutenção        |
-|**Limpeza e análise bacteriológica de caixa d'água**                 |Semestral (recomendação) ou conforme norma municipal|Empresa especializada        |
-|**Recarga de extintores**                                            |Anual + após uso                                    |Empresa certificada          |
-|**Ensaio hidrostático de extintores**                                |A cada 5 anos                                       |Empresa certificada          |
-|**Inspeção da rede de gás**                                          |Anual                                               |Empresa habilitada           |
-|**Certificado de Brigada de Incêndio**                               |Anual                                               |Treinamento coletivo         |
-|**PMOC** (Plano de Manutenção, Operação e Controle — ar-condicionado)|Conforme RDC ANVISA                                 |Empresa especializada        |
-|**Desinsetização / Desratização**                                    |Semestral (mínimo)                                  |Empresa habilitada           |
-|**Seguro de incêndio**                                               |Anual (renovação)                                   |Síndico (obrigatório por lei)|
-|**ART/RRT de obras e reformas**                                      |A cada obra/reforma                                 |Engenheiro/Arquiteto         |
-|**Laudo de impermeabilização**                                       |Conforme vistoria predial                           |Engenheiro                   |
+| Documento / Certificado | Periodicidade | Responsável |
+|---|---|---|
+| **AVCB** (Auto de Vistoria do Corpo de Bombeiros) | 3 anos (SP — Decreto 69.118/2024 e IT-01/2025) | Síndico |
+| **RIA** (Relatório de Inspeção Anual de Elevadores) | Anual (lei municipal em muitas cidades) | Empresa de manutenção |
+| **Limpeza e análise bacteriológica de caixa d'água** | Semestral (recomendação) ou conforme norma municipal | Empresa especializada |
+| **Recarga de extintores** | Anual + após uso | Empresa certificada |
+| **Ensaio hidrostático de extintores** | A cada 5 anos | Empresa certificada |
+| **Inspeção da rede de gás** | Anual | Empresa habilitada |
+| **Certificado de Brigada de Incêndio** | Anual | Treinamento coletivo |
+| **PMOC** (ar-condicionado) | Conforme RDC ANVISA | Empresa especializada |
+| **Desinsetização / Desratização** | Semestral (mínimo) | Empresa habilitada |
+| **Seguro de incêndio** | Anual (renovação) | Síndico (obrigatório por lei) |
+| **ART/RRT de obras e reformas** | A cada obra/reforma | Engenheiro/Arquiteto |
+| **Laudo de impermeabilização** | Conforme vistoria predial | Engenheiro |
 
 ### 7.4 Manutenção de Elevadores
 
@@ -560,7 +558,7 @@ Existem mais de 100 normas ABNT que impactam condomínios. As mais críticas:
 - O condomínio é **controlador de dados pessoais** nos termos da LGPD (Lei 13.709/2018).
 - Síndico e administradora respondem **solidariamente** por violações.
 - Multas: até **2% do faturamento** (para entidades com fins lucrativos) ou até **R$ 50 milhões** por infração.
-- Para condomínios: a aplicação é inequívoca; responsabilidade civil e administrativa é clara (Art. 42 e 52 LGPD).
+- Para condomínios: a aplicação é inequívoca; responsabilidade civil e administrativa é clara (Arts. 42 e 52 LGPD).
 
 ### 8.2 Categorias de Dados Tratados pelo Condomínio
 
@@ -604,45 +602,35 @@ Existem mais de 100 normas ABNT que impactam condomínios. As mais críticas:
 
 #### Tipos de Canal
 
-|Canal                          |Uso Principal                                                                            |Formalidade       |
-|-------------------------------|-----------------------------------------------------------------------------------------|------------------|
-|Aplicativo do condomínio       |Comunicados, votações, reservas, ocorrências, boletos, enquetes                          |Digital / Formal  |
-|Push notification (app)        |Alertas urgentes, lembretes de vencimento, confirmações                                  |Digital / Imediato|
-|E-mail                         |Comunicados formais, convocações de assembleia, prestação de contas                      |Formal            |
-|SMS                            |Alertas críticos (falta de água, emergência, inadimplência)                              |Urgente           |
-|Mural físico / Quadro de avisos|Avisos gerais nas áreas comuns (elevador, hall)                                          |Físico / Informal |
-|Circulares impressas           |Convocações formais quando exigido pela convenção                                        |Físico / Formal   |
-|Grupos de WhatsApp             |Comunicados informais; risco de desordem e conflitos — não recomendado como canal oficial|Informal          |
-|Interfone / App de portaria    |Controle de acesso, comunicação com portaria                                             |Operacional       |
+| Canal | Uso Principal | Formalidade |
+|---|---|---|
+| Aplicativo do condomínio | Comunicados, votações, reservas, ocorrências, boletos, enquetes | Digital / Formal |
+| Push notification (app) | Alertas urgentes, lembretes de vencimento, confirmações | Digital / Imediato |
+| E-mail | Comunicados formais, convocações de assembleia, prestação de contas | Formal |
+| SMS | Alertas críticos (falta de água, emergência, inadimplência) | Urgente |
+| Mural físico / Quadro de avisos | Avisos gerais nas áreas comuns (elevador, hall) | Físico / Informal |
+| Circulares impressas | Convocações formais quando exigido pela convenção | Físico / Formal |
+| Grupos de WhatsApp | Comunicados informais; risco de desordem e conflitos — não recomendado como canal oficial | Informal |
+| Interfone / App de portaria | Controle de acesso, comunicação com portaria | Operacional |
 
 #### Tipos de Comunicado
 
-|Tipo                      |Descrição                                                               |Exemplos                                                    |
-|--------------------------|------------------------------------------------------------------------|------------------------------------------------------------|
-|**Aviso Geral**           |Informação sem ação requerida, para todos os moradores                  |Interrupção de água, obra agendada, manutenção de elevador  |
-|**Aviso Segmentado**      |Informação para subconjunto de moradores (bloco, andar, tipo de unidade)|Problema no bloco B, manutenção no 5º andar                 |
-|**Convocação**            |Chamado formal para assembleia ou reunião                               |AGO, AGE, reunião de conselho                               |
-|**Notificação Financeira**|Alertas sobre cobranças, vencimentos, inadimplência                     |Boleto disponível, cobrança vencida, acordo aprovado        |
-|**Alerta de Segurança**   |Comunicados urgentes de segurança patrimonial                           |Tentativa de invasão, falha no portão, câmera offline       |
-|**Comunicado Normativo**  |Mudanças em regras, regimento, convenção                                |Nova regra de uso da piscina, mudança no horário de silêncio|
-|**Resposta a Ocorrência** |Retorno formal ao morador sobre uma reclamação registrada               |Atualização de status, resolução, prazo estimado            |
+| Tipo | Descrição | Exemplos |
+|---|---|---|
+| **Aviso Geral** | Informação sem ação requerida, para todos os moradores | Interrupção de água, obra agendada, manutenção de elevador |
+| **Aviso Segmentado** | Informação para subconjunto de moradores (bloco, andar, tipo de unidade) | Problema no bloco B, manutenção no 5º andar |
+| **Convocação** | Chamado formal para assembleia ou reunião | AGO, AGE, reunião de conselho |
+| **Notificação Financeira** | Alertas sobre cobranças, vencimentos, inadimplência | Boleto disponível, cobrança vencida, acordo aprovado |
+| **Alerta de Segurança** | Comunicados urgentes de segurança patrimonial | Tentativa de invasão, falha no portão, câmera offline |
+| **Comunicado Normativo** | Mudanças em regras, regimento, convenção | Nova regra de uso da piscina, mudança no horário de silêncio |
+| **Resposta a Ocorrência** | Retorno formal ao morador sobre uma reclamação registrada | Atualização de status, resolução, prazo estimado |
 
-#### Configurações de Notificação por Morador
+#### Regras de Comunicação do Domínio
 
-Cada morador deve poder configurar preferências individuais:
-
-- Canais habilitados (app, e-mail, SMS)
-- Tipos de notificação que deseja receber
-- Horários permitidos para notificações (ex: não receber push após 22h)
-- Frequência de resumos (diário, semanal)
-
-#### Regras de Comunicação
-
-- **RN-COM-001:** Convocações de assembleia devem ser enviadas pelo canal formal definido na convenção (geralmente e-mail + app + mural).
-- **RN-COM-002:** Comunicados sobre inadimplência devem ser enviados exclusivamente ao proprietário/responsável pela unidade, nunca em grupos coletivos.
-- **RN-COM-003:** Comunicados devem ter confirmação de leitura registrada (read receipt) para fins de comprovação.
-- **RN-COM-004:** O histórico de todos os comunicados enviados deve ser arquivado com data, hora, destinatários e conteúdo.
-- **RN-COM-005:** Alertas de emergência (falta de água, gás, estrutura) devem disparar simultaneamente em todos os canais ativos.
+- Convocações de assembleia devem ser enviadas pelo canal formal definido na convenção (e-mail + aviso físico + mural). Somente os itens do edital oficial podem ser votados.
+- Comunicados sobre inadimplência devem ser direcionados exclusivamente ao proprietário responsável pela unidade — nunca em canais coletivos (exigências de LGPD e privacidade).
+- Alertas de emergência (água, gás, falha estrutural) devem alcançar todos os moradores simultaneamente por todos os canais disponíveis.
+- Comunicações formais (convocações, inadimplência, multas) devem ter comprovante de entrega documentado para eventual uso jurídico.
 
 ---
 
@@ -650,53 +638,45 @@ Cada morador deve poder configurar preferências individuais:
 
 #### Conceito
 
-A reserva de áreas comuns é um direito do condômino adimplente, regulamentado pelo regimento interno. O sistema deve garantir que não haja sobreposição de reservas, que as regras de uso sejam aplicadas automaticamente e que o processo seja transparente para todos os moradores.
+A reserva de áreas comuns é um direito do condômino adimplente, regulamentado pelo regimento interno. Não são permitidas reservas sobrepostas. O regimento interno define: número máximo de reservas por unidade por mês, antecedência mínima, prazo de cancelamento e eventuais taxas ou caucões.
 
 #### Tipos de Áreas Comuns Reserváveis
 
-|Área                          |Características Típicas                                                                |
-|------------------------------|---------------------------------------------------------------------------------------|
-|Salão de Festas               |Capacidade definida; reserva por período (manhã/tarde/noite); taxa de limpeza ou caução|
-|Churrasqueira / Espaço Gourmet|Geralmente acoplado ao salão; pode ter reserva independente                            |
-|Quadra Poliesportiva          |Horários fixos (ex: 1h por reserva); sem taxa                                          |
-|Piscina                       |Pode ter horários exclusivos ou apenas controle de lotação                             |
-|Salão de Jogos / Cinema       |Reserva por hora; capacidade limitada                                                  |
-|Espaço Coworking              |Reserva por hora ou meio período; uso individual ou grupo                              |
-|Espaço Pet                    |Reserva opcional ou livre conforme regimento                                           |
-|Área de Churrasco Descoberta  |Mesmas regras do espaço gourmet                                                        |
-|Quadra de Tênis               |Horários; pode exigir cadastro de convidados                                           |
+| Área | Características Típicas |
+|---|---|
+| Salão de Festas | Capacidade definida; reserva por período (manhã/tarde/noite); taxa de limpeza ou caução |
+| Churrasqueira / Espaço Gourmet | Geralmente acoplado ao salão; pode ter reserva independente |
+| Quadra Poliesportiva | Horários fixos (ex: 1h por reserva); sem taxa |
+| Piscina | Pode ter horários exclusivos ou apenas controle de lotação |
+| Salão de Jogos / Cinema | Reserva por hora; capacidade limitada |
+| Espaço Coworking | Reserva por hora ou meio período; uso individual ou grupo |
+| Espaço Pet | Reserva opcional ou livre conforme regimento |
+| Área de Churrasco Descoberta | Mesmas regras do espaço gourmet |
+| Quadra de Tênis | Horários; pode exigir cadastro de convidados |
 
 #### Fluxo de Reserva
 
 ```
-Morador acessa app
+Morador solicita reserva (área, data, horário)
        ↓
-Seleciona área e data
-       ↓
-Sistema verifica: disponibilidade + inadimplência + limite de reservas
+Verificação: disponibilidade + inadimplência + limite de reservas
        ↓
    [Bloqueado] → Notificação de motivo (indisponível / inadimplente / limite atingido)
        ↓
-   [Disponível] → Morador confirma → Reserva criada
-       ↓
-Confirmação enviada + dados adicionados ao calendário compartilhado
+   [Disponível] → Reserva confirmada → Adicionada ao calendário compartilhado
        ↓
 Lembrete automático (ex: 24h e 2h antes)
        ↓
-Após uso: checklist de vistoria (opcional) + liberação da área
+Após uso: checklist de vistoria opcional + área liberada para próximas reservas
 ```
 
-#### Regras de Negócio — Reserva
+#### Regras de Domínio para Reservas
 
-- **RN-RES-001:** Condômino inadimplente não pode realizar novas reservas.
-- **RN-RES-002:** Cada unidade pode ter no máximo N reservas ativas por mês (N definido no regimento interno).
-- **RN-RES-003:** Cancelamentos devem respeitar prazo mínimo (ex: 24h de antecedência) para não gerar penalidade.
-- **RN-RES-004:** Cancelamento tardio ou não comparecimento pode gerar bloqueio temporário de novas reservas (conforme regimento).
-- **RN-RES-005:** Reservas para datas com mais de 30 dias de antecedência devem exigir confirmação próximo à data (ex: 7 dias antes).
-- **RN-RES-006:** Moradores convidados (não condôminos) só podem acessar a área reservada acompanhados do condômino reservante ou com autorização prévia registrada.
-- **RN-RES-007:** A área reservada deve ser entregue limpa e em conformidade com o checklist de saída; descumprimento gera cobrança de taxa de limpeza.
-- **RN-RES-008:** Conflito de reservas (erro de sistema) deve ser resolvido pelo síndico; o segundo reservante recebe prioridade na próxima data disponível.
-- **RN-RES-009:** Reservas em feriados ou fins de semana podem ter regras diferenciadas (taxa adicional, horário reduzido).
+- Condôminos inadimplentes não podem realizar novas reservas (direito restrito a condôminos adimplentes pela convenção).
+- A área reservada deve ser devolvida nas mesmas condições; o descumprimento resulta em taxa de limpeza ou cobrança de danos conforme o regimento interno.
+- Cancelamento tardio ou não comparecimento pode gerar bloqueio temporário de novas reservas conforme o regimento.
+- Reservas em feriados ou fins de semana podem ter regras distintas (taxas adicionais, horários reduzidos) conforme a convenção.
+- O acesso de convidados a áreas reservadas requer autorização prévia do condômino reservante.
 
 ---
 
@@ -704,66 +684,125 @@ Após uso: checklist de vistoria (opcional) + liberação da área
 
 #### Conceito
 
-Ocorrência é qualquer relato formal de um morador sobre problema, infração, irregularidade ou solicitação que requer resposta ou ação da administração. É instrumento essencial de gestão e transparência, e seu registro protege tanto o morador quanto o síndico.
+Ocorrência é qualquer relato formal de um morador sobre problema, infração, irregularidade ou solicitação que requer resposta ou ação da administração. O registro formal de ocorrências é essencial para transparência na gestão e protege tanto o morador quanto o síndico em eventuais processos judiciais.
 
 #### Categorias de Ocorrências
 
-|Categoria                      |Subcategorias / Exemplos                                                                  |
-|-------------------------------|------------------------------------------------------------------------------------------|
-|**Barulho e Perturbação**      |Música alta, obras fora do horário, festas após limite, animais, brigas                   |
-|**Descumprimento de Regras**   |Uso indevido de área comum, fumar em área proibida, animais sem coleira, vagas irregulares|
-|**Manutenção / Infraestrutura**|Vazamento, lâmpada queimada, elevador com defeito, portão com falha, infiltração          |
-|**Segurança**                  |Porta de emergência travada, câmera offline, suspeito no condomínio, acesso indevido      |
-|**Limpeza e Conservação**      |Área comum suja, lixo fora do horário, entulho abandonado                                 |
-|**Conduta de Funcionários**    |Reclamação sobre porteiro, zelador, prestador de serviço                                  |
-|**Danos a Áreas Comuns**       |Equipamento danificado, pichação, vandalismo                                              |
-|**Sugestões e Melhorias**      |Propostas de melhoria, pedidos de novos serviços                                          |
-|**Financeiro**                 |Contestação de cobrança, dúvida sobre boleto, pedido de acordo                            |
-|**Outros**                     |Assuntos não enquadrados nas categorias acima                                             |
+| Categoria | Subcategorias / Exemplos |
+|---|---|
+| **Barulho e Perturbação** | Música alta, obras fora do horário, festas após limite, animais, brigas |
+| **Descumprimento de Regras** | Uso indevido de área comum, fumar em área proibida, animais sem coleira, vagas irregulares |
+| **Manutenção / Infraestrutura** | Vazamento, lâmpada queimada, elevador com defeito, portão com falha, infiltração |
+| **Segurança** | Porta de emergência travada, câmera offline, suspeito no condomínio, acesso indevido |
+| **Limpeza e Conservação** | Área comum suja, lixo fora do horário, entulho abandonado |
+| **Conduta de Funcionários** | Reclamação sobre porteiro, zelador, prestador de serviço |
+| **Danos a Áreas Comuns** | Equipamento danificado, pichação, vandalismo |
+| **Sugestões e Melhorias** | Propostas de melhoria, pedidos de novos serviços |
+| **Financeiro** | Contestação de cobrança, dúvida sobre boleto, pedido de acordo |
+| **Outros** | Assuntos não enquadrados nas categorias acima |
 
-#### SLA (Prazo de Resposta por Prioridade)
+#### Fluxo de Gestão de Ocorrências
 
-|Prioridade |Critério                                                       |Prazo de 1ª Resposta|Prazo de Resolução                  |
-|-----------|---------------------------------------------------------------|--------------------|------------------------------------|
-|**Crítica**|Risco à vida, segurança ou estrutura                           |Imediato (até 1h)   |Até 24h ou acionamento de emergência|
-|**Alta**   |Falha de equipamento essencial (elevador, portão, bomba d'água)|Até 4h              |Até 48h                             |
-|**Média**  |Perturbação, limpeza, manutenção não urgente                   |Até 24h             |Até 7 dias                          |
-|**Baixa**  |Sugestões, dúvidas, melhorias estéticas                        |Até 48h             |Até 30 dias ou próxima assembleia   |
+```
+Morador registra ocorrência (app / e-mail / presencial)
+       ↓
+Número de protocolo gerado + síndico/administração notificados
+       ↓
+Responsável analisa e categoriza
+       ↓
+   [Infração ao regimento] → Notificação formal ao infrator + prazo para regularização
+   [Manutenção]            → Ordem de Serviço aberta
+   [Segurança]             → Alerta imediato + acionamento de protocolo
+   [Sugestão]              → Registrada para pauta de assembleia
+       ↓
+Atualizações de status comunicadas ao reclamante
+       ↓
+Resolução → Síndico registra encerramento com descrição
+       ↓
+Morador pode confirmar resolução ou reabrir a ocorrência
+       ↓
+Ocorrência arquivada com histórico completo
+```
 
-#### Regras de Negócio — Ocorrências
+#### SLA — Prazo de Resposta por Prioridade
 
-- **RN-OCO-001:** Toda ocorrência registrada deve receber protocolo único imediatamente.
-- **RN-OCO-002:** O reclamante deve receber notificação automática a cada mudança de status.
-- **RN-OCO-003:** Ocorrências de segurança com prioridade crítica devem notificar o síndico via push e SMS simultaneamente.
-- **RN-OCO-004:** O síndico não pode arquivar uma ocorrência sem registrar a resolução adotada.
-- **RN-OCO-005:** Ocorrências de manutenção devem gerar automaticamente uma Ordem de Serviço vinculada.
-- **RN-OCO-006:** Notificações de infração ao regimento interno devem ter comprovante de entrega registrado (para validade em eventual cobrança de multa).
-- **RN-OCO-007:** O histórico de ocorrências de uma unidade deve ser consultável pelo síndico para análise de reincidência.
-- **RN-OCO-008:** Ocorrências anônimas são permitidas apenas para denúncias; reclamações que gerem multa ao infrator exigem identificação do reclamante.
+| Prioridade | Critério | Prazo de 1ª Resposta | Prazo de Resolução |
+|---|---|---|---|
+| **Crítica** | Risco à vida, segurança ou estrutura | Imediato (até 1h) | Até 24h ou acionamento de emergência |
+| **Alta** | Falha de equipamento essencial (elevador, portão, bomba d'água) | Até 4h | Até 48h |
+| **Média** | Perturbação, limpeza, manutenção não urgente | Até 24h | Até 7 dias |
+| **Baixa** | Sugestões, dúvidas, melhorias estéticas | Até 48h | Até 30 dias ou próxima assembleia |
+
+> Prazos de referência; o regimento interno pode definir SLAs próprios.
+
+#### Processo de Aplicação de Multa por Infração
+
+Quando a ocorrência envolve violação do regimento:
+
+1. **1ª ocorrência:** Notificação formal por escrito (advertência); prazo para regularização.
+2. **2ª ocorrência (mesma categoria):** Notificação + multa conforme regimento (base: Art. 1.336 CC — até 5× a cota condominial por descumprimento).
+3. **Reincidência:** Multa + possibilidade de convocar assembleia para deliberar penalidades adicionais.
+4. **Comportamento antissocial grave (Art. 1.337 CC):** Assembleia pode deliberar multa de até **10× a cota condominial**.
+
+> A multa por infração ao regimento é diferente da multa por inadimplência. Ambas são obrigações condominiais e podem ser executadas judicialmente.
 
 ---
 
 ### 9.4 Enquetes
 
-#### Regras de Negócio — Enquetes
+#### Conceito
 
-- **RN-ENQ-001:** Enquetes são **não vinculantes**; seus resultados não substituem votação em assembleia para decisões que exigem quórum legal.
-- **RN-ENQ-002:** Cada unidade (não cada pessoa) tem direito a um único voto por enquete, salvo configuração diferente.
-- **RN-ENQ-003:** O prazo mínimo de uma enquete deve ser de 48 horas para garantir participação razoável.
-- **RN-ENQ-004:** Enquetes podem ser anônimas ou nominais; a configuração deve ser informada antes da participação.
-- **RN-ENQ-005:** Enquetes anônimas: o sistema registra que a unidade votou, mas não associa o voto à identidade do morador.
-- **RN-ENQ-006:** O resultado de enquetes deve ser publicado para todos os moradores do condomínio após o encerramento.
-- **RN-ENQ-007:** Enquetes não podem ser editadas após o início da votação; apenas canceladas (com notificação de cancelamento e motivo).
-- **RN-ENQ-008:** Condôminos inadimplentes podem participar de enquetes (diferente de assembleias, onde perdem o direito de voto).
-- **RN-ENQ-009:** Enquetes de satisfação com o síndico ou administradora devem ter participação garantida a todos os moradores, sem restrição.
+Enquetes são consultas não vinculantes realizadas pelo síndico ou pela administração para colher a opinião dos moradores sobre temas de interesse coletivo. Diferem das **votações em assembleia** (que têm força deliberativa legal): são instrumentos de escuta e planejamento e não geram obrigações jurídicas.
+
+#### Finalidades Típicas
+
+- Colher preferências antes de propor pauta de assembleia (ex: "portaria remota ou presencial?")
+- Avaliar satisfação com serviços contratados (limpeza, segurança, administradora)
+- Decidir temas cotidianos sem necessidade de assembleia formal
+- Priorizar obras ou melhorias com múltiplas opções e orçamento limitado
+- Coletar sugestões de pauta para a próxima AGO
+- Pesquisa periódica de satisfação com a gestão do síndico
+
+#### Tipos de Enquete
+
+| Tipo | Descrição | Exemplos |
+|---|---|---|
+| **Escolha Única** | Morador escolhe uma entre N opções | "Qual empresa de limpeza você prefere?" |
+| **Múltipla Escolha** | Morador escolhe uma ou mais opções | "Quais melhorias você quer para 2026?" |
+| **Escala de Satisfação** | Avaliação numérica (1–5 ou NPS 0–10) | "Como você avalia o serviço da portaria?" |
+| **Pergunta Aberta** | Campo de texto livre | "Qual é sua sugestão para a área de lazer?" |
+| **Ranking / Priorização** | Morador ordena opções por preferência | "Classifique as obras por prioridade" |
+
+#### Fluxo de Enquete
+
+```
+Síndico cria enquete (título, pergunta, tipo, opções, prazo, público-alvo)
+       ↓
+Enquete publicada + moradores notificados
+       ↓
+Moradores respondem dentro do prazo
+       ↓
+Resultados compilados após encerramento
+       ↓
+Síndico analisa resultados e decide próximos passos
+       ↓
+Resultados compartilhados com todos os moradores (transparência)
+```
+
+#### Regras de Domínio para Enquetes
+
+- Cada unidade (não cada pessoa) tem um voto por enquete, consistente com o princípio de votação condominial.
+- Enquetes são não vinculantes e não podem substituir votação formal em assembleia para matérias que exigem quórum legal.
+- Os resultados devem ser publicados a todos os moradores após o encerramento para garantir transparência.
+- Condôminos inadimplentes podem participar de enquetes (diferente de assembleias formais, onde perdem o direito de voto).
 
 ---
 
 ### 9.5 Encomendas e Delivery
 
-- Gestão de encomendas: protocolo de recebimento, notificação ao morador, prazo de retirada.
-- Tendência: armários inteligentes (lockers) para retirada autônoma 24h.
-- Delivery: políticas de acesso de entregadores (acesso à portaria apenas, sem acesso aos andares).
+- Gestão de encomendas: protocolo de recebimento pelo porteiro, notificação ao morador, prazo definido de retirada.
+- Tendência crescente: armários inteligentes (lockers) para retirada autônoma 24h sem intervenção da portaria.
+- Entregadores: acesso apenas à área da portaria; sem acesso direto aos andares sem autorização do morador.
 
 ---
 
@@ -771,18 +810,18 @@ Ocorrência é qualquer relato formal de um morador sobre problema, infração, 
 
 ### 10.1 Categorias de Sistemas para Condomínios
 
-|Categoria                        |Funcionalidades                                                  |
-|---------------------------------|-----------------------------------------------------------------|
-|**ERP Condominial**              |Financeiro, boletos, prestação de contas, contratos, eSocial     |
-|**App do Morador**               |Comunicados, reservas, ocorrências, acesso digital, votações     |
-|**Portaria / Controle de Acesso**|CFTV, reconhecimento facial, QR code, interfone digital          |
-|**Manutenção Predial**           |Ordens de serviço, check-lists, alertas de vencimento, documentos|
-|**Segurança**                    |Monitoramento 24h, análise de vídeo por IA, alertas de intrusão  |
-|**Comunicação**                  |Notificações push, e-mail, mural digital                         |
+| Categoria | Funcionalidades |
+|---|---|
+| **ERP Condominial** | Financeiro, boletos, prestação de contas, contratos, eSocial |
+| **App do Morador** | Comunicados, reservas, ocorrências, acesso digital, votações |
+| **Portaria / Controle de Acesso** | CFTV, reconhecimento facial, QR code, interfone digital |
+| **Manutenção Predial** | Ordens de serviço, check-lists, alertas de vencimento, documentos |
+| **Segurança** | Monitoramento 24h, análise de vídeo por IA, alertas de intrusão |
+| **Comunicação** | Notificações push, e-mail, mural digital |
 
 ### 10.2 Tendências e Inovações (2025–2026)
 
-- **IA na segurança:** análise de vídeo em tempo real, detecção de comportamentos anômalos, previsão de riscos.
+- **IA na segurança:** análise de vídeo em tempo real, detecção de comportamentos anômalos, previsão de riscos — de 54% para 64,3% das soluções incluindo IA (ABESE, 2024).
 - **Portaria remota com IA:** centrais redundantes, IA para triagem de acesso.
 - **Assembleias digitais:** votação online com validação biométrica ou de identidade.
 - **Automação de cobranças:** geração automática de notificações de inadimplência, parcelamentos, acordos.
@@ -792,168 +831,278 @@ Ocorrência é qualquer relato formal de um morador sobre problema, infração, 
 
 ---
 
-## 11. Domínio de Dados — Entidades e Atributos
+## 11. Gestão de Patrimônio Condominial
 
-> Os nomes de campos nas entidades abaixo seguem a versão em inglês (`knowledge-base.md`), que é a referência canônica para implementação.
-> Esta seção é mantida em português para facilitar a leitura pelos membros do time.
+### 11.1 Conceito e Responsabilidade Legal
 
-Consulte [`knowledge-base.md` — Seção 11](knowledge-base.md#11-data-domain--entities-and-attributes) para as definições completas e canônicas das entidades.
+**Patrimônio condominial** é o conjunto de bens móveis e imóveis de propriedade coletiva do condomínio, adquiridos com recursos condominiais e destinados ao uso e benefício de todos os condôminos.
+
+**Responsabilidade legal:**
+
+- O síndico é responsável pela guarda, conservação e controle dos bens (Art. 1.348, V, CC).
+- O relatório financeiro anual deve incluir a posição patrimonial do condomínio.
+- Bens adquiridos com recursos condominiais são de propriedade coletiva; o síndico não pode vender, emprestar ou dar em garantia sem aprovação em assembleia.
+- Venda ou descarte de bens de valor relevante exige deliberação em assembleia.
+
+### 11.2 Categorias de Patrimônio
+
+| Categoria | Subcategoria | Exemplos |
+|---|---|---|
+| **Equipamentos de Infraestrutura** | Elétrico / Hidráulico | Bombas d'água, geradores, quadros elétricos, no-breaks |
+| | Elevação | Elevadores, plataformas de acessibilidade |
+| | HVAC | Ar-condicionado de áreas comuns, exaustores |
+| | Segurança | Câmeras CFTV, painéis de alarme, cercas elétricas, interfones |
+| | Portaria / Acesso | Cancelas, portões automáticos, leitores biométricos, totens |
+| **Equipamentos de Lazer** | Fitness | Esteiras, bikes, aparelhos de musculação, anilhas, halteres |
+| | Recreação | Mesas de bilhar, ping-pong, pebolim, videogame, jogos de tabuleiro |
+| | Audiovisual | TVs, projetores, sistemas de som, home theater, caixas acústicas |
+| | Piscina | Bombas, aquecedores, aspiradores, medidores de cloro |
+| **Mobiliário** | Salão de Festas | Mesas, cadeiras, sofás, aparadores, estantes |
+| | Espaço Gourmet | Freezers, geladeiras, fornos, fogões, micro-ondas, churrasqueiras |
+| | Escritório / Administração | Escrivaninhas, cadeiras, arquivos, gaveteiros |
+| | Áreas Comuns | Bancos, espreguiçadeiras, guarda-sóis, lixeiras |
+| **Utensílios e Louças** | Cozinha | Talheres, pratos, copos, taças, travessas, panelas, assadeiras |
+| | Limpeza | Aspiradores, enceradeiras, mangueiras, carrinhos de limpeza |
+| | Ferramentas | Furadeiras, lixadeiras, caixas de ferramentas, escadas |
+| **Equipamentos de TI** | Administração | Computadores, impressoras, tablets, roteadores |
+| | Monitoramento | Servidores de gravação CFTV, switches de rede |
+| **Veículos e Outros** | — | Carrinhos de mão, carrinhos de mudança, bicicletas comunitárias |
+| **Documentos Físicos** | — | Apólices de seguro, manuais de equipamentos, plantas e projetos |
+
+### 11.3 Inventário e Tombamento de Bens
+
+**Tombamento** é o processo de registro formal de cada bem, atribuindo-lhe um identificador único (número patrimonial / etiqueta) e documentando suas características.
+
+#### Informações de Tombamento por Item
+
+- **Número patrimonial:** código sequencial único por condomínio (ex: `COND-2024-00142`)
+- **Descrição completa:** nome, marca, modelo, cor, características físicas
+- **Categoria e subcategoria**
+- **Localização:** área comum onde está alocado (salão, academia, portaria, etc.)
+- **Data de aquisição** e **valor de aquisição** com nota fiscal
+- **Fornecedor** e número da nota fiscal
+- **Garantia:** data de início e término
+- **Estado de conservação:** ótimo / bom / regular / ruim / inservível
+- **Responsável pela guarda** (zelador, porteiro, administração)
+- **Fotos** do estado no tombamento e nas revisões periódicas
+
+#### Inventário Periódico
+
+Realizado ao menos **uma vez por ano**, preferencialmente antes da AGO, para:
+
+- Confirmar a existência física dos bens registrados
+- Atualizar o estado de conservação de cada item
+- Identificar bens desaparecidos, danificados ou extraviados
+- Subsidiar a prestação de contas ao conselho fiscal
+
+### 11.4 Ciclo de Vida do Patrimônio
+
+```
+Aquisição (nota fiscal)
+       ↓
+Recebimento + Inspeção
+       ↓
+Tombamento (registro + etiqueta física)
+       ↓
+Alocação em área comum
+       ↓
+Uso + Manutenção periódica ◄──────────────────┐
+       ↓                                        │
+Revisão de conservação                         │ loop
+       ↓                                        │
+  [Bom / Regular] ──────────────────────────────┘
+       ↓
+  [Ruim / Inservível]
+       ↓
+  Decisão de destinação (síndico + conselho)
+  Venda de valor relevante → aprovação em assembleia
+       ↓              ↓              ↓
+    Reparo         Descarte       Venda / Doação
+    (OS)        (documentado)   (aprovação em assembleia)
+                     ↓              ↓
+               Baixa patrimonial com registro
+```
+
+### 11.5 Depreciação de Patrimônio
+
+Boas práticas recomendam o controle da depreciação para planejar a substituição de bens.
+
+| Categoria | Vida Útil Estimada | Taxa Anual Aproximada |
+|---|---|---|
+| Eletrônicos (TV, projetor, computador) | 3–5 anos | 20–33% |
+| Utensílios e louças | 3–5 anos | 20–33% |
+| Equipamentos fitness | 5–8 anos | 12–20% |
+| Câmeras de segurança / CFTV | 5–7 anos | 14–20% |
+| Ferramentas | 5–10 anos | 10–20% |
+| Eletrodomésticos (freezer, forno, geladeira) | 8–10 anos | 10–12% |
+| Portões automáticos e cancelas | 8–10 anos | 10–12% |
+| Mobiliário (mesas, cadeiras, sofás) | 10–15 anos | 7–10% |
+| Equipamentos hidráulicos (bombas) | 10–15 anos | 7–10% |
+| Elevadores | 20–25 anos | 4–5% |
+
+> Valores de referência para planejamento. O condomínio pode adotar tabelas próprias definidas em assembleia.
+
+### 11.6 Tipos de Movimentação Patrimonial
+
+| Tipo | Descrição |
+|---|---|
+| **Entrada** | Aquisição, doação, permuta |
+| **Transferência** | Mudança de localização dentro do condomínio |
+| **Empréstimo Interno** | Cessão temporária para evento condominial |
+| **Saída para Manutenção** | Bem enviado para reparo externo |
+| **Retorno de Manutenção** | Bem retornado após reparo |
+| **Baixa por Descarte** | Bem inservível descartado |
+| **Baixa por Venda/Doação** | Bem vendido, doado ou permutado |
+| **Baixa por Extravio** | Bem desaparecido; gera ocorrência vinculada |
+| **Atualização de Estado** | Revisão de conservação sem movimentação física |
 
 ---
 
-## 12. Regras de Negócio Críticas
+## 12. Gestão de Estoque de Itens de Consumo
 
-### Comunicação
+### 12.1 Distinção entre Patrimônio e Consumíveis
 
-- **RN-COM-001:** Convocações de assembleia devem ser enviadas pelo canal formal definido na convenção (e-mail + app + mural).
-- **RN-COM-002:** Comunicados sobre inadimplência devem ser enviados exclusivamente ao responsável pela unidade, nunca em grupos coletivos.
-- **RN-COM-003:** Todo comunicado deve ter confirmação de leitura registrada para fins de comprovação legal.
-- **RN-COM-004:** O histórico de todos os comunicados enviados deve ser arquivado com data, destinatários e conteúdo.
-- **RN-COM-005:** Alertas de emergência devem disparar simultaneamente em todos os canais ativos (app + SMS + e-mail).
+| Dimensão | Patrimônio (Seção 11) | Consumível (Esta Seção) |
+|---|---|---|
+| **Natureza** | Bem durável; não se esgota com o uso | Item de uso contínuo; esgota-se ou expira |
+| **Controle** | Tombamento individual por item | Controle por produto/SKU e quantidade em estoque |
+| **Vida útil** | Anos | Dias a meses |
+| **Gestão financeira** | Depreciação, valor residual | Custo por uso, consumo médio mensal |
+| **Reposição** | Eventual, por decisão | Periódica, acionada por estoque mínimo |
+| **Exemplos** | TV, freezer, conjunto de talheres, furadeira | Detergente, papel higiênico, cloro, lâmpada |
 
-### Reserva de Espaços
+> **Observação:** Alguns itens transitam entre as categorias dependendo do contexto. Ferramentas manuais simples (esponjas, vassouras) são consumíveis; ferramentas elétricas (aspirador, furadeira) são patrimônio.
 
-- **RN-RES-001:** Condômino inadimplente não pode realizar novas reservas de áreas comuns.
-- **RN-RES-002:** Cada unidade pode ter no máximo N reservas ativas por mês, conforme regimento.
-- **RN-RES-003:** Cancelamentos fora do prazo mínimo (padrão: 24h) geram penalidade conforme regimento.
-- **RN-RES-004:** Não comparecimento sem cancelamento pode gerar bloqueio temporário de novas reservas.
-- **RN-RES-005:** Área com manutenção ativa deve ser bloqueada automaticamente para novas reservas.
-- **RN-RES-006:** Conflito de reservas deve ser resolvido pelo síndico; segundo reservante recebe prioridade na próxima data disponível.
-- **RN-RES-007:** A disponibilidade no calendário deve ser pública (livre/ocupado), mas sem expor o nome do reservante.
+### 12.2 Categorias de Consumíveis
 
-### Ocorrências e Reclamações
+| Categoria | Exemplos |
+|---|---|
+| **Limpeza e Higiene** | Detergente, desinfetante, alvejante, sabão em pó, multiuso, desentupidor, limpa-vidros, cera de piso, removedor de ferrugem, mop, esponja, vassoura, balde mop, sacos de lixo, papel toalha, papel higiênico, sabonete líquido |
+| **Jardinagem** | Adubo, substrato, inseticida, herbicida, sementes, mudas, fertilizante foliar |
+| **Piscina e Área de Lazer** | Cloro granulado, algicida, clarificante, ph-minus, ph-plus, floculante, pastilha de cloro |
+| **Elétrico e Iluminação** | Lâmpadas (LED, fluorescente), fusíveis, fita isolante, tomadas, interruptores, cabos |
+| **Hidráulico** | Fita veda-rosca, cola PVC, lixa, abraçadeiras, conexões PVC, fita impermeável, desentupidor |
+| **Manutenção Geral** | Parafusos, pregos, buchas, lixa, massa corrida, tinta retoque, fita crepe, silicone, cola |
+| **Escritório / Administração** | Papel A4, canetas, grampos, clipes, envelopes, cartuchos de impressora, pastas, etiquetas |
+| **Segurança e EPI** | Luvas descartáveis, máscaras, óculos de proteção, capacetes, placas de piso molhado |
+| **Portaria e Recepção** | Fichas de visitante, etiquetas de identificação, bobinas de papel para impressora de acesso |
+| **Copa / Funcionários** | Café, açúcar, copos descartáveis, filtros de papel, detergente de cozinha |
 
-- **RN-OCO-001:** Toda ocorrência registrada deve receber protocolo único imediatamente.
-- **RN-OCO-002:** O reclamante deve receber notificação automática a cada mudança de status.
-- **RN-OCO-003:** Ocorrências de segurança com prioridade crítica devem notificar o síndico via push e SMS simultaneamente.
-- **RN-OCO-004:** O síndico não pode arquivar uma ocorrência sem registrar a resolução adotada.
-- **RN-OCO-005:** Ocorrências de manutenção devem gerar automaticamente uma Ordem de Serviço vinculada.
-- **RN-OCO-006:** Notificações de infração ao regimento devem ter comprovante de entrega registrado (para validade em eventual multa).
-- **RN-OCO-007:** O histórico de ocorrências de uma unidade deve ser consultável pelo síndico para análise de reincidência.
+### 12.3 Fluxo de Gestão de Estoque
 
-### Enquetes
+```
+Cadastro de produto (SKU, categoria, unidade, estoque mínimo)
+                    ↓
+         Entrada em estoque (compra, doação, transferência)
+                    ↓
+         Saída registrada (por funcionário ou vinculada a OS)
+                    ↓
+         Saldo atualizado
+                    ↓
+    Saldo ≤ estoque mínimo? → Sim → Alerta de reposição
+                    ↓
+    Pedido de compra (manual ou gerado automaticamente)
+                    ↓
+    Aprovação (síndico / zelador)
+                    ↓
+    Compra realizada → Nota fiscal registrada → Entrada em estoque
+```
 
-- **RN-ENQ-001 a RN-ENQ-007:** Ver Seção 9.4.
-- **RN-FIN-001:** A cota condominial vencida gera multa de 2% + juros de 1% ao mês automaticamente.
-- **RN-FIN-002:** Condômino com débito em aberto não pode votar em assembleia.
-- **RN-FIN-003:** O fundo de reserva não pode ser utilizado para despesas ordinárias previstas no orçamento.
-- **RN-FIN-004:** A previsão orçamentária deve ser aprovada em AGO antes de entrar em vigor.
-- **RN-FIN-005:** O fundo de reserva deve ter conta bancária separada da conta corrente operacional.
-- **RN-FIN-006:** O seguro de incêndio é obrigatório; sua ausência expõe o síndico a responsabilidade pessoal.
+### 12.4 Estoque Mínimo e Ponto de Pedido
 
-### Governança
+- **Estoque mínimo:** quantidade abaixo da qual há risco de interrupção operacional. Aciona alerta de reposição.
+- **Estoque máximo:** limite superior para evitar desperdício, vencimento e capital imobilizado.
+- **Ponto de pedido:** quantidade na qual o pedido deve ser acionado, considerando o prazo médio de entrega do fornecedor.
+- **Consumo médio mensal:** calculado com base no histórico de saídas dos últimos 3–6 meses.
 
-- **RN-GOV-001:** Alterações na Convenção exigem aprovação de 2/3 de TODOS os condôminos.
-- **RN-GOV-002:** A pauta de assembleia é fechada; apenas itens do edital podem ser votados.
-- **RN-GOV-003:** O síndico nunca pode presidir a própria assembleia.
-- **RN-GOV-004:** Convocações de assembleia por condôminos requerem representação de pelo menos 1/4 do total.
-- **RN-GOV-005:** A ata de assembleia que altera a convenção deve ser registrada em cartório.
-- **RN-GOV-006:** O mandato do síndico é de no máximo 2 anos, renovável.
+```
+Ponto de Pedido = Consumo Médio Diário × Prazo de Entrega (dias) + Estoque Mínimo
+```
 
-### Segurança e Acesso
+**Exemplo:**
 
-- **RN-SEG-001:** O uso de biometria facial exige consentimento individual e explícito; deve haver meio alternativo de acesso.
-- **RN-SEG-002:** Imagens de câmeras só podem ser compartilhadas com autoridades via requisição formal; nunca diretamente a condôminos.
-- **RN-SEG-003:** Dados de visitantes devem ter prazo de retenção definido e ser excluídos após o período.
-- **RN-SEG-004:** Câmeras não podem ser posicionadas de modo a capturar áreas privativas.
+- Detergente: consumo 2 frascos/dia, prazo de entrega 3 dias, estoque mínimo 5 frascos.
+- Ponto de pedido = (2 × 3) + 5 = **11 frascos**.
 
-### Manutenção
+### 12.5 Requisições e Saídas de Itens
 
-- **RN-MAN-001:** AVCB vencido expõe o síndico a responsabilização pessoal por qualquer sinistro.
-- **RN-MAN-002:** Elevadores devem ter manutenção preventiva mensal e inspeção semestral documentadas.
-- **RN-MAN-003:** Reformas em unidades privativas que afetem estrutura, hidráulica ou elétrica exigem ART/RRT antes do início.
-- **RN-MAN-004:** Documentos de manutenção devem ser arquivados por no mínimo 5 anos.
+- Toda retirada de item do estoque deve ser registrada por um responsável identificado.
+- A requisição pode estar vinculada a uma Ordem de Serviço (manutenção) ou a um centro de custo (limpeza, portaria, administração).
+- Isso permite calcular o **custo real por área / atividade**, cruzando com o orçamento planejado.
 
-### Trabalhista
+**Centros de custo típicos:**
 
-- **RN-RH-001:** Todo funcionário CLT deve ser registrado no eSocial antes do início das atividades.
-- **RN-RH-002:** O síndico não tem vínculo empregatício com o condomínio.
-- **RN-RH-003:** Funcionários terceirizados não podem receber ordens diretas do síndico (risco de vínculo empregatício).
-- **RN-RH-004:** Pagamento de verbas rescisórias deve ocorrer em até 10 dias após o desligamento.
+- Limpeza e conservação
+- Manutenção predial
+- Portaria e segurança
+- Piscina e lazer
+- Jardinagem
+- Administração
+
+### 12.6 Controle de Validade
+
+- Produtos com data de validade (desinfetantes, cloro, itens de copa, EPI) devem ter a data registrada na entrada do lote.
+- Alerta de proximidade de vencimento (recomendado: 30 dias de antecedência).
+- Política FIFO (*First In, First Out*): itens mais antigos são consumidos primeiro.
+- Itens vencidos devem ser baixados do estoque com registro de descarte.
+
+### 12.7 Gestão de Fornecedores de Consumíveis
+
+- Cada produto pode ter um ou mais fornecedores cadastrados, com preço de referência e prazo de entrega.
+- O histórico de compras permite identificar variações de preço e subsidiar negociações.
+- Cotações prévias: para compras acima de valor definido em assembleia, recomenda-se mínimo de 3 cotações.
+- Critérios de avaliação: preço, prazo, qualidade, regularidade fiscal (CNPJ ativo, certidões negativas).
+
+### 12.8 Relatórios e Inteligência de Estoque
+
+| Relatório | Finalidade |
+|---|---|
+| **Posição de Estoque** | Saldo atual de todos os itens; identifica faltas e excessos críticos |
+| **Consumo Mensal por Categoria** | Custo real de suprimentos por mês e por centro de custo |
+| **Histórico de Movimentações** | Rastreamento de entradas, saídas e responsáveis |
+| **Itens Próximos ao Vencimento** | Alerta preventivo para uso ou descarte |
+| **Análise de Fornecedores** | Comparativo de preços e prazos por fornecedor ao longo do tempo |
+| **Variação Orçamentária** | Comparativo entre custo planejado e real de consumíveis |
+| **Alertas de Reposição Pendentes** | Itens abaixo do ponto de pedido sem compra solicitada |
 
 ---
 
 ## 13. Glossário Condominial
 
-|Termo                   |Definição                                                                                                                                                       |
-|------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|**AVCB**                |Auto de Vistoria do Corpo de Bombeiros. Certificado de conformidade com normas de segurança contra incêndio.                                                    |
-|**ART**                 |Anotação de Responsabilidade Técnica. Documento emitido por engenheiro ao CREA para obras e laudos.                                                             |
-|**RRT**                 |Registro de Responsabilidade Técnica. Equivalente do ART para arquitetos (CAU).                                                                                 |
-|**AGO**                 |Assembleia Geral Ordinária. Realizada ao menos uma vez por ano.                                                                                                 |
-|**AGE**                 |Assembleia Geral Extraordinária. Convocada para temas urgentes ou fora do ciclo anual.                                                                          |
-|**Convenção**           |Estatuto do condomínio. Documento registrado em cartório que define regras de convivência e administração.                                                      |
-|**Regimento Interno**   |Normas de uso cotidiano das áreas comuns; pode ser parte da convenção ou documento separado.                                                                    |
-|**Fração Ideal**        |Percentual da área comum que corresponde a cada unidade privativa. Base para cálculo de contribuições e votos.                                                  |
-|**Cota Condominial**    |Taxa mensal paga por cada unidade para custeio das despesas do condomínio.                                                                                      |
-|**Fundo de Reserva**    |Reserva financeira do condomínio para despesas emergenciais e extraordinárias.                                                                                  |
-|**Inadimplência**       |Situação de não pagamento da cota condominial. Implica multa, juros e suspensão do direito de voto.                                                             |
-|**Pro Labore**          |Remuneração do síndico pelos serviços de gestão, quando previsto.                                                                                               |
-|**Quórum**              |Número mínimo de condôminos necessário para que uma assembleia ou votação seja válida.                                                                          |
-|**Maioria Simples**     |50% + 1 dos presentes na assembleia.                                                                                                                            |
-|**Maioria Absoluta**    |50% + 1 de TODOS os condôminos do condomínio.                                                                                                                   |
-|**CCT**                 |Convenção Coletiva de Trabalho. Acordo entre sindicato de trabalhadores e de empregadores que define direitos e pisos salariais por categoria e região.         |
-|**eSocial**             |Sistema do governo federal que centraliza informações trabalhistas, previdenciárias e fiscais dos empregados. Obrigatório para condomínios com funcionários CLT.|
-|**DET**                 |Domicílio Eletrônico Trabalhista. Canal oficial de comunicação entre o Ministério do Trabalho e os empregadores (Decreto 11.905/2024).                          |
-|**PCMSO**               |Programa de Controle Médico de Saúde Ocupacional. Obrigatório para condomínios com funcionários.                                                                |
-|**PPRA**                |Programa de Prevenção de Riscos Ambientais. Complementar ao PCMSO.                                                                                             |
-|**CIPA**                |Comissão Interna de Prevenção de Acidentes. Obrigatória em condomínios com determinado número de funcionários.                                                  |
-|**LGPD**                |Lei Geral de Proteção de Dados (Lei 13.709/2018). Regula o tratamento de dados pessoais no Brasil.                                                              |
-|**RIPD**                |Relatório de Impacto à Proteção de Dados. Documento obrigatório para tratamento de dados sensíveis (ex: biometria).                                             |
-|**CFTV**                |Circuito Fechado de TV. Sistema de câmeras de segurança.                                                                                                        |
-|**RIA**                 |Relatório de Inspeção Anual de Elevadores. Obrigatório em muitos municípios.                                                                                    |
-|**PMOC**                |Plano de Manutenção, Operação e Controle. Obrigatório para sistemas de ar-condicionado conforme norma ANVISA.                                                   |
-|**Síndico Profissional**|Síndico externo (não morador), contratado como prestador de serviços para gestão profissional do condomínio.                                                    |
-|**Administradora**      |Empresa contratada para suporte administrativo, financeiro e operacional do síndico.                                                                            |
-|**Portaria Remota**     |Modelo de portaria sem presença física, operada por central de monitoramento via câmeras, interfones e IA.                                                      |
-|**NBR**                 |Norma Brasileira. Documento técnico publicado pela ABNT (Associação Brasileira de Normas Técnicas).                                                             |
-|**Área Comum**          |Partes do condomínio de uso coletivo (hall, piscina, salão, garagem coletiva, escadas, etc.).                                                                   |
-|**Área Privativa**      |Unidade autônoma de uso exclusivo do condômino (apartamento, sala, vaga vinculada).                                                                             |
-
----
-
-## 14. Arquitetura Multi-Tenancy
-
-Consulte [`knowledge-base.md` — Seção 14](knowledge-base.md#14-multi-tenancy-architecture) para a versão canônica desta seção.
-
-O ZenAndVillage opera em um modelo **multi-tenant hierárquico**:
-
-```
-Plataforma (ZenAndVillage)
-└── Tenant (Administradora | Condomínio Independente)
-    └── Condomínio
-        └── Bloco
-            └── Unidade
-                └── Morador / Proprietário / Inquilino
-```
-
-As regras de isolamento, papéis, planos, assinaturas, white-label, auditoria e ciclo de vida do tenant seguem integralmente a especificação da versão em inglês.
-
----
-
-## 15. Gestão de Patrimônio Condominial
-
-O **patrimônio condominial** é o conjunto de bens móveis e imóveis de propriedade coletiva do condomínio.
-
-**Responsabilidade legal:** o síndico é responsável pela guarda, conservação e controle (Art. 1.348, V, CC). A venda ou descarte de bens de valor relevante exige deliberação em assembleia.
-
-As entidades, regras de negócio, fluxo de ciclo de vida, categorias de bens e tabelas de depreciação seguem integralmente a especificação da versão em inglês ([`knowledge-base.md` — Seção 15](knowledge-base.md#15-condominium-asset-management)).
-
-**Regras de negócio resumidas:**
-
-- **RN-PAT-001 a RN-PAT-009:** Ver versão canônica em inglês.
-
----
-
-## 16. Gestão de Estoque de Itens de Consumo
-
-Itens de consumo são materiais utilizados nas operações cotidianas do condomínio que se esgotam com o uso e precisam de reposição periódica (diferente do patrimônio, que são bens duráveis).
-
-As entidades, regras de negócio, fluxo de gestão, controle de validade, ponto de pedido e relatórios seguem integralmente a especificação da versão em inglês ([`knowledge-base.md` — Seção 16](knowledge-base.md#16-consumable-inventory-management)).
-
-**Regras de negócio resumidas:**
-
-- **RN-EST-001 a RN-EST-009:** Ver versão canônica em inglês.
+| Termo | Definição |
+|---|---|
+| **AVCB** | Auto de Vistoria do Corpo de Bombeiros. Certificado de conformidade com normas de segurança contra incêndio. |
+| **ART** | Anotação de Responsabilidade Técnica. Documento emitido por engenheiro ao CREA para obras e laudos. |
+| **RRT** | Registro de Responsabilidade Técnica. Equivalente do ART para arquitetos (CAU). |
+| **AGO** | Assembleia Geral Ordinária. Realizada ao menos uma vez por ano. |
+| **AGE** | Assembleia Geral Extraordinária. Convocada para temas urgentes ou fora do ciclo anual. |
+| **Convenção** | Estatuto do condomínio. Documento registrado em cartório que define regras de convivência e administração. |
+| **Regimento Interno** | Normas de uso cotidiano das áreas comuns; pode ser parte da convenção ou documento separado. |
+| **Fração Ideal** | Percentual da área comum que corresponde a cada unidade privativa. Base para cálculo de contribuições e votos. |
+| **Cota Condominial** | Taxa mensal paga por cada unidade para custeio das despesas do condomínio. |
+| **Fundo de Reserva** | Reserva financeira do condomínio para despesas emergenciais e extraordinárias. |
+| **Inadimplência** | Situação de não pagamento da cota condominial. Implica multa, juros e suspensão do direito de voto. |
+| **Pro Labore** | Remuneração do síndico pelos serviços de gestão, quando previsto. |
+| **Quórum** | Número mínimo de condôminos necessário para que uma assembleia ou votação seja válida. |
+| **Maioria Simples** | 50% + 1 dos presentes na assembleia. |
+| **Maioria Absoluta** | 50% + 1 de TODOS os condôminos do condomínio. |
+| **CCT** | Convenção Coletiva de Trabalho. Acordo entre sindicato de trabalhadores e de empregadores que define direitos e pisos salariais por categoria e região. |
+| **eSocial** | Sistema do governo federal que centraliza informações trabalhistas, previdenciárias e fiscais dos empregados. Obrigatório para condomínios com funcionários CLT. |
+| **DET** | Domicílio Eletrônico Trabalhista. Canal oficial de comunicação entre o Ministério do Trabalho e os empregadores (Decreto 11.905/2024). |
+| **PCMSO** | Programa de Controle Médico de Saúde Ocupacional. Obrigatório para condomínios com funcionários. |
+| **PPRA** | Programa de Prevenção de Riscos Ambientais. Complementar ao PCMSO. |
+| **CIPA** | Comissão Interna de Prevenção de Acidentes. Obrigatória em condomínios com determinado número de funcionários. |
+| **LGPD** | Lei Geral de Proteção de Dados (Lei 13.709/2018). Regula o tratamento de dados pessoais no Brasil. |
+| **RIPD** | Relatório de Impacto à Proteção de Dados. Documento obrigatório para tratamento de dados sensíveis (ex: biometria). |
+| **CFTV** | Circuito Fechado de TV. Sistema de câmeras de segurança. |
+| **RIA** | Relatório de Inspeção Anual de Elevadores. Obrigatório em muitos municípios. |
+| **PMOC** | Plano de Manutenção, Operação e Controle. Obrigatório para sistemas de ar-condicionado conforme norma ANVISA. |
+| **Síndico Profissional** | Síndico externo (não morador), contratado como prestador de serviços para gestão profissional do condomínio. |
+| **Administradora** | Empresa contratada para suporte administrativo, financeiro e operacional do síndico. |
+| **Portaria Remota** | Modelo de portaria sem presença física, operada por central de monitoramento via câmeras, interfones e IA. |
+| **NBR** | Norma Brasileira. Documento técnico publicado pela ABNT (Associação Brasileira de Normas Técnicas). |
+| **Área Comum** | Partes do condomínio de uso coletivo (hall, piscina, salão, garagem coletiva, escadas, etc.). |
+| **Área Privativa** | Unidade autônoma de uso exclusivo do condômino (apartamento, sala, vaga vinculada). |
 
 ---
 
@@ -975,4 +1124,4 @@ As entidades, regras de negócio, fluxo de gestão, controle de validade, ponto 
 
 ---
 
-*Documento para uso interno de desenvolvimento. Revisar periodicamente para manter atualização com alterações legislativas e normativas. Última revisão: Maio 2026 — v1.4.*
+*Documento para uso interno de desenvolvimento. Revisar periodicamente para manter atualização com alterações legislativas e normativas. Última revisão: Maio 2026 — v2.0 (reestruturado: apenas domínio; requisitos de software e entidades movidos para `software-vision-pt_BR.md`).*

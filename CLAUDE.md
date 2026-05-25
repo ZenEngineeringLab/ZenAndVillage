@@ -22,14 +22,27 @@ It is the **single source of truth for all engineering decisions** — stack, pa
 
 ## Knowledge Base
 
-The domain knowledge base is maintained in two files that must always stay in sync:
+Project documentation is split into two concerns — domain knowledge and software vision — each maintained as a bilingual pair that must always stay in sync:
+
+### Domain Knowledge Base (Brazilian condominium domain only)
 
 | File | Language | Role |
 |---|---|---|
-| [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
+| [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — domain definitions, legal framework, real-world roles and processes |
 | [`docs/knowledge-base-pt_BR.md`](docs/knowledge-base-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
 
-**Sync rule:** Any edit to either file must be reflected in the other before the task is considered complete. The en-US file (`knowledge-base.md`) is the source of truth. When content diverges, the en-US version takes precedence. Entity field names and code identifiers are defined in the en-US version; the pt-BR version may reference them rather than redefine them.
+Contains **only domain facts**: Brazilian condo law, actor/role definitions, governance processes, financial concepts, HR/labor rules, building operations, LGPD obligations. No entity schemas, no RN-XXX business rule codes, no software architecture.
+
+### Software Vision (platform requirements and business rules)
+
+| File | Language | Role |
+|---|---|---|
+| [`docs/software-vision.md`](docs/software-vision.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
+| [`docs/software-vision-pt_BR.md`](docs/software-vision-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+
+Contains: product vision, multi-tenancy **business model** (hierarchy, plans, tenant lifecycle), user roles and permissions, platform modules, data domain entities (with field definitions), and business rules (RN-XXX codes). For technical implementation details (DynamoDB patterns, Lambda Authorizer, Cognito flows), always defer to `docs/architecture-guide.md` — software-vision.md must not duplicate that content.
+
+**Sync rule (applies to both pairs):** Any edit to either file in a pair must be reflected in the other before the task is considered complete. The en-US file is the source of truth. When content diverges, the en-US version takes precedence. Entity field names and code identifiers are defined in the en-US versions; the pt-BR versions may reference them rather than redefine them.
 
 ---
 
