@@ -4,7 +4,7 @@
 > **Como usar este documento**
 > Substitua `{project}` pelo identificador curto do seu projeto (ex.: `myapp`, `acme`, `foobar`).
 > Este documento é a **fonte única de verdade para a arquitetura de engenharia**.
-> Decisões de UI (componentes, tokens, estilização, ícones) são regidas pela Seção 4 deste documento.
+> Decisões de UI (componentes, tokens, estilização, ícones) são regidas pela Seção 15 deste documento.
 
 > **Versão pt_BR.** Este documento é a tradução em Português Brasileiro (pt_BR) de [`architecture-guide.md`](architecture-guide.md).
 > Toda edição feita em `architecture-guide.md` deve ser refletida neste arquivo.
@@ -12,7 +12,7 @@
 
 ---
 
-## 1. Visão Geral
+## 1. Overview
 
 Esta arquitetura combina um **frontend PWA** (React + TypeScript + Vite) com um
 **backend serverless AWS** (Lambda + API Gateway + Cognito), organizado por princípios
@@ -78,7 +78,7 @@ requisitos em tempo real, uploads de arquivos e suporte offline via PWA.
 
 ---
 
-## 2. Stack Tecnológico
+## 2. Technology Stack
 
 ### Backend (AWS Serverless)
 
@@ -119,7 +119,7 @@ requisitos em tempo real, uploads de arquivos e suporte offline via PWA.
 | --- | --- | --- |
 | Framework | React 19 + TypeScript 6 (strict) | Este documento |
 | Bundler | Vite 8 | Este documento |
-| Camada de UI (tokens, componentes, estilização, ícones) | shadcn/ui + Tailwind CSS v4 + Lucide React | Este documento (Seção 4) |
+| Camada de UI (tokens, componentes, estilização, ícones) | shadcn/ui + Tailwind CSS v4 + Lucide React | Este documento (Seção 15) |
 | Roteamento | React Router 7 | Este documento |
 | Estado de servidor | TanStack Query 5 | Este documento |
 | Estado de cliente | Zustand 5 | Este documento |
@@ -132,11 +132,11 @@ requisitos em tempo real, uploads de arquivos e suporte offline via PWA.
 
 > **Leia a coluna Autoridade antes de adicionar qualquer coisa a um componente.**
 > Se a autoridade for "Este documento", a definição está na seção referenciada abaixo.
-> Todas as decisões de UI (estilização, componentes, ícones) são regidas pela Seção 4.
+> Todas as decisões de UI (estilização, componentes, ícones) são regidas pela Seção 15.
 
 ---
 
-## 3. Matriz de Compatibilidade
+## 3. Compatibility Matrix
 
 Todas as versões da Seção 2 foram validadas entre si em **Maio 2026**.
 As versões mínimas de patch indicadas abaixo são obrigatórias — não use patches anteriores.
@@ -193,40 +193,143 @@ para a atualização oficial do peer dep.
 
 ---
 
-## 4. Stack de UI
+## 4. Project Structure
 
-### Stack
+### Backend
 
-| Camada | Tecnologia | Notas |
-| --- | --- | --- |
-| Primitivos de componentes | **shadcn/ui** (Radix UI) | Instalar via `npx shadcn@latest add <componente>` |
-| Estilização | **Tailwind CSS v4** | Único mecanismo de estilização — sem CSS Modules ou CSS puro |
-| Ícones | **Lucide React** | Única biblioteca de ícones — sem mistura com outros conjuntos |
-| Modo escuro | Variant `dark:` do Tailwind CSS | Toggle define classe `dark` no `<html>`; sem temas paralelos |
+```
+{project}-backend/
+├── infra/
+│   ├── bin/app.ts
+│   ├── stacks/
+│   │   ├── users.stack.ts              # Tabela DynamoDB users (Lambda Pre-Token)
+│   │   ├── cognito.stack.ts
+│   │   ├── api-gateway.stack.ts
+│   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
+│   │   ├── {domain}.stack.ts           # um por domínio de negócio — um arquivo por domínio
+│   │   └── pipeline.stack.ts           # 🔜 Pós-MVP — CodePipeline CI/CD
+│   └── constructs/
+│       ├── lambda-with-powertools.ts
+│       └── sqs-with-dlq.ts
+│
+└── lambda/
+    ├── shared/
+    │   ├── tenant-authorizer.handler.ts  # HttpLambdaResponseType.SIMPLE
+    │   ├── extract-context.ts
+    │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
+    ├── auth/
+    │   └── pre-token-generation.handler.ts
+    ├── {domain}/                         # uma pasta por domínio de negócio
+    │   ├── list.handler.ts
+    │   ├── get-by-id.handler.ts
+    │   ├── create.handler.ts
+    │   ├── update.handler.ts
+    │   ├── delete.handler.ts
+    │   ├── domain/                       # Entidades, Value Objects
+    │   └── infrastructure/               # Repositório DynamoDB
+    ├── uploads/
+    │   └── presign.handler.ts
+    └── notifications/
+        ├── ws-connect.handler.ts
+        ├── ws-disconnect.handler.ts
+        ├── notifier.handler.ts           # Trigger SQS → push WebSocket
+        ├── list.handler.ts
+        ├── mark-read.handler.ts
+        └── mark-all-read.handler.ts
+```
 
-### Regras
+### Frontend
 
-- **Use componentes shadcn/ui como base para todos os primitivos de UI.** Execute `npx shadcn@latest add <componente>` antes de reconstruir qualquer coisa que já exista no catálogo (Button, Input, Select, Dialog, Sheet, Table, Toast, Badge, Avatar, Skeleton, etc.).
-- **Todos os valores visuais vêm de tokens Tailwind.** Nunca use valores arbitrários (`w-[137px]`, `text-[#ff0000]`). Se um token estiver faltando, adicione-o em `tailwind.config.ts` e documente a decisão aqui.
-- **Ícones são sempre do Lucide React.** `import { IconName } from 'lucide-react'` — nunca importe de heroicons, react-icons ou outras bibliotecas.
-- **Modo escuro é nativo do Tailwind.** A classe `dark` no `<html>` é a única fonte de verdade. Persista a preferência do usuário em `localStorage` via um pequeno hook; nunca implemente uma estratégia separada de variáveis CSS.
-- **Localização dos componentes:** a saída do shadcn fica em `src/shared/components/ui/`; compostos customizados em `src/shared/components/`. Nunca espalhe primitivos de UI por pastas de feature.
-- **Extensão de componentes shadcn:** use `cva` (class-variance-authority) para novas variantes — nunca codifique strings de classe condicionais diretamente.
+```
+{project}-web/
+├── public/
+│   ├── pwa-192x192.png                   # Ícones PWA
+│   ├── pwa-512x512.png
+│   └── favicon.svg
+│
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx                          # Amplify.configure() + init i18n aqui
+│   ├── index.css
+│   │
+│   ├── app/
+│   │   ├── router.tsx                    # Lazy-loaded por feature (React.lazy + Suspense)
+│   │   └── query-client.ts
+│   │
+│   ├── features/                         # Uma pasta por domínio — estrutura plana
+│   │   ├── auth/
+│   │   │   ├── pages/LoginPage.tsx
+│   │   │   └── store/auth.store.ts       # Zustand — user, activeTenantId, tenants
+│   │   ├── dashboard/DashboardPage.tsx
+│   │   ├── {feature}/
+│   │   │   ├── {Feature}Page.tsx         # Componente de página (alvo de rota lazy-loaded)
+│   │   │   ├── {Feature}Form.tsx         # Formulário de criação / edição
+│   │   │   ├── {Feature}Detail.tsx       # Detalhe / painel lateral (opcional)
+│   │   │   ├── hooks/
+│   │   │   │   └── use{Feature}Query.ts  # Hooks TanStack Query + key factory
+│   │   │   ├── services/
+│   │   │   │   └── {feature}.service.ts  # Chamadas Axios — chave de idempotência gerada aqui
+│   │   │   └── types/
+│   │   │       └── {feature}.types.ts
+│   │   ├── notifications/
+│   │   │   ├── hooks/useNotificationsQuery.ts
+│   │   │   └── services/notifications.service.ts
+│   │   └── preferences/PreferencesPage.tsx
+│   │
+│   ├── i18n/
+│   │   ├── index.ts                      # Init i18next (sem plugin LanguageDetector)
+│   │   └── locales/
+│   │       ├── en_US.json                # canônico
+│   │       └── pt_BR.json
+│   │
+│   └── shared/
+│       ├── api/
+│       │   ├── http-client.ts            # Instância Axios + interceptors de requisição/resposta
+│       │   └── error-mapper.ts
+│       ├── auth/
+│       │   └── auth.adapter.ts           # Arquivo único que importa aws-amplify
+│       ├── components/
+│       │   ├── AppShell.tsx              # useWebSocket chamado uma vez aqui
+│       │   ├── AppHeader.tsx
+│       │   ├── AppSidebar.tsx
+│       │   ├── AuthGuard.tsx
+│       │   ├── DataTable.tsx
+│       │   ├── NotificationPanel.tsx
+│       │   └── ui/                       # Saída shadcn/ui (button, input, dialog, …)
+│       ├── hooks/
+│       │   ├── useWebSocket.ts           # chamado uma vez no AppShell
+│       │   ├── useServiceWorkerUpdate.ts
+│       │   ├── useTheme.ts
+│       │   └── useLocale.ts
+│       ├── store/
+│       │   └── app.store.ts              # Zustand — sidebar, theme, locale
+│       └── types/
+│           ├── api.types.ts              # PaginatedResponse<T>, ApiError
+│           └── entities.ts
+│
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+└── .env.example
+```
 
-### O Que Este Documento Também Define
+### Variáveis de Ambiente (Frontend)
 
-Este documento define tudo que **não é aparência de UI**:
-
-- Como os componentes recebem dados (hooks, TanStack Query, formato de props)
-- Como os componentes comunicam mudanças de estado (mutations, Zustand)
-- Em qual arquivo um componente reside (estrutura de feature slice)
-- Como roteamento, guards de auth e error boundaries envolvem as páginas
-- Como formulários se conectam a serviços de API (React Hook Form + Zod + mutation)
-- Estratégia de testes (o que testar, não como o componente aparece)
+```bash
+# .env.example — valores injetados pelo CodeBuild via SSM (nunca hardcoded)
+VITE_API_BASE_URL=
+VITE_WS_ENDPOINT=
+VITE_COGNITO_USER_POOL_ID=
+VITE_COGNITO_CLIENT_ID=
+VITE_COGNITO_REGION=          # fixo por projeto  (ex.: us-east-1)
+VITE_VAPID_PUBLIC_KEY=        # chave pública VAPID para Web Push
+VITE_APP_VERSION=             # injetado pela CI (git tag ou commit SHA)
+VITE_SENTRY_DSN=              # opcional — rastreamento de erros
+```
 
 ---
 
-## 5. Mapeamento Feature ↔ Domínio ↔ API
+## 5. Feature ↔ Domain ↔ API Mapping
 
 Esta tabela é a **fonte única de verdade** para nomenclatura de features frontend, domínios
 Lambda e rotas de API. Preencha-a no kickoff do projeto e mantenha-a atualizada a cada nova feature.
@@ -256,7 +359,7 @@ sem registrá-lo aqui primeiro.**
 
 ---
 
-## 6. Contrato de API (Fonte Única de Verdade)
+## 6. API Contract (Single Source of Truth)
 
 Todo endpoint deve seguir este contrato. Lambda e frontend implementam exatamente estes
 formatos. Nunca adicione campos fora deste envelope sem atualizar este documento primeiro.
@@ -340,7 +443,7 @@ HTTP 204 No Content  (sem corpo)
 
 ---
 
-## 7. Autenticação e Autorização (Ponta a Ponta)
+## 7. Authentication and Authorization (End-to-End)
 
 ### Fluxo Completo
 
@@ -445,7 +548,7 @@ export const handler = async (
 
 ---
 
-## 8. Multi-Tenancy (Ponta a Ponta)
+## 8. Multi-Tenancy (End-to-End)
 
 ### Padrão de Partition Key do DynamoDB
 
@@ -523,7 +626,7 @@ const mapApiError = (error: AxiosError): ApiError => ({
 
 ---
 
-## 9. CORS (CDK — Obrigatório)
+## 9. CORS (CDK — Required)
 
 ```typescript
 // infra/stacks/api-gateway.stack.ts
@@ -550,265 +653,7 @@ const api = new HttpApi(this, `{project}-api-${props.env}`, {
 
 ---
 
-## 10. Canal em Tempo Real (WebSocket API Gateway)
-
-### Arquitetura
-
-```
-EventBridge (evento de domínio publicado por qualquer Lambda)
-    │
-    ▼
-SQS ({project}-notifier-queue)
-    │
-    ▼
-Lambda (notificador)
-    ├── Busca conexões ativas do tenant no DynamoDB
-    └── Chama API Gateway WebSocket Management API (postToConnection)
-              │
-              ▼
-        Browser (Service Worker / hook React)
-              │
-              ▼
-        queryClient.invalidateQueries({ queryKey: ['{domain}'] })
-```
-
-### Handlers Lambda WebSocket
-
-```typescript
-// lambda/notifications/ws-connect.handler.ts
-export const handler = async (event: APIGatewayProxyWebsocketHandlerV2) => {
-  const tenantId     = extractTenantFromToken(event.queryStringParameters?.token);
-  const userId       = extractUserIdFromToken(event.queryStringParameters?.token);
-  const connectionId = event.requestContext.connectionId;
-
-  await connectionsRepository.save({
-    PK:  `TENANT#${tenantId}#USER#${userId}`,
-    SK:  `CONN#${connectionId}`,
-    connectionId, tenantId, userId,
-    ttl: Math.floor(Date.now() / 1000) + 7200,
-  });
-
-  return { statusCode: 200 };
-};
-
-// lambda/notifications/notifier.handler.ts  (trigger: SQS)
-export const handler = async (event: SQSEvent) => {
-  for (const record of event.Records) {
-    const notification = JSON.parse(record.body);
-    const connections  = await connectionsRepository.findByTenant(notification.tenantId);
-
-    await Promise.allSettled(
-      connections.map(conn =>
-        apiGwMgmt.postToConnection({
-          ConnectionId: conn.connectionId,
-          Data:         JSON.stringify(notification),
-        }).promise()
-      )
-    );
-  }
-};
-```
-
-### Hook `useWebSocket` (Frontend)
-
-```typescript
-// shared/hooks/useWebSocket.ts
-export const useWebSocket = () => {
-  const { user } = useAuthStore();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!user) return;
-
-    let ws: WebSocket | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let destroyed = false;  // previne reconexão após desmontagem
-
-    const connect = async () => {
-      // Sempre rebusca o token a cada (re)conexão — trata expiração de token
-      const token = await authAdapter.getAccessToken();
-      if (destroyed) return;
-
-      ws = new WebSocket(`${env.VITE_WS_ENDPOINT}?token=${token}&tenantId=${tenantId}`);
-
-      ws.onmessage = ({ data }) => {
-        const event: RealtimeEvent = JSON.parse(data);
-        queryClient.invalidateQueries({ queryKey: [event.domain] });
-        queryClient.setQueryData(
-          notificationKeys.list(),
-          (prev: Notification[]) => [mapToNotification(event), ...(prev ?? [])]
-        );
-      };
-
-      ws.onclose = () => {
-        if (!destroyed) {
-          // Backoff exponencial limitado em 30s
-          reconnectTimer = setTimeout(connect, Math.min(3000 * 2, 30_000));
-        }
-      };
-    };
-
-    connect();
-
-    // Cleanup: fecha socket e cancela reconexão pendente no logout / desmontagem
-    return () => {
-      destroyed = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      ws?.close();
-    };
-  }, [user?.id]);
-};
-```
-
-> **Regra:** `useWebSocket` é chamado **apenas uma vez** no `AppShell`. Nunca em componentes individuais.
-
----
-
-## 11. Upload de Arquivos (S3 Pre-Signed)
-
-Nunca envie arquivos pelo API Gateway.
-
-### Fluxo Ponta a Ponta
-
-```
-1. Frontend → POST /v1/uploads/presign
-   Body: { filename, contentType, domain, metadata? }
-
-2. Lambda → S3.createPresignedPost()
-   Retorna: { uploadUrl, fields, fileId, expiresAt }
-
-3. Frontend → PUT {uploadUrl}  (diretamente para S3, bypassando API Gateway)
-
-4. S3 Event → EventBridge → SQS → Lambda (post-upload-processor)
-
-5. Frontend recebe atualização via WebSocket → invalida cache do domínio
-```
-
-### Lambda de Presign
-
-```typescript
-// lambda/uploads/presign.handler.ts
-export const handler = async (event: APIGatewayProxyEventV2) => {
-  const { filename, contentType, domain, metadata } = JSON.parse(event.body!);
-  const { tenantId, userId } = extractContext(event);
-  const fileId = randomUUID();
-  const key    = `${tenantId}/${domain}/${fileId}/${filename}`;
-
-  const { url, fields } = await s3.createPresignedPost({
-    Bucket:     process.env.UPLOADS_BUCKET!,
-    Key:        key,
-    Conditions: [
-      ['content-length-range', 0, 52_428_800],
-      ['eq', '$Content-Type', contentType],
-    ],
-    Expires: 300,
-  });
-
-  await fileRepository.createPending({
-    PK: `TENANT#${tenantId}#FILE#${fileId}`, SK: 'METADATA',
-    fileId, tenantId, userId, domain, key, filename, metadata, status: 'PENDING',
-  });
-
-  return ok({ uploadUrl: url, fields, fileId, expiresAt: Date.now() + 300_000 });
-};
-```
-
-### Hook `useFileUpload` (Frontend)
-
-```typescript
-// shared/hooks/useFileUpload.ts
-export const useFileUpload = () => {
-  const [progress, setProgress] = useState(0);
-  const presignMutation = useMutation({
-    mutationFn: (input: PresignInput) => uploadsService.presign(input),
-  });
-
-  const upload = async (file: File, domain: string, metadata?: Record<string, unknown>) => {
-    const { uploadUrl, fields, fileId } = await presignMutation.mutateAsync({
-      filename: file.name, contentType: file.type, domain, metadata,
-    });
-
-    const formData = new FormData();
-    Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
-    formData.append('file', file);
-
-    await axios.post(uploadUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) => setProgress(Math.round((e.progress ?? 0) * 100)),
-    });
-
-    return fileId;
-  };
-
-  return { upload, progress, isUploading: presignMutation.isPending };
-};
-```
-
----
-
-## 12. Notificações Push (Web Push)
-
-### Fluxo Ponta a Ponta
-
-```
-1. REGISTRO — Frontend → POST /v1/notifications/push-subscription
-   Lambda salva { userId, tenantId, subscription } no DynamoDB (TTL 30d)
-
-2. ENTREGA — EventBridge → SQS → Lambda (push-sender) → Web Push API
-
-3. CANCELAMENTO — Frontend → DELETE /v1/notifications/push-subscription
-```
-
-### Endpoints Lambda
-
-```typescript
-// POST /v1/notifications/push-subscription
-export const registerHandler = async (event: APIGatewayProxyEventV2) => {
-  const { subscription } = JSON.parse(event.body!);
-  const { tenantId, userId } = extractContext(event);
-
-  await subscriptionsRepository.save({
-    PK:  `TENANT#${tenantId}#USER#${userId}`,
-    SK:  `PUSH#${subscription.endpoint.slice(-16)}`,
-    subscription,
-    ttl: Math.floor(Date.now() / 1000) + 30 * 86400,
-  });
-  return created({});
-};
-
-// DELETE /v1/notifications/push-subscription
-export const unregisterHandler = async (event: APIGatewayProxyEventV2) => {
-  const { tenantId, userId } = extractContext(event);
-  await subscriptionsRepository.deleteAll({ tenantId, userId });
-  return noContent();
-};
-```
-
-### Hook de Registro (Frontend)
-
-```typescript
-// shared/hooks/usePushSubscription.ts
-export const usePushSubscription = () => {
-  const { user } = useAuthStore();
-
-  useEffect(() => {
-    if (!user || !('PushManager' in window)) return;
-    const register = async () => {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly:      true,
-        applicationServerKey: env.VITE_VAPID_PUBLIC_KEY,
-      });
-      await notificationsService.registerPush(sub.toJSON());
-    };
-    register().catch(console.error);
-  }, [user?.id]);
-};
-```
-
----
-
-## 13. Estratégia de Dados
+## 10. Data Strategy
 
 DynamoDB é o **único armazenamento de dados primário** nesta arquitetura. Cada domínio
 possui sua própria tabela. Sem VPC, sem connection pools, sem scripts de migração, sem servidores provisionados.
@@ -977,7 +822,7 @@ new Function(this, id, {
 
 ---
 
-## 14. Mensageria Assíncrona
+## 11. Asynchronous Messaging
 
 ### EventBridge — Eventos de Domínio
 
@@ -1014,7 +859,298 @@ Todo evento publicado deve ter um schema registrado no
 
 ---
 
-## 15. Estado de Servidor — TanStack Query
+## 12. Real-Time Channel (WebSocket API Gateway)
+
+### Arquitetura
+
+```
+EventBridge (evento de domínio publicado por qualquer Lambda)
+    │
+    ▼
+SQS ({project}-notifier-queue)
+    │
+    ▼
+Lambda (notificador)
+    ├── Busca conexões ativas do tenant no DynamoDB
+    └── Chama API Gateway WebSocket Management API (postToConnection)
+              │
+              ▼
+        Browser (Service Worker / hook React)
+              │
+              ▼
+        queryClient.invalidateQueries({ queryKey: ['{domain}'] })
+```
+
+### Handlers Lambda WebSocket
+
+```typescript
+// lambda/notifications/ws-connect.handler.ts
+export const handler = async (event: APIGatewayProxyWebsocketHandlerV2) => {
+  const tenantId     = extractTenantFromToken(event.queryStringParameters?.token);
+  const userId       = extractUserIdFromToken(event.queryStringParameters?.token);
+  const connectionId = event.requestContext.connectionId;
+
+  await connectionsRepository.save({
+    PK:  `TENANT#${tenantId}#USER#${userId}`,
+    SK:  `CONN#${connectionId}`,
+    connectionId, tenantId, userId,
+    ttl: Math.floor(Date.now() / 1000) + 7200,
+  });
+
+  return { statusCode: 200 };
+};
+
+// lambda/notifications/notifier.handler.ts  (trigger: SQS)
+export const handler = async (event: SQSEvent) => {
+  for (const record of event.Records) {
+    const notification = JSON.parse(record.body);
+    const connections  = await connectionsRepository.findByTenant(notification.tenantId);
+
+    await Promise.allSettled(
+      connections.map(conn =>
+        apiGwMgmt.postToConnection({
+          ConnectionId: conn.connectionId,
+          Data:         JSON.stringify(notification),
+        }).promise()
+      )
+    );
+  }
+};
+```
+
+### Hook `useWebSocket` (Frontend)
+
+```typescript
+// shared/hooks/useWebSocket.ts
+export const useWebSocket = () => {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;  // previne reconexão após desmontagem
+
+    const connect = async () => {
+      // Sempre rebusca o token a cada (re)conexão — trata expiração de token
+      const token = await authAdapter.getAccessToken();
+      if (destroyed) return;
+
+      ws = new WebSocket(`${env.VITE_WS_ENDPOINT}?token=${token}&tenantId=${tenantId}`);
+
+      ws.onmessage = ({ data }) => {
+        const event: RealtimeEvent = JSON.parse(data);
+        queryClient.invalidateQueries({ queryKey: [event.domain] });
+        queryClient.setQueryData(
+          notificationKeys.list(),
+          (prev: Notification[]) => [mapToNotification(event), ...(prev ?? [])]
+        );
+      };
+
+      ws.onclose = () => {
+        if (!destroyed) {
+          // Backoff exponencial limitado em 30s
+          reconnectTimer = setTimeout(connect, Math.min(3000 * 2, 30_000));
+        }
+      };
+    };
+
+    connect();
+
+    // Cleanup: fecha socket e cancela reconexão pendente no logout / desmontagem
+    return () => {
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [user?.id]);
+};
+```
+
+> **Regra:** `useWebSocket` é chamado **apenas uma vez** no `AppShell`. Nunca em componentes individuais.
+
+---
+
+## 13. File Upload (Pre-Signed S3)
+
+Nunca envie arquivos pelo API Gateway.
+
+### Fluxo Ponta a Ponta
+
+```
+1. Frontend → POST /v1/uploads/presign
+   Body: { filename, contentType, domain, metadata? }
+
+2. Lambda → S3.createPresignedPost()
+   Retorna: { uploadUrl, fields, fileId, expiresAt }
+
+3. Frontend → PUT {uploadUrl}  (diretamente para S3, bypassando API Gateway)
+
+4. S3 Event → EventBridge → SQS → Lambda (post-upload-processor)
+
+5. Frontend recebe atualização via WebSocket → invalida cache do domínio
+```
+
+### Lambda de Presign
+
+```typescript
+// lambda/uploads/presign.handler.ts
+export const handler = async (event: APIGatewayProxyEventV2) => {
+  const { filename, contentType, domain, metadata } = JSON.parse(event.body!);
+  const { tenantId, userId } = extractContext(event);
+  const fileId = randomUUID();
+  const key    = `${tenantId}/${domain}/${fileId}/${filename}`;
+
+  const { url, fields } = await s3.createPresignedPost({
+    Bucket:     process.env.UPLOADS_BUCKET!,
+    Key:        key,
+    Conditions: [
+      ['content-length-range', 0, 52_428_800],
+      ['eq', '$Content-Type', contentType],
+    ],
+    Expires: 300,
+  });
+
+  await fileRepository.createPending({
+    PK: `TENANT#${tenantId}#FILE#${fileId}`, SK: 'METADATA',
+    fileId, tenantId, userId, domain, key, filename, metadata, status: 'PENDING',
+  });
+
+  return ok({ uploadUrl: url, fields, fileId, expiresAt: Date.now() + 300_000 });
+};
+```
+
+### Hook `useFileUpload` (Frontend)
+
+```typescript
+// shared/hooks/useFileUpload.ts
+export const useFileUpload = () => {
+  const [progress, setProgress] = useState(0);
+  const presignMutation = useMutation({
+    mutationFn: (input: PresignInput) => uploadsService.presign(input),
+  });
+
+  const upload = async (file: File, domain: string, metadata?: Record<string, unknown>) => {
+    const { uploadUrl, fields, fileId } = await presignMutation.mutateAsync({
+      filename: file.name, contentType: file.type, domain, metadata,
+    });
+
+    const formData = new FormData();
+    Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
+    formData.append('file', file);
+
+    await axios.post(uploadUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => setProgress(Math.round((e.progress ?? 0) * 100)),
+    });
+
+    return fileId;
+  };
+
+  return { upload, progress, isUploading: presignMutation.isPending };
+};
+```
+
+---
+
+## 14. Push Notifications (Web Push)
+
+### Fluxo Ponta a Ponta
+
+```
+1. REGISTRO — Frontend → POST /v1/notifications/push-subscription
+   Lambda salva { userId, tenantId, subscription } no DynamoDB (TTL 30d)
+
+2. ENTREGA — EventBridge → SQS → Lambda (push-sender) → Web Push API
+
+3. CANCELAMENTO — Frontend → DELETE /v1/notifications/push-subscription
+```
+
+### Endpoints Lambda
+
+```typescript
+// POST /v1/notifications/push-subscription
+export const registerHandler = async (event: APIGatewayProxyEventV2) => {
+  const { subscription } = JSON.parse(event.body!);
+  const { tenantId, userId } = extractContext(event);
+
+  await subscriptionsRepository.save({
+    PK:  `TENANT#${tenantId}#USER#${userId}`,
+    SK:  `PUSH#${subscription.endpoint.slice(-16)}`,
+    subscription,
+    ttl: Math.floor(Date.now() / 1000) + 30 * 86400,
+  });
+  return created({});
+};
+
+// DELETE /v1/notifications/push-subscription
+export const unregisterHandler = async (event: APIGatewayProxyEventV2) => {
+  const { tenantId, userId } = extractContext(event);
+  await subscriptionsRepository.deleteAll({ tenantId, userId });
+  return noContent();
+};
+```
+
+### Hook de Registro (Frontend)
+
+```typescript
+// shared/hooks/usePushSubscription.ts
+export const usePushSubscription = () => {
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user || !('PushManager' in window)) return;
+    const register = async () => {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: env.VITE_VAPID_PUBLIC_KEY,
+      });
+      await notificationsService.registerPush(sub.toJSON());
+    };
+    register().catch(console.error);
+  }, [user?.id]);
+};
+```
+
+---
+
+## 15. UI Stack
+
+### Stack
+
+| Camada | Tecnologia | Notas |
+| --- | --- | --- |
+| Primitivos de componentes | **shadcn/ui** (Radix UI) | Instalar via `npx shadcn@latest add <componente>` |
+| Estilização | **Tailwind CSS v4** | Único mecanismo de estilização — sem CSS Modules ou CSS puro |
+| Ícones | **Lucide React** | Única biblioteca de ícones — sem mistura com outros conjuntos |
+| Modo escuro | Variant `dark:` do Tailwind CSS | Toggle define classe `dark` no `<html>`; sem temas paralelos |
+
+### Regras
+
+- **Use componentes shadcn/ui como base para todos os primitivos de UI.** Execute `npx shadcn@latest add <componente>` antes de reconstruir qualquer coisa que já exista no catálogo (Button, Input, Select, Dialog, Sheet, Table, Toast, Badge, Avatar, Skeleton, etc.).
+- **Todos os valores visuais vêm de tokens Tailwind.** Nunca use valores arbitrários (`w-[137px]`, `text-[#ff0000]`). Se um token estiver faltando, adicione-o em `tailwind.config.ts` e documente a decisão aqui.
+- **Ícones são sempre do Lucide React.** `import { IconName } from 'lucide-react'` — nunca importe de heroicons, react-icons ou outras bibliotecas.
+- **Modo escuro é nativo do Tailwind.** A classe `dark` no `<html>` é a única fonte de verdade. Persista a preferência do usuário em `localStorage` via um pequeno hook; nunca implemente uma estratégia separada de variáveis CSS.
+- **Localização dos componentes:** a saída do shadcn fica em `src/shared/components/ui/`; compostos customizados em `src/shared/components/`. Nunca espalhe primitivos de UI por pastas de feature.
+- **Extensão de componentes shadcn:** use `cva` (class-variance-authority) para novas variantes — nunca codifique strings de classe condicionais diretamente.
+
+### O Que Este Documento Também Define
+
+Este documento define tudo que **não é aparência de UI**:
+
+- Como os componentes recebem dados (hooks, TanStack Query, formato de props)
+- Como os componentes comunicam mudanças de estado (mutations, Zustand)
+- Em qual arquivo um componente reside (estrutura de feature slice)
+- Como roteamento, guards de auth e error boundaries envolvem as páginas
+- Como formulários se conectam a serviços de API (React Hook Form + Zod + mutation)
+- Estratégia de testes (o que testar, não como o componente aparece)
+
+---
+
+## 16. Server State — TanStack Query
 
 Todo estado de servidor é gerenciado pelo TanStack Query. `useEffect + fetch` é proibido para
 dados remotos — sem exceções.
@@ -1077,7 +1213,7 @@ export const queryClient = new QueryClient({
 
 ---
 
-## 16. Estado de Cliente — Zustand
+## 17. Client State — Zustand
 
 | ✅ Use Zustand para | ❌ Nunca use Zustand para |
 | --- | --- |
@@ -1102,7 +1238,7 @@ export const useAuthStore = create<AuthState>()(
 
 ---
 
-## 17. PWA — Estratégia de Cache e Comportamento Offline
+## 18. PWA — Cache Strategy and Offline Behavior
 
 ### Estratégias de Cache (Workbox)
 
@@ -1147,373 +1283,7 @@ export const useServiceWorkerUpdate = () => {
 
 ---
 
-## 18. Observabilidade
-
-### Backend — Lambda Powertools (Obrigatório em Cada Lambda)
-
-```typescript
-const logger  = new Logger({ serviceName: '{domain}' });
-const metrics = new Metrics({ namespace: '{Project}/{Domain}' });
-const tracer  = new Tracer({ serviceName: '{domain}' });
-
-export const handler = middy(mainHandler)
-  .use(injectLambdaContext(logger))
-  .use(captureLambdaHandler(tracer))
-  .use(logMetrics(metrics));
-```
-
-Cada entrada de log deve incluir: `level`, `message`, `requestId`, `traceId`, `service`,
-`tenantId`, `timestamp`. Nunca registre: tokens JWT, senhas, dados de cartão, PII sensível.
-
-### Alarmes por Lambda (Obrigatório)
-
-| Métrica | Threshold | Ação |
-| --- | --- | --- |
-| `Errors` | > 1% em 5 min | SNS → plantão |
-| `Throttles` | > 0 | SNS → plantão |
-| `Duration` | > 80% do timeout configurado | SNS → aviso |
-| DLQ `NumberOfMessagesVisible` | > 0 | SNS → plantão |
-
-### Frontend — Error Boundary com Correlação
-
-```typescript
-// app/ErrorBoundary.tsx
-componentDidCatch(error: Error, info: ErrorInfo) {
-  ErrorTracker.captureException(error, {
-    extra: {
-      componentStack: info.componentStack,
-      requestId:      getLastApiRequestId(),
-      tenantId:       useAuthStore.getState().tenantId,
-    },
-  });
-}
-```
-
----
-
-## 19. Infraestrutura como Código — Saídas CDK → Frontend
-
-Nenhuma URL é codificada diretamente em nenhum lugar do repositório.
-
-### CDK — Exportar para Parameter Store
-
-```typescript
-// infra/stacks/api-gateway.stack.ts
-const params = [
-  { name: 'api-url',           value: api.url },
-  { name: 'ws-url',            value: wsApi.apiEndpoint },
-  { name: 'cognito-pool-id',   value: userPool.userPoolId },
-  { name: 'cognito-client-id', value: userPoolClient.userPoolClientId },
-];
-
-for (const { name, value } of params) {
-  new StringParameter(this, `Param-${name}`, {
-    parameterName: `/{project}/${props.env}/${name}`,
-    stringValue:   value,
-  });
-}
-```
-
-### CodeBuild — Consumir no Build do Frontend
-
-```yaml
-# buildspec-frontend.yml
-phases:
-  pre_build:
-    commands:
-      - ENV=${ENVIRONMENT:-staging}
-      - SSM="aws ssm get-parameter --query Parameter.Value --output text"
-      - API_URL=$($SSM   --name /{project}/$ENV/api-url)
-      - WS_URL=$($SSM    --name /{project}/$ENV/ws-url)
-      - POOL_ID=$($SSM   --name /{project}/$ENV/cognito-pool-id)
-      - CLIENT_ID=$($SSM --name /{project}/$ENV/cognito-client-id)
-  build:
-    commands:
-      - >
-        VITE_API_BASE_URL=$API_URL VITE_WS_ENDPOINT=$WS_URL
-        VITE_COGNITO_USER_POOL_ID=$POOL_ID VITE_COGNITO_CLIENT_ID=$CLIENT_ID
-        npm run build
-  post_build:
-    commands:
-      - aws s3 sync dist/ s3://{project}-frontend-$ENV/ --delete
-      - aws cloudfront create-invalidation --distribution-id $CF_DIST_ID --paths "/*"
-```
-
----
-
-## 20. Pipeline CI/CD Unificado
-
-O frontend nunca vai para produção antes que o backend correspondente esteja saudável.
-
-```
-FONTE
-  Push para `develop` ou `main`
-        │
-        ▼
-BUILD PARALELO
-  ├── Backend: lint + testes + CDK synth
-  └── Frontend: lint + testes + Vite build
-        │
-        ▼
-BACKEND STAGING
-  CDK deploy → smoke tests
-        │  (prossegue apenas se ✅)
-        ▼
-FRONTEND STAGING
-  CodeBuild lê SSM de staging → build → S3 + invalidação CloudFront
-        │
-        ▼
-E2E PLAYWRIGHT
-  Frontend + Backend juntos em staging
-  Cobre: login, CRUD, upload, tempo real, push, logout
-        │  (prossegue apenas se ✅)
-        ▼
-APROVAÇÃO MANUAL
-        │
-        ▼
-BACKEND PROD
-  CDK deploy → health check 5 min
-        │  (prossegue apenas se ✅)
-        ▼
-FRONTEND PROD
-  CodeBuild lê SSM de prod → build → S3 + invalidação CloudFront
-```
-
----
-
-## 21. Estrutura do Projeto
-
-### Backend
-
-```
-{project}-backend/
-├── infra/
-│   ├── bin/app.ts
-│   ├── stacks/
-│   │   ├── users.stack.ts              # Tabela DynamoDB users (Lambda Pre-Token)
-│   │   ├── cognito.stack.ts
-│   │   ├── api-gateway.stack.ts
-│   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
-│   │   ├── {domain}.stack.ts           # um por domínio de negócio — um arquivo por domínio
-│   │   └── pipeline.stack.ts           # 🔜 Pós-MVP — CodePipeline CI/CD
-│   └── constructs/
-│       ├── lambda-with-powertools.ts
-│       └── sqs-with-dlq.ts
-│
-└── lambda/
-    ├── shared/
-    │   ├── tenant-authorizer.handler.ts  # HttpLambdaResponseType.SIMPLE
-    │   ├── extract-context.ts
-    │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
-    ├── auth/
-    │   └── pre-token-generation.handler.ts
-    ├── {domain}/                         # uma pasta por domínio de negócio
-    │   ├── list.handler.ts
-    │   ├── get-by-id.handler.ts
-    │   ├── create.handler.ts
-    │   ├── update.handler.ts
-    │   ├── delete.handler.ts
-    │   ├── domain/                       # Entidades, Value Objects
-    │   └── infrastructure/               # Repositório DynamoDB
-    ├── uploads/
-    │   └── presign.handler.ts
-    └── notifications/
-        ├── ws-connect.handler.ts
-        ├── ws-disconnect.handler.ts
-        ├── notifier.handler.ts           # Trigger SQS → push WebSocket
-        ├── list.handler.ts
-        ├── mark-read.handler.ts
-        └── mark-all-read.handler.ts
-```
-
-### Frontend
-
-```
-{project}-web/
-├── public/
-│   ├── pwa-192x192.png                   # Ícones PWA
-│   ├── pwa-512x512.png
-│   └── favicon.svg
-│
-├── src/
-│   ├── App.tsx
-│   ├── main.tsx                          # Amplify.configure() + init i18n aqui
-│   ├── index.css
-│   │
-│   ├── app/
-│   │   ├── router.tsx                    # Lazy-loaded por feature (React.lazy + Suspense)
-│   │   └── query-client.ts
-│   │
-│   ├── features/                         # Uma pasta por domínio — estrutura plana
-│   │   ├── auth/
-│   │   │   ├── pages/LoginPage.tsx
-│   │   │   └── store/auth.store.ts       # Zustand — user, activeTenantId, tenants
-│   │   ├── dashboard/DashboardPage.tsx
-│   │   ├── {feature}/
-│   │   │   ├── {Feature}Page.tsx         # Componente de página (alvo de rota lazy-loaded)
-│   │   │   ├── {Feature}Form.tsx         # Formulário de criação / edição
-│   │   │   ├── {Feature}Detail.tsx       # Detalhe / painel lateral (opcional)
-│   │   │   ├── hooks/
-│   │   │   │   └── use{Feature}Query.ts  # Hooks TanStack Query + key factory
-│   │   │   ├── services/
-│   │   │   │   └── {feature}.service.ts  # Chamadas Axios — chave de idempotência gerada aqui
-│   │   │   └── types/
-│   │   │       └── {feature}.types.ts
-│   │   ├── notifications/
-│   │   │   ├── hooks/useNotificationsQuery.ts
-│   │   │   └── services/notifications.service.ts
-│   │   └── preferences/PreferencesPage.tsx
-│   │
-│   ├── i18n/
-│   │   ├── index.ts                      # Init i18next (sem plugin LanguageDetector)
-│   │   └── locales/
-│   │       ├── en_US.json                # canônico
-│   │       └── pt_BR.json
-│   │
-│   └── shared/
-│       ├── api/
-│       │   ├── http-client.ts            # Instância Axios + interceptors de requisição/resposta
-│       │   └── error-mapper.ts
-│       ├── auth/
-│       │   └── auth.adapter.ts           # Arquivo único que importa aws-amplify
-│       ├── components/
-│       │   ├── AppShell.tsx              # useWebSocket chamado uma vez aqui
-│       │   ├── AppHeader.tsx
-│       │   ├── AppSidebar.tsx
-│       │   ├── AuthGuard.tsx
-│       │   ├── DataTable.tsx
-│       │   ├── NotificationPanel.tsx
-│       │   └── ui/                       # Saída shadcn/ui (button, input, dialog, …)
-│       ├── hooks/
-│       │   ├── useWebSocket.ts           # chamado uma vez no AppShell
-│       │   ├── useServiceWorkerUpdate.ts
-│       │   ├── useTheme.ts
-│       │   └── useLocale.ts
-│       ├── store/
-│       │   └── app.store.ts              # Zustand — sidebar, theme, locale
-│       └── types/
-│           ├── api.types.ts              # PaginatedResponse<T>, ApiError
-│           └── entities.ts
-│
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── .env.example
-```
-
-### Variáveis de Ambiente (Frontend)
-
-```bash
-# .env.example — valores injetados pelo CodeBuild via SSM (nunca hardcoded)
-VITE_API_BASE_URL=
-VITE_WS_ENDPOINT=
-VITE_COGNITO_USER_POOL_ID=
-VITE_COGNITO_CLIENT_ID=
-VITE_COGNITO_REGION=          # fixo por projeto  (ex.: us-east-1)
-VITE_VAPID_PUBLIC_KEY=        # chave pública VAPID para Web Push
-VITE_APP_VERSION=             # injetado pela CI (git tag ou commit SHA)
-VITE_SENTRY_DSN=              # opcional — rastreamento de erros
-```
-
----
-
-## 22. Checklist de Nova Feature (Frontend + Backend)
-
-### Backend
-- [ ] Adicionar linha na tabela de mapeamento (Seção 5) com domínio, caminho e armazenamento
-- [ ] Criar CDK Stack com IAM de menor privilégio por Lambda
-- [ ] Implementar arquitetura hexagonal (domain → application → infrastructure)
-- [ ] Definir rotas HTTP API com Cognito Authorizer + Lambda Authorizer de tenant
-- [ ] Extrair `tenantId` do contexto do authorizer — nunca diretamente do header
-- [ ] Usar `TENANT#{tenantId}` na partition key do DynamoDB em cada acesso
-- [ ] Retornar respostas seguindo o contrato de API (Seção 6)
-- [ ] Incluir `requestId` (`context.awsRequestId`) nos envelopes de erro
-- [ ] Publicar evento de domínio no EventBridge com entrada no Schema Registry
-- [ ] Criar SQS + DLQ para todos os consumidores assíncronos
-- [ ] Definir timeout da Lambda explicitamente — use a tabela de referência na Seção 13
-- [ ] Habilitar rastreamento ativo X-Ray na Lambda e no stage API Gateway
-- [ ] Configurar logs estruturados com Lambda Powertools Logger (via middy)
-- [ ] Emitir métricas de negócio com Lambda Powertools Metrics (EMF, via middy)
-- [ ] Criar CloudWatch Alarms para erros, throttles e latência
-- [ ] Exportar URLs de endpoints para SSM se o frontend precisar deles
-- [ ] Aplicar Lambda Powertools Idempotency com `X-Idempotency-Key` para POST/PUT/PATCH em handlers API Gateway
-- [ ] Para Lambdas consumidoras de SQS: use `eventId` do EventBridge como chave de idempotência, não `X-Idempotency-Key`
-- [ ] Se atomicidade entre entidades for necessária: usar `TransactWriteItems` (até 100 itens)
-- [ ] Se domínio precisa de reações a mudanças (auditoria, projeções): habilitar DynamoDB Streams na tabela
-- [ ] Se domínio precisa de agregações ou relatórios: projetar o caminho de export S3 e consulta Athena
-
-### Frontend
-- [ ] Adicionar linha na tabela de mapeamento (Seção 5)
-- [ ] Criar feature slice em `src/features/{feature}/` com estrutura completa
-- [ ] Definir schema Zod + tipos TypeScript inferidos
-- [ ] Implementar service com caminho `/v1/{domain}/...` (sem prefixo `/api/`)
-- [ ] Implementar query key factory (sem strings hardcoded)
-- [ ] Implementar hooks TanStack Query (query + mutation) — nunca `useEffect + fetch`
-- [ ] Gerar `X-Idempotency-Key` no service — não no hook
-- [ ] Registrar rotas lazy-loaded com `React.lazy` + `Suspense` + `ErrorBoundary`
-- [ ] Construir página e componentes de feature usando **shadcn/ui** — executar `npx shadcn@latest add <componente>` antes de reconstruir qualquer primitivo existente
-- [ ] Não usar valores arbitrários Tailwind — todas as cores, espaçamentos e radii de tokens `tailwind.config.ts`
-- [ ] Verificar navegação por teclado e conformidade ARIA — primitivos Radix UI cobrem a maioria dos contratos; validar com axe-core
-- [ ] Escrever teste de integração RTL cobrindo o fluxo principal de dados (não aparência visual)
-- [ ] Escrever teste E2E Playwright para o caminho feliz
-- [ ] Verificar comportamento offline com dados em cache
-- [ ] Se eventos em tempo real: confirmar que `useWebSocket` invalida `queryKey: ['{domain}']`
-- [ ] Se upload de arquivo: usar hook `useFileUpload` — nunca POST de arquivo pelo API Gateway
-- [ ] Exportar apenas API pública via `index.ts` — sem imports internos entre features
-
----
-
-## 23. Anti-Padrões (Proibidos — Ambos os Lados)
-
-### Backend
-
-| Anti-Padrão | Por Que É Proibido |
-| --- | --- |
-| Ler `tenantId` do header `x-tenant-id` no handler Lambda | Facilmente forjado — sempre use o contexto do authorizer |
-| DynamoDB sem `TENANT#` na partition key | Dados de tenant se misturam silenciosamente entre tenants |
-| Lambda sem DLQ em um trigger assíncrono | Falhas desaparecem sem visibilidade |
-| Lambda usando o timeout padrão AWS (3s) | Sempre defina explicitamente — use a tabela de referência na Seção 13 |
-| Segredos armazenados em variáveis de ambiente Lambda | Visíveis no console AWS — sempre use Secrets Manager |
-| IAM com wildcard (`*`) em ações sensíveis | Sempre escope para ARNs específicos de tabela/bucket |
-| Cadeia síncrona Lambda-a-Lambda (A→B→C) | Use Step Functions ou EventBridge/SQS |
-| ARNs ou URLs de API hardcoded | Sempre via variáveis de ambiente ou saídas CDK |
-| Mudança manual no console AWS | Tudo via CDK — sem exceções em staging/prod |
-| Publicar evento sem entrada no Schema Registry | Contratos de evento devem ser explícitos e versionados |
-| Usar `X-Idempotency-Key` como chave de idempotência em consumidores SQS | Consumidores SQS nunca recebem esse header — use `eventId` do EventBridge |
-| Executar consultas de agregação diretamente em tabela DynamoDB | Agregações vão para Athena sobre exports S3 — nunca escaneie a tabela primária |
-| Escrever no DynamoDB dentro de um consumidor DynamoDB Streams da mesma tabela | Cria loop infinito de trigger — escreva em tabela diferente ou publique no EventBridge |
-
-### Frontend — Engenharia
-
-| Anti-Padrão | Por Que É Proibido |
-| --- | --- |
-| `useEffect + useState + fetch` para dados de servidor | Sempre TanStack Query — sem exceções |
-| Ler `requestId` do header de resposta HTTP | Leia de `error.response.data.error.requestId` (corpo) |
-| Enviar arquivo diretamente pelo API Gateway | Use hook `useFileUpload` (S3 pre-signed) |
-| Cache PWA para dados sensíveis (financeiro, auditoria) | `NetworkOnly` obrigatório — nunca servir desatualizado |
-| `X-Idempotency-Key` gerado no hook | Gerar no service para que a chave viaje com retentativas |
-| Importar uma feature dentro de outra feature | Use router, Zustand ou eventos — nunca import direto |
-| Chamar `useWebSocket` em múltiplos componentes | Uma vez no `AppShell`, distribuído via cache TanStack Query |
-| Hardcoding de URLs em `.env.production` | Valores sempre vêm do SSM via CodeBuild |
-| Imports de Amplify fora de `shared/auth/` | Encapsule completamente dentro do adapter de auth |
-| Refresh token expirado sem redirect para `/login` | Interceptor deve capturar, limpar store e redirecionar |
-| Rotas sem `ErrorBoundary` + `Suspense` | Toda rota lazy precisa de ambos os fallbacks |
-
-### Frontend — Violações da Stack de UI
-
-| Anti-Padrão | Por Que É Proibido |
-| --- | --- |
-| Usar valores arbitrários Tailwind (`w-[137px]`, `text-[#ff0000]`) | Todos os valores devem vir de tokens `tailwind.config.ts` — valores arbitrários criam drift |
-| Adicionar CSS Modules ou arquivos `.css` para estilização de componentes | Tailwind CSS é o único mecanismo de estilização; sistemas paralelos divergem |
-| Reconstruir componente já presente no catálogo shadcn/ui | Execute `npx shadcn@latest add <componente>` — nunca reconstrua Button, Input, Dialog, etc. |
-| Importar ícones de qualquer biblioteca além de Lucide React | Um único conjunto de ícones mantém consistência visual e de bundle |
-| Implementar modo escuro fora da estratégia de classe `dark:` do Tailwind | A classe `dark` no `<html>` é a única fonte de verdade para temas |
-| Sobrescrever estilos de componentes shadcn com estilos inline ou `!important` | Estenda via variantes `cva` no arquivo do componente — nunca patches externos |
-| Adicionar tokens em `theme.extend` sem documentá-los aqui | Adições de tokens devem ser registradas neste documento para permanecerem descobríveis |
-
----
-
-## 24. Internacionalização (i18n)
+## 19. Internationalization (i18n)
 
 ### Locales Suportados
 
@@ -1591,7 +1361,237 @@ O `LanguageDetector` customizado deve implementar o algoritmo de detecção defi
 
 ---
 
-## 25. Estratégia de Versionamento
+## 20. Observability
+
+### Backend — Lambda Powertools (Obrigatório em Cada Lambda)
+
+```typescript
+const logger  = new Logger({ serviceName: '{domain}' });
+const metrics = new Metrics({ namespace: '{Project}/{Domain}' });
+const tracer  = new Tracer({ serviceName: '{domain}' });
+
+export const handler = middy(mainHandler)
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer))
+  .use(logMetrics(metrics));
+```
+
+Cada entrada de log deve incluir: `level`, `message`, `requestId`, `traceId`, `service`,
+`tenantId`, `timestamp`. Nunca registre: tokens JWT, senhas, dados de cartão, PII sensível.
+
+### Alarmes por Lambda (Obrigatório)
+
+| Métrica | Threshold | Ação |
+| --- | --- | --- |
+| `Errors` | > 1% em 5 min | SNS → plantão |
+| `Throttles` | > 0 | SNS → plantão |
+| `Duration` | > 80% do timeout configurado | SNS → aviso |
+| DLQ `NumberOfMessagesVisible` | > 0 | SNS → plantão |
+
+### Frontend — Error Boundary com Correlação
+
+```typescript
+// app/ErrorBoundary.tsx
+componentDidCatch(error: Error, info: ErrorInfo) {
+  ErrorTracker.captureException(error, {
+    extra: {
+      componentStack: info.componentStack,
+      requestId:      getLastApiRequestId(),
+      tenantId:       useAuthStore.getState().tenantId,
+    },
+  });
+}
+```
+
+---
+
+## 21. Infrastructure as Code — CDK Outputs → Frontend
+
+Nenhuma URL é codificada diretamente em nenhum lugar do repositório.
+
+### CDK — Exportar para Parameter Store
+
+```typescript
+// infra/stacks/api-gateway.stack.ts
+const params = [
+  { name: 'api-url',           value: api.url },
+  { name: 'ws-url',            value: wsApi.apiEndpoint },
+  { name: 'cognito-pool-id',   value: userPool.userPoolId },
+  { name: 'cognito-client-id', value: userPoolClient.userPoolClientId },
+];
+
+for (const { name, value } of params) {
+  new StringParameter(this, `Param-${name}`, {
+    parameterName: `/{project}/${props.env}/${name}`,
+    stringValue:   value,
+  });
+}
+```
+
+### CodeBuild — Consumir no Build do Frontend
+
+```yaml
+# buildspec-frontend.yml
+phases:
+  pre_build:
+    commands:
+      - ENV=${ENVIRONMENT:-staging}
+      - SSM="aws ssm get-parameter --query Parameter.Value --output text"
+      - API_URL=$($SSM   --name /{project}/$ENV/api-url)
+      - WS_URL=$($SSM    --name /{project}/$ENV/ws-url)
+      - POOL_ID=$($SSM   --name /{project}/$ENV/cognito-pool-id)
+      - CLIENT_ID=$($SSM --name /{project}/$ENV/cognito-client-id)
+  build:
+    commands:
+      - >
+        VITE_API_BASE_URL=$API_URL VITE_WS_ENDPOINT=$WS_URL
+        VITE_COGNITO_USER_POOL_ID=$POOL_ID VITE_COGNITO_CLIENT_ID=$CLIENT_ID
+        npm run build
+  post_build:
+    commands:
+      - aws s3 sync dist/ s3://{project}-frontend-$ENV/ --delete
+      - aws cloudfront create-invalidation --distribution-id $CF_DIST_ID --paths "/*"
+```
+
+---
+
+## 22. Unified CI/CD Pipeline
+
+O frontend nunca vai para produção antes que o backend correspondente esteja saudável.
+
+```
+FONTE
+  Push para `develop` ou `main`
+        │
+        ▼
+BUILD PARALELO
+  ├── Backend: lint + testes + CDK synth
+  └── Frontend: lint + testes + Vite build
+        │
+        ▼
+BACKEND STAGING
+  CDK deploy → smoke tests
+        │  (prossegue apenas se ✅)
+        ▼
+FRONTEND STAGING
+  CodeBuild lê SSM de staging → build → S3 + invalidação CloudFront
+        │
+        ▼
+E2E PLAYWRIGHT
+  Frontend + Backend juntos em staging
+  Cobre: login, CRUD, upload, tempo real, push, logout
+        │  (prossegue apenas se ✅)
+        ▼
+APROVAÇÃO MANUAL
+        │
+        ▼
+BACKEND PROD
+  CDK deploy → health check 5 min
+        │  (prossegue apenas se ✅)
+        ▼
+FRONTEND PROD
+  CodeBuild lê SSM de prod → build → S3 + invalidação CloudFront
+```
+
+---
+
+## 23. New Feature Checklist (Frontend + Backend)
+
+### Backend
+- [ ] Adicionar linha na tabela de mapeamento (Seção 5) com domínio, caminho e armazenamento
+- [ ] Criar CDK Stack com IAM de menor privilégio por Lambda
+- [ ] Implementar arquitetura hexagonal (domain → application → infrastructure)
+- [ ] Definir rotas HTTP API com Cognito Authorizer + Lambda Authorizer de tenant
+- [ ] Extrair `tenantId` do contexto do authorizer — nunca diretamente do header
+- [ ] Usar `TENANT#{tenantId}` na partition key do DynamoDB em cada acesso
+- [ ] Retornar respostas seguindo o contrato de API (Seção 6)
+- [ ] Incluir `requestId` (`context.awsRequestId`) nos envelopes de erro
+- [ ] Publicar evento de domínio no EventBridge com entrada no Schema Registry
+- [ ] Criar SQS + DLQ para todos os consumidores assíncronos
+- [ ] Definir timeout da Lambda explicitamente — use a tabela de referência na Seção 10
+- [ ] Habilitar rastreamento ativo X-Ray na Lambda e no stage API Gateway
+- [ ] Configurar logs estruturados com Lambda Powertools Logger (via middy)
+- [ ] Emitir métricas de negócio com Lambda Powertools Metrics (EMF, via middy)
+- [ ] Criar CloudWatch Alarms para erros, throttles e latência
+- [ ] Exportar URLs de endpoints para SSM se o frontend precisar deles
+- [ ] Aplicar Lambda Powertools Idempotency com `X-Idempotency-Key` para POST/PUT/PATCH em handlers API Gateway
+- [ ] Para Lambdas consumidoras de SQS: use `eventId` do EventBridge como chave de idempotência, não `X-Idempotency-Key`
+- [ ] Se atomicidade entre entidades for necessária: usar `TransactWriteItems` (até 100 itens)
+- [ ] Se domínio precisa de reações a mudanças (auditoria, projeções): habilitar DynamoDB Streams na tabela
+- [ ] Se domínio precisa de agregações ou relatórios: projetar o caminho de export S3 e consulta Athena
+
+### Frontend
+- [ ] Adicionar linha na tabela de mapeamento (Seção 5)
+- [ ] Criar feature slice em `src/features/{feature}/` com estrutura completa
+- [ ] Definir schema Zod + tipos TypeScript inferidos
+- [ ] Implementar service com caminho `/v1/{domain}/...` (sem prefixo `/api/`)
+- [ ] Implementar query key factory (sem strings hardcoded)
+- [ ] Implementar hooks TanStack Query (query + mutation) — nunca `useEffect + fetch`
+- [ ] Gerar `X-Idempotency-Key` no service — não no hook
+- [ ] Registrar rotas lazy-loaded com `React.lazy` + `Suspense` + `ErrorBoundary`
+- [ ] Construir página e componentes de feature usando **shadcn/ui** — executar `npx shadcn@latest add <componente>` antes de reconstruir qualquer primitivo existente
+- [ ] Não usar valores arbitrários Tailwind — todas as cores, espaçamentos e radii de tokens `tailwind.config.ts`
+- [ ] Verificar navegação por teclado e conformidade ARIA — primitivos Radix UI cobrem a maioria dos contratos; validar com axe-core
+- [ ] Escrever teste de integração RTL cobrindo o fluxo principal de dados (não aparência visual)
+- [ ] Escrever teste E2E Playwright para o caminho feliz
+- [ ] Verificar comportamento offline com dados em cache
+- [ ] Se eventos em tempo real: confirmar que `useWebSocket` invalida `queryKey: ['{domain}']`
+- [ ] Se upload de arquivo: usar hook `useFileUpload` — nunca POST de arquivo pelo API Gateway
+- [ ] Exportar apenas API pública via `index.ts` — sem imports internos entre features
+
+---
+
+## 24. Anti-Patterns (Forbidden — Both Sides)
+
+### Backend
+
+| Anti-Padrão | Por Que É Proibido |
+| --- | --- |
+| Ler `tenantId` do header `x-tenant-id` no handler Lambda | Facilmente forjado — sempre use o contexto do authorizer |
+| DynamoDB sem `TENANT#` na partition key | Dados de tenant se misturam silenciosamente entre tenants |
+| Lambda sem DLQ em um trigger assíncrono | Falhas desaparecem sem visibilidade |
+| Lambda usando o timeout padrão AWS (3s) | Sempre defina explicitamente — use a tabela de referência na Seção 10 |
+| Segredos armazenados em variáveis de ambiente Lambda | Visíveis no console AWS — sempre use Secrets Manager |
+| IAM com wildcard (`*`) em ações sensíveis | Sempre escope para ARNs específicos de tabela/bucket |
+| Cadeia síncrona Lambda-a-Lambda (A→B→C) | Use Step Functions ou EventBridge/SQS |
+| ARNs ou URLs de API hardcoded | Sempre via variáveis de ambiente ou saídas CDK |
+| Mudança manual no console AWS | Tudo via CDK — sem exceções em staging/prod |
+| Publicar evento sem entrada no Schema Registry | Contratos de evento devem ser explícitos e versionados |
+| Usar `X-Idempotency-Key` como chave de idempotência em consumidores SQS | Consumidores SQS nunca recebem esse header — use `eventId` do EventBridge |
+| Executar consultas de agregação diretamente em tabela DynamoDB | Agregações vão para Athena sobre exports S3 — nunca escaneie a tabela primária |
+| Escrever no DynamoDB dentro de um consumidor DynamoDB Streams da mesma tabela | Cria loop infinito de trigger — escreva em tabela diferente ou publique no EventBridge |
+
+### Frontend — Engenharia
+
+| Anti-Padrão | Por Que É Proibido |
+| --- | --- |
+| `useEffect + useState + fetch` para dados de servidor | Sempre TanStack Query — sem exceções |
+| Ler `requestId` do header de resposta HTTP | Leia de `error.response.data.error.requestId` (corpo) |
+| Enviar arquivo diretamente pelo API Gateway | Use hook `useFileUpload` (S3 pre-signed) |
+| Cache PWA para dados sensíveis (financeiro, auditoria) | `NetworkOnly` obrigatório — nunca servir desatualizado |
+| `X-Idempotency-Key` gerado no hook | Gerar no service para que a chave viaje com retentativas |
+| Importar uma feature dentro de outra feature | Use router, Zustand ou eventos — nunca import direto |
+| Chamar `useWebSocket` em múltiplos componentes | Uma vez no `AppShell`, distribuído via cache TanStack Query |
+| Hardcoding de URLs em `.env.production` | Valores sempre vêm do SSM via CodeBuild |
+| Imports de Amplify fora de `shared/auth/` | Encapsule completamente dentro do adapter de auth |
+| Refresh token expirado sem redirect para `/login` | Interceptor deve capturar, limpar store e redirecionar |
+| Rotas sem `ErrorBoundary` + `Suspense` | Toda rota lazy precisa de ambos os fallbacks |
+
+### Frontend — Violações da Stack de UI
+
+| Anti-Padrão | Por Que É Proibido |
+| --- | --- |
+| Usar valores arbitrários Tailwind (`w-[137px]`, `text-[#ff0000]`) | Todos os valores devem vir de tokens `tailwind.config.ts` — valores arbitrários criam drift |
+| Adicionar CSS Modules ou arquivos `.css` para estilização de componentes | Tailwind CSS é o único mecanismo de estilização; sistemas paralelos divergem |
+| Reconstruir componente já presente no catálogo shadcn/ui | Execute `npx shadcn@latest add <componente>` — nunca reconstrua Button, Input, Dialog, etc. |
+| Importar ícones de qualquer biblioteca além de Lucide React | Um único conjunto de ícones mantém consistência visual e de bundle |
+| Implementar modo escuro fora da estratégia de classe `dark:` do Tailwind | A classe `dark` no `<html>` é a única fonte de verdade para temas |
+| Sobrescrever estilos de componentes shadcn com estilos inline ou `!important` | Estenda via variantes `cva` no arquivo do componente — nunca patches externos |
+| Adicionar tokens em `theme.extend` sem documentá-los aqui | Adições de tokens devem ser registradas neste documento para permanecerem descobríveis |
+
+---
+
+## 25. Versioning Strategy
 
 Este projeto usa um **modelo de versionamento de três camadas**. Cada camada tem um propósito distinto e um responsável distinto. Não as confunda.
 
@@ -1641,7 +1641,7 @@ O procedimento passo a passo de release é definido em `CLAUDE.md` sob **Version
 
 ---
 
-## 26. Referência de Custos
+## 26. Cost Reference
 
 > **Preços obtidos das páginas públicas de pricing da AWS — Maio 2026, região us-east-1.**
 > Todos os valores em USD. Os preços podem mudar; verifique em [aws.amazon.com/pricing](https://aws.amazon.com/pricing) antes de planejar orçamentos.
@@ -1827,7 +1827,7 @@ Mensagens são medidas em chunks de 32 KB (uma mensagem de 96 KB = 3 mensagens).
 
 **Impacto prático:** a 1 evento por ação do usuário e 100.000 ações/mês, o custo é **$0,10/mês**. EventBridge é um dos serviços de menor custo desta stack.
 
-**Dica:** mantenha payloads de eventos abaixo de 64 KB para evitar cobrança multi-chunk. O schema obrigatório definido na Seção 14 (eventId, source, detailType, entityId, tenantId, userId, timestamp, metadata) cabe confortavelmente em 1 KB.
+**Dica:** mantenha payloads de eventos abaixo de 64 KB para evitar cobrança multi-chunk. O schema obrigatório definido na Seção 11 (eventId, source, detailType, entityId, tenantId, userId, timestamp, metadata) cabe confortavelmente em 1 KB.
 
 ---
 
@@ -1865,9 +1865,9 @@ Mensagens são medidas em chunks de 32 KB (uma mensagem de 96 KB = 3 mensagens).
 
 **Quando a cobrança começa:** quando qualquer dimensão excede sua cota gratuita no mês.
 
-**Impacto prático:** logs estruturados do Lambda Powertools (Seção 18) têm em média ~1–2 KB por invocação. Com 1 milhão de invocações Lambda/mês, a ingestão de logs é ~1–2 GB — dentro do free tier de 5 GB. O principal driver de custo em escala são as **métricas customizadas**, não os logs.
+**Impacto prático:** logs estruturados do Lambda Powertools (Seção 20) têm em média ~1–2 KB por invocação. Com 1 milhão de invocações Lambda/mês, a ingestão de logs é ~1–2 GB — dentro do free tier de 5 GB. O principal driver de custo em escala são as **métricas customizadas**, não os logs.
 
-**Dica:** métricas EMF do Lambda Powertools (Seção 18) criam uma métrica CloudWatch por nome de métrica por função Lambda. Com 4 alarmes obrigatórios por Lambda (erros, throttles, duração, DLQ) × N funções Lambda, planeje `4N` métricas. A $0,30/métrica, mantenha o número de funções Lambda enxuto nas fases iniciais.
+**Dica:** métricas EMF do Lambda Powertools (Seção 20) criam uma métrica CloudWatch por nome de métrica por função Lambda. Com 4 alarmes obrigatórios por Lambda (erros, throttles, duração, DLQ) × N funções Lambda, planeje `4N` métricas. A $0,30/métrica, mantenha o número de funções Lambda enxuto nas fases iniciais.
 
 ---
 

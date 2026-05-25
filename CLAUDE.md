@@ -64,7 +64,7 @@ This covers without exception:
 - Log and error messages in code
 - Database schema names and column names
 - API endpoint names and descriptions
-- User-facing UI strings (labels, messages, placeholders, tooltips) — must use i18n translation keys (never hardcoded). `en_US` is the canonical locale; `pt_BR` is the second required locale. Both translation files must stay in sync. See Section 24 of `docs/architecture-guide.md`.
+- User-facing UI strings (labels, messages, placeholders, tooltips) — must use i18n translation keys (never hardcoded). `en_US` is the canonical locale; `pt_BR` is the second required locale. Both translation files must stay in sync. See Section 19 of `docs/architecture-guide.md`.
 
 **Locale-sensitive formatting** (dates, numbers, currencies) is runtime behavior driven by `Intl` APIs — governed by the active locale, not by this policy.
 
