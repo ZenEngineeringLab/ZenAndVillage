@@ -83,27 +83,27 @@ real-time requirements, file uploads, and offline support via PWA.
 > a second runtime surface — use it only when the domain team has a strong Python-first reason.
 > Node.js 20 reaches EOL on 30 April 2026 — do not use for new projects.
 
-| Role | Service | MVP status |
-| --- | --- | --- |
-| REST API | Amazon API Gateway HTTP API | ✅ Implemented |
-| Real-time API | Amazon API Gateway WebSocket API | ✅ Implemented |
-| Compute | AWS Lambda (Node.js 22 / TypeScript) | ✅ Implemented |
-| Identity | Amazon Cognito User Pool | ✅ Implemented |
-| Identity Pool (direct S3 access) | Amazon Cognito Identity Pool | 🔜 Post-MVP |
-| Primary data store | Amazon DynamoDB | ✅ Implemented |
-| Change streams | DynamoDB Streams → Lambda | 🔜 Post-MVP |
-| Object storage | Amazon S3 | ✅ Implemented |
-| Analytics / reporting | Amazon Athena (queries S3 exports) | 🔜 Post-MVP |
-| Async events | SQS + SNS | ✅ Implemented |
-| Async events (domain pub/sub) | Amazon EventBridge | 🔜 Post-MVP |
-| Observability | CloudWatch Logs + Metrics + X-Ray | ✅ Implemented |
-| Observability dashboards | CloudWatch Dashboards | 🔜 Post-MVP |
-| Secrets | AWS Secrets Manager | 🔜 Post-MVP (VAPID key manual) |
-| Config | AWS SSM Parameter Store | ✅ Implemented |
-| Middleware | middy v7 (Lambda middleware engine for Powertools) | ✅ Implemented |
-| IaC | AWS CDK (TypeScript) | ✅ Implemented |
-| CI/CD | AWS CodePipeline + CodeBuild | 🔜 Post-MVP |
-| CDN + Hosting | Amazon CloudFront + S3 | ✅ Implemented |
+| Role | Service |
+| --- | --- |
+| REST API | Amazon API Gateway HTTP API |
+| Real-time API | Amazon API Gateway WebSocket API |
+| Compute | AWS Lambda (Node.js 22 / TypeScript) |
+| Identity | Amazon Cognito User Pool |
+| Identity Pool (direct S3 access) | Amazon Cognito Identity Pool |
+| Primary data store | Amazon DynamoDB |
+| Change streams | DynamoDB Streams → Lambda |
+| Object storage | Amazon S3 |
+| Analytics / reporting | Amazon Athena (queries S3 exports) |
+| Async events | SQS + SNS |
+| Async events (domain pub/sub) | Amazon EventBridge |
+| Observability | CloudWatch Logs + Metrics + X-Ray |
+| Observability dashboards | CloudWatch Dashboards |
+| Secrets | AWS Secrets Manager |
+| Config | AWS SSM Parameter Store |
+| Middleware | middy v7 (Lambda middleware engine for Powertools) |
+| IaC | AWS CDK (TypeScript) |
+| CI/CD | AWS CodePipeline + CodeBuild |
+| CDN + Hosting | Amazon CloudFront + S3 |
 
 ### Frontend (PWA)
 
@@ -203,7 +203,7 @@ for the official peer dep update.
 │   │   ├── api-gateway.stack.ts
 │   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
 │   │   ├── {domain}.stack.ts           # one per domain — one file per business domain
-│   │   └── pipeline.stack.ts           # 🔜 Post-MVP — CodePipeline CI/CD
+│   │   └── pipeline.stack.ts           # CodePipeline CI/CD (add when enabling pipeline)
 │   └── constructs/
 │       ├── lambda-with-powertools.ts
 │       └── sqs-with-dlq.ts
@@ -334,16 +334,16 @@ every new feature.
 **Both sides must reference this table. Never define a route name in the frontend
 without registering it here first.**
 
-| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store | Status |
-| --- | --- | --- | --- | --- |
-| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`{project}-users`) | ✅ MVP |
-| `{feature-a}` | — | *(client-side only — no backend)* | — | ✅ MVP |
-| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) | ✅ MVP |
-| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) | ✅ MVP |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) | ✅ MVP |
-| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 | ✅ MVP |
-| `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
-| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB | 🔜 Post-MVP |
+| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store |
+| --- | --- | --- | --- |
+| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`{project}-users`) |
+| `{feature-a}` | — | *(client-side only — no backend)* | — |
+| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) |
+| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 |
+| `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` |
+| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB |
 
 > **Instructions:** Replace `{feature-a}`, `{feature-b}`, etc. with the actual feature names for
 > your project. Add one row per domain at project kickoff. `auth`, `notifications`, `uploads`,
@@ -655,7 +655,7 @@ const api = new HttpApi(this, `{project}-api-${props.env}`, {
 DynamoDB is the **only primary data store** in this architecture. Every domain owns its
 own table. No VPC, no connection pools, no migration scripts, no provisioned servers.
 
-> **MVP trade-off — ScanCommand:** All MVP `list` handlers use `ScanCommand` with a
+> **Trade-off — ScanCommand:** Initial `list` handlers may use `ScanCommand` with a
 > `FilterExpression` on the tenant prefix. This is acceptable for small data sets during
 > early product phases. At scale (> 10 k items per tenant per table), replace with
 > `QueryCommand` using a GSI with `tenantId` as the partition key and `SK` as the sort key.
@@ -1654,7 +1654,7 @@ This architecture is entirely pay-per-use. There are no reserved instances, no h
 | **Free tier buffer** | Usage grows but stays within 12-month new-account free tier |
 | **Billed** | Any service exceeds its free tier threshold for the billing month |
 
-**For a new project at zero users, the monthly AWS bill is $0.** The free tiers across Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch, and X-Ray are generous enough to carry an MVP from launch to meaningful user volume before any invoice appears.
+**For a new project at zero users, the monthly AWS bill is $0.** The free tiers across Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch, and X-Ray are generous enough to sustain a project from launch to meaningful user volume before any invoice appears.
 
 ---
 
@@ -1898,7 +1898,7 @@ Messages are metered in 32 KB chunks (a 96 KB message = 3 messages).
 
 **When billing starts:** immediately upon creating the first secret. At $0.40/secret/month, a project with 10 secrets costs **$4.00/month**.
 
-**Architecture note:** Secrets Manager is marked 🔜 Post-MVP in this stack (VAPID key is managed manually at MVP). Prioritize Secrets Manager for database credentials, third-party API keys, and signing keys before launch.
+**Architecture note:** Prioritize Secrets Manager for database credentials, third-party API keys, and signing keys. Introduce it before launch to avoid managing secrets manually at the application layer.
 
 **Tip:** Lambda functions cache Secrets Manager responses in memory across warm invocations. A single `getSecretValue` call per Lambda warm-start amortizes the API cost to near zero.
 

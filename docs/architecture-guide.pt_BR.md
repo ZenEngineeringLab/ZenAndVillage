@@ -88,27 +88,27 @@ requisitos em tempo real, uploads de arquivos e suporte offline via PWA.
 > tiver uma razão fortemente orientada a Python.
 > Node.js 20 atinge EOL em 30 de abril de 2026 — não usar em novos projetos.
 
-| Função | Serviço | Status MVP |
-| --- | --- | --- |
-| API REST | Amazon API Gateway HTTP API | ✅ Implementado |
-| API Tempo Real | Amazon API Gateway WebSocket API | ✅ Implementado |
-| Computação | AWS Lambda (Node.js 22 / TypeScript) | ✅ Implementado |
-| Identidade | Amazon Cognito User Pool | ✅ Implementado |
-| Identity Pool (acesso S3 direto) | Amazon Cognito Identity Pool | 🔜 Pós-MVP |
-| Armazenamento primário | Amazon DynamoDB | ✅ Implementado |
-| Change streams | DynamoDB Streams → Lambda | 🔜 Pós-MVP |
-| Armazenamento de objetos | Amazon S3 | ✅ Implementado |
-| Analytics / relatórios | Amazon Athena (consultas em exports S3) | 🔜 Pós-MVP |
-| Eventos assíncronos | SQS + SNS | ✅ Implementado |
-| Eventos assíncronos (pub/sub de domínio) | Amazon EventBridge | 🔜 Pós-MVP |
-| Observabilidade | CloudWatch Logs + Metrics + X-Ray | ✅ Implementado |
-| Dashboards de observabilidade | CloudWatch Dashboards | 🔜 Pós-MVP |
-| Segredos | AWS Secrets Manager | 🔜 Pós-MVP (chave VAPID manual) |
-| Configuração | AWS SSM Parameter Store | ✅ Implementado |
-| Middleware | middy v7 (motor de middleware Lambda para Powertools) | ✅ Implementado |
-| IaC | AWS CDK (TypeScript) | ✅ Implementado |
-| CI/CD | AWS CodePipeline + CodeBuild | 🔜 Pós-MVP |
-| CDN + Hospedagem | Amazon CloudFront + S3 | ✅ Implementado |
+| Função | Serviço |
+| --- | --- |
+| API REST | Amazon API Gateway HTTP API |
+| API Tempo Real | Amazon API Gateway WebSocket API |
+| Computação | AWS Lambda (Node.js 22 / TypeScript) |
+| Identidade | Amazon Cognito User Pool |
+| Identity Pool (acesso S3 direto) | Amazon Cognito Identity Pool |
+| Armazenamento primário | Amazon DynamoDB |
+| Change streams | DynamoDB Streams → Lambda |
+| Armazenamento de objetos | Amazon S3 |
+| Analytics / relatórios | Amazon Athena (consultas em exports S3) |
+| Eventos assíncronos | SQS + SNS |
+| Eventos assíncronos (pub/sub de domínio) | Amazon EventBridge |
+| Observabilidade | CloudWatch Logs + Metrics + X-Ray |
+| Dashboards de observabilidade | CloudWatch Dashboards |
+| Segredos | AWS Secrets Manager |
+| Configuração | AWS SSM Parameter Store |
+| Middleware | middy v7 (motor de middleware Lambda para Powertools) |
+| IaC | AWS CDK (TypeScript) |
+| CI/CD | AWS CodePipeline + CodeBuild |
+| CDN + Hospedagem | Amazon CloudFront + S3 |
 
 ### Frontend (PWA)
 
@@ -207,7 +207,7 @@ para a atualização oficial do peer dep.
 │   │   ├── api-gateway.stack.ts
 │   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
 │   │   ├── {domain}.stack.ts           # um por domínio de negócio — um arquivo por domínio
-│   │   └── pipeline.stack.ts           # 🔜 Pós-MVP — CodePipeline CI/CD
+│   │   └── pipeline.stack.ts           # CodePipeline CI/CD (adicionar ao habilitar o pipeline)
 │   └── constructs/
 │       ├── lambda-with-powertools.ts
 │       └── sqs-with-dlq.ts
@@ -337,16 +337,16 @@ Lambda e rotas de API. Preencha-a no kickoff do projeto e mantenha-a atualizada 
 **Ambos os lados devem referenciar esta tabela. Nunca defina um nome de rota no frontend
 sem registrá-lo aqui primeiro.**
 
-| Feature Frontend | Domínio Lambda | Caminho Base da API | Armazenamento Primário | Status |
-| --- | --- | --- | --- | --- |
-| `auth` | `auth` | *(Trigger Cognito — sem rotas REST)* | DynamoDB (`{project}-users`) | ✅ MVP |
-| `{feature-a}` | — | *(somente client-side — sem backend)* | — | ✅ MVP |
-| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) | ✅ MVP |
-| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) | ✅ MVP |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) | ✅ MVP |
-| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 | ✅ MVP |
-| `preferences` | — | *(somente client-side — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
-| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB | 🔜 Pós-MVP |
+| Feature Frontend | Domínio Lambda | Caminho Base da API | Armazenamento Primário |
+| --- | --- | --- | --- |
+| `auth` | `auth` | *(Trigger Cognito — sem rotas REST)* | DynamoDB (`{project}-users`) |
+| `{feature-a}` | — | *(somente client-side — sem backend)* | — |
+| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) |
+| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 |
+| `preferences` | — | *(somente client-side — locale/theme)* | Cognito `custom:locale` |
+| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB |
 
 > **Instruções:** Substitua `{feature-a}`, `{feature-b}`, etc. pelos nomes reais de features do
 > seu projeto. Adicione uma linha por domínio no kickoff do projeto. `auth`, `notifications`,
@@ -658,7 +658,7 @@ const api = new HttpApi(this, `{project}-api-${props.env}`, {
 DynamoDB é o **único armazenamento de dados primário** nesta arquitetura. Cada domínio
 possui sua própria tabela. Sem VPC, sem connection pools, sem scripts de migração, sem servidores provisionados.
 
-> **Trade-off MVP — ScanCommand:** Todos os handlers `list` do MVP usam `ScanCommand` com
+> **Trade-off — ScanCommand:** Handlers `list` iniciais podem usar `ScanCommand` com
 > `FilterExpression` no prefixo do tenant. Isso é aceitável para conjuntos de dados pequenos
 > durante as fases iniciais do produto. Em escala (> 10 mil itens por tenant por tabela),
 > substitua por `QueryCommand` usando um GSI com `tenantId` como partition key e `SK` como sort key.
@@ -1657,7 +1657,7 @@ Esta arquitetura é inteiramente pay-per-use. Não há instâncias reservadas, s
 | **Buffer free tier** | Uso cresce mas permanece dentro do free tier de 12 meses para novas contas |
 | **Cobrado** | Qualquer serviço excede o limite do free tier no mês de cobrança |
 
-**Para um projeto novo com zero usuários, a fatura mensal AWS é $0.** Os free tiers de Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch e X-Ray são generosos o suficiente para sustentar um MVP do lançamento até um volume significativo de usuários sem gerar cobranças.
+**Para um projeto novo com zero usuários, a fatura mensal AWS é $0.** Os free tiers de Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch e X-Ray são generosos o suficiente para sustentar um projeto do lançamento até um volume significativo de usuários sem gerar cobranças.
 
 ---
 
@@ -1901,7 +1901,7 @@ Mensagens são medidas em chunks de 32 KB (uma mensagem de 96 KB = 3 mensagens).
 
 **Quando a cobrança começa:** imediatamente ao criar o primeiro segredo. A $0,40/segredo/mês, um projeto com 10 segredos custa **$4,00/mês**.
 
-**Nota arquitetural:** Secrets Manager está marcado 🔜 Pós-MVP nesta stack (chave VAPID é gerenciada manualmente no MVP). Priorize Secrets Manager para credenciais de banco de dados, chaves de API de terceiros e chaves de assinatura antes do lançamento.
+**Nota arquitetural:** Priorize Secrets Manager para credenciais de banco de dados, chaves de API de terceiros e chaves de assinatura. Introduza-o antes do lançamento para evitar gerenciar segredos manualmente na camada de aplicação.
 
 **Dica:** funções Lambda fazem cache de respostas do Secrets Manager em memória entre invocações warm. Uma única chamada `getSecretValue` por warm-start da Lambda amortiza o custo de API para quase zero.
 
