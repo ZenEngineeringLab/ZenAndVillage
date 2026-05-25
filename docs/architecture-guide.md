@@ -1635,3 +1635,341 @@ Controls which code is running in AWS at any given moment, without SemVer overhe
 ### Version Bump Flow
 
 The step-by-step release procedure is defined in `CLAUDE.md` under **Versioning Policy**. The git tag `vX.Y.Z` is the canonical release marker; CI/CD pipelines key off it.
+
+---
+
+## 26. Cost Reference
+
+> **Prices sourced from AWS public pricing pages — May 2026, us-east-1 region.**
+> All values are in USD. Prices may change; verify at [aws.amazon.com/pricing](https://aws.amazon.com/pricing) before budget planning.
+> Free tier limits marked **Always Free** are permanent. Those marked **12-month Free Tier** apply only to new AWS accounts in the first year.
+
+### 26.1 Cost Model Overview
+
+This architecture is entirely pay-per-use. There are no reserved instances, no hourly servers, and no minimum fees. The cost model has three zones:
+
+| Zone | Description |
+| --- | --- |
+| **Zero cost** | Usage stays within the always-free tier of every service |
+| **Free tier buffer** | Usage grows but stays within 12-month new-account free tier |
+| **Billed** | Any service exceeds its free tier threshold for the billing month |
+
+**For a new project at zero users, the monthly AWS bill is $0.** The free tiers across Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch, and X-Ray are generous enough to carry an MVP from launch to meaningful user volume before any invoice appears.
+
+---
+
+### 26.2 AWS Lambda
+
+> Pricing: [aws.amazon.com/lambda/pricing](https://aws.amazon.com/lambda/pricing/)
+
+**Billing model:** charged on two dimensions — number of invocations and compute duration (memory × time).
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Requests | 1,000,000 / month | $0.20 per million | Always Free |
+| Duration | 400,000 GB-seconds / month | $0.0000166667 per GB-second | Always Free |
+
+**Duration calculation:** `(memory in MB / 1024) × execution time in seconds`. A 512 MB function running for 200 ms = 0.1 GB-second. Duration is rounded up to the nearest 1 ms.
+
+**When billing starts:** after the 1,000,000th invocation or the 400,000th GB-second in the calendar month — whichever is exceeded first.
+
+**Practical scale:** A typical CRUD API handler (512 MB, ~100 ms average) costs approximately **$0 up to ~8 million requests/month** under the free tier. After that, 10 million requests costs roughly **$1.80/month** in request fees plus duration fees.
+
+**Tip:** Run on ARM (Graviton2) — same price per GB-second, up to 34 % better performance per dollar due to efficiency gains.
+
+---
+
+### 26.3 Amazon DynamoDB
+
+> Pricing: [aws.amazon.com/dynamodb/pricing/on-demand](https://aws.amazon.com/dynamodb/pricing/on-demand/)
+
+**Billing model (on-demand mode):** charged per read and write request unit consumed, plus storage.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Write Request Units (WRU) | 25 WCU/month (≈ 2.16 M writes/day) | $0.625 per million WRUs | Always Free |
+| Read Request Units (RRU) | 25 RCU/month | $0.125 per million RRUs | Always Free |
+| Storage | 25 GB / month | $0.25 per GB (Standard) | Always Free |
+| DynamoDB Streams reads | 2,500,000 reads / month | $0.02 per 100,000 reads | Always Free |
+
+**Request unit consumption:**
+- Standard write: 1 WRU per 1 KB (or fraction thereof)
+- Transactional write: 2 WRUs per 1 KB
+- Eventually consistent read: 0.5 RRU per 4 KB
+- Strongly consistent read: 1 RRU per 4 KB
+- Transactional read: 2 RRUs per 4 KB
+
+**When billing starts:** when monthly writes exceed the free WCU budget or reads exceed the free RCU budget. The free tier is permanently available — it does not expire.
+
+**Tip:** The free tier is per AWS account, not per table. Spreading load across multiple tables does not increase the free allowance.
+
+---
+
+### 26.4 Amazon API Gateway
+
+> Pricing: [aws.amazon.com/api-gateway/pricing](https://aws.amazon.com/api-gateway/pricing/)
+
+This architecture uses two API Gateway types: **HTTP API** (REST endpoints) and **WebSocket API** (real-time channel).
+
+#### HTTP API
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| API calls | 1,000,000 / month | $1.00 per million (first 300M), then $0.90/M | 12-month Free Tier |
+| Data transfer out | — | $0.09 per GB | — |
+
+> HTTP API is **3.5× cheaper** than REST API ($1.00 vs $3.50 per million calls). Always use HTTP API for new projects.
+
+#### WebSocket API
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Messages | 1,000,000 / month | $1.00 per million | 12-month Free Tier |
+| Connection minutes | 750,000 / month | $0.25 per million minutes | 12-month Free Tier |
+
+Messages are metered in 32 KB chunks (a 96 KB message = 3 messages).
+
+**When billing starts:** after the 12-month free tier expires for new accounts, or immediately for existing accounts. At $1.00/M, 10 million HTTP API calls cost **$10/month**.
+
+---
+
+### 26.5 Amazon Cognito
+
+> Pricing: [aws.amazon.com/cognito/pricing](https://aws.amazon.com/cognito/pricing/)
+
+**Billing model:** charged per Monthly Active User (MAU). A MAU is a user who performs any identity operation (sign-up, sign-in, sign-out, token refresh, password change, attribute update) at least once in the calendar month. Subsequent sessions in the same month are not re-billed.
+
+| Tier | Free MAUs / month | Price per MAU (above free tier) | Tier Type |
+| --- | --- | --- | --- |
+| Lite / Essentials (direct sign-in) | 10,000 | $0.0055 (first 90K above free) → $0.0046 | Always Free |
+| SAML 2.0 / OIDC federation | 50 | $0.015 | Always Free |
+| Cognito Identity Pools | Unlimited | $0.00 | Always Free |
+
+**When billing starts:** when active users in the month exceed 10,000 (direct sign-in). The 10,001st MAU costs $0.0055.
+
+**Practical scale:**
+- 0–10,000 MAU → **$0/month**
+- 10,000–100,000 MAU → ~**$0.50–$4.95/month**
+- 100,000–1,000,000 MAU → ~**$4.95–$45/month**
+
+---
+
+### 26.6 Amazon S3
+
+> Pricing: [aws.amazon.com/s3/pricing](https://aws.amazon.com/s3/pricing/)
+
+**Billing model:** charged on storage volume, API requests, and data transfer out.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Storage (S3 Standard) | 5 GB / month | $0.023 per GB | 12-month Free Tier |
+| PUT / COPY / POST requests | 2,000 / month | $0.005 per 1,000 | 12-month Free Tier |
+| GET / SELECT requests | 20,000 / month | $0.0004 per 1,000 | 12-month Free Tier |
+| DELETE requests | — | Free | — |
+| Data transfer out to internet | 100 GB / month (aggregated) | $0.09 per GB | Always Free |
+| Data transfer to CloudFront | — | Free | — |
+
+**When billing starts:** when storage exceeds 5 GB or request counts exceed free limits (for new accounts in year 1). Data transfer to CloudFront is always free — all user-facing downloads should go through CloudFront, not direct S3 URLs.
+
+**Tip:** Never expose S3 bucket URLs directly to users. Serve assets via CloudFront — this eliminates data transfer charges from S3 and adds CDN caching.
+
+---
+
+### 26.7 Amazon CloudFront
+
+> Pricing: [aws.amazon.com/cloudfront/pricing](https://aws.amazon.com/cloudfront/pricing/)
+
+**Billing model:** charged on data transferred out to the internet and number of HTTPS requests.
+
+| Dimension | Free Tier | Price After Free Tier (US/EU) | Tier Type |
+| --- | --- | --- | --- |
+| Data transfer out | 1 TB / month | $0.085/GB (next 9 TB), $0.080/GB (next 40 TB) | Always Free |
+| HTTPS requests | 10,000,000 / month | $0.0100 per 10,000 requests | Always Free |
+| CloudFront Functions | 2,000,000 invocations / month | $0.10 per million | Always Free |
+
+**When billing starts:** after 1 TB of monthly egress or 10 million requests. For a typical SaaS app serving a React PWA (~2 MB gzipped) to 10,000 users/month, data transfer is approximately 20 GB — well within the free tier.
+
+**Tip:** CloudFront has one of the most generous always-free tiers on AWS. The 1 TB/month free egress covers a large majority of early-stage SaaS products at no cost.
+
+---
+
+### 26.8 Amazon SQS
+
+> Pricing: [aws.amazon.com/sqs/pricing](https://aws.amazon.com/sqs/pricing/)
+
+**Billing model:** charged per API request. Each `Send`, `Receive`, `Delete`, or `ChangeMessageVisibility` call counts as one request. Payloads larger than 64 KB are billed in 64 KB chunks.
+
+| Queue Type | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Standard Queue | 1,000,000 requests / month | $0.40 per million requests | Always Free |
+| FIFO Queue | 1,000,000 requests / month | $0.50 per million requests | Always Free |
+
+**When billing starts:** after the 1,000,000th request in the calendar month. For the standard async pattern in this architecture (notifier, email, push, audit queues), each user action generates roughly 3–5 SQS requests. At 10,000 active users/day, monthly SQS requests stay within the free tier.
+
+---
+
+### 26.9 Amazon EventBridge
+
+> Pricing: [aws.amazon.com/eventbridge/pricing](https://aws.amazon.com/eventbridge/pricing/)
+
+**Billing model:** charged per custom event published to a custom event bus. Events are metered in 64 KB chunks.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Custom events published | None | $1.00 per million events | — |
+| Delivery to same-account services | — | Free | — |
+| AWS service events (management) | — | Free | — |
+
+**When billing starts:** immediately upon publishing the first custom event. There is no free tier for custom events — every event is billed.
+
+**Practical impact:** At 1 event per user action and 100,000 actions/month, the cost is **$0.10/month**. EventBridge is one of the lowest-cost services in this stack.
+
+**Tip:** Keep event payloads under 64 KB to avoid multi-chunk billing. The required schema defined in Section 14 (eventId, source, detailType, entityId, tenantId, userId, timestamp, metadata) fits comfortably within 1 KB.
+
+---
+
+### 26.10 Amazon SNS
+
+> Pricing: [aws.amazon.com/sns/pricing](https://aws.amazon.com/sns/pricing/)
+
+**Billing model:** charged per API request and per notification delivery. Mobile push notifications (iOS APNs, Android FCM) are free to deliver.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| API requests | 1,000,000 / month | $0.50 per million requests | Always Free |
+| Mobile push delivery (APNs, FCM) | — | Free | — |
+| HTTP/HTTPS delivery | — | $0.60 per million deliveries | — |
+| Email delivery | — | $2.00 per 100,000 deliveries | — |
+
+**When billing starts:** after 1 million API requests per month. In the fan-out pattern used here (EventBridge → SQS → Lambda), SNS is used primarily for alarm notifications — volume is negligible.
+
+---
+
+### 26.11 Amazon CloudWatch
+
+> Pricing: [aws.amazon.com/cloudwatch/pricing](https://aws.amazon.com/cloudwatch/pricing/)
+
+**Billing model:** charged per log GB ingested, per custom metric, per alarm, and per dashboard.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Log ingestion | 5 GB / month | $0.50 per GB | Always Free |
+| Log storage (archive) | 5 GB / month | $0.03 per GB / month | Always Free |
+| Custom metrics | 10 metrics / month | $0.30 per metric (first 10K) → $0.10 → $0.05 | Always Free |
+| API requests | 1,000,000 / month | $0.01 per 1,000 requests | Always Free |
+| Alarms (standard resolution) | 10 alarms / month | $0.10 per metric per alarm | Always Free |
+| Dashboards | 3 dashboards / month | $3.00 per additional dashboard | Always Free |
+
+**When billing starts:** when any single dimension exceeds its free quota in the month.
+
+**Practical impact:** Structured logs from Lambda Powertools (Section 18) average ~1–2 KB per invocation. At 1 million Lambda invocations/month, log ingestion is ~1–2 GB — within the 5 GB free tier. The primary cost driver at scale is **custom metrics**, not logs.
+
+**Tip:** Lambda Powertools EMF metrics (Section 18) create one CloudWatch metric per metric name per Lambda function. With 4 required alarms per Lambda (errors, throttles, duration, DLQ) × N Lambda functions, plan for `4N` metrics. At $0.30/metric, keep Lambda function count lean during early phases.
+
+---
+
+### 26.12 AWS X-Ray
+
+> Pricing: [aws.amazon.com/xray/pricing](https://aws.amazon.com/xray/pricing/)
+
+**Billing model:** charged per trace recorded and per trace retrieved/scanned.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Traces recorded | 100,000 / month | $5.00 per million traces | Always Free |
+| Traces retrieved / scanned | 1,000,000 / month | $0.50 per million traces | Always Free |
+
+**When billing starts:** after 100,000 traces recorded or 1,000,000 traces retrieved in the month.
+
+**Tip:** X-Ray sampling rules control what fraction of requests are traced. The default sampling rate is 1 request/second + 5 % of additional requests. For most SaaS applications, this keeps recorded traces well within the free tier. Do not set sampling to 100 % in production without budget analysis.
+
+---
+
+### 26.13 AWS Secrets Manager
+
+> Pricing: [aws.amazon.com/secrets-manager/pricing](https://aws.amazon.com/secrets-manager/pricing/)
+
+**Billing model:** charged per secret stored per month and per API call.
+
+| Dimension | Free Tier | Price | Notes |
+| --- | --- | --- | --- |
+| Secrets stored | None (permanent) | $0.40 per secret / month | Billing starts on day 1 |
+| API calls | None (permanent) | $0.05 per 10,000 API calls | — |
+
+**When billing starts:** immediately upon creating the first secret. At $0.40/secret/month, a project with 10 secrets costs **$4.00/month**.
+
+**Architecture note:** Secrets Manager is marked 🔜 Post-MVP in this stack (VAPID key is managed manually at MVP). Prioritize Secrets Manager for database credentials, third-party API keys, and signing keys before launch.
+
+**Tip:** Lambda functions cache Secrets Manager responses in memory across warm invocations. A single `getSecretValue` call per Lambda warm-start amortizes the API cost to near zero.
+
+---
+
+### 26.14 AWS SSM Parameter Store
+
+> Pricing: [aws.amazon.com/systems-manager/pricing](https://aws.amazon.com/systems-manager/pricing/)
+
+**Billing model:** standard parameters and standard-throughput API calls are permanently free.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Standard parameters (≤ 4 KB) | Unlimited | Free | Always Free |
+| Standard-throughput API calls | Unlimited | Free | Always Free |
+| Higher-throughput API calls | — | $0.05 per 10,000 interactions | — |
+| Advanced parameters (> 4 KB) | — | $0.05 per parameter / month | — |
+
+**When billing starts:** never for standard parameters at standard throughput. Higher throughput (> 40 transactions/second per account-region) triggers charges.
+
+**Usage in this architecture:** CDK exports infrastructure URLs (API Gateway, Cognito, WebSocket) to Parameter Store at deploy time. CodeBuild reads them at build time. Both are infrequent, low-throughput operations — **cost is $0**.
+
+---
+
+### 26.15 Amazon Athena
+
+> Pricing: [aws.amazon.com/athena/pricing](https://aws.amazon.com/athena/pricing/)
+
+**Billing model:** charged per TB of data scanned per SQL query. No charge for failed queries.
+
+| Dimension | Free Tier | Price | Notes |
+| --- | --- | --- | --- |
+| SQL queries | None | $5.00 per TB scanned | Charged per query |
+| Minimum scan | None (SQL) | No minimum | — |
+
+**When billing starts:** on the first query. There is no free tier.
+
+**Cost optimization — critical:**
+
+| Technique | Effect on Cost | Implementation |
+| --- | --- | --- |
+| Partition by date/tenant | Up to 99 % reduction | Export data to `s3://.../year=YYYY/month=MM/` |
+| Compress with GZIP / Snappy | ~3× reduction | Enable compression in the DynamoDB Streams exporter |
+| Use columnar format (Parquet) | ~4× reduction | Convert JSON exports to Parquet via Glue or Lambda |
+| Combined (partition + compress + Parquet) | Up to ~12× reduction | Standard for any production analytics path |
+
+**Practical impact:** Without optimization, scanning 1 TB/query at $5.00/TB makes Athena expensive. With partitioning and Parquet, the same analytical query may scan only 10–50 GB — reducing cost to $0.05–$0.25 per query. Always implement partitioning before enabling Athena in production.
+
+---
+
+### 26.16 Cost Summary Table
+
+The table below shows the **monthly free tier ceiling** — the approximate usage level at which the first AWS dollar is charged for a greenfield project.
+
+| Service | Billing Trigger | Free Until | Notes |
+| --- | --- | --- | --- |
+| Lambda | > 1M invocations OR > 400K GB-s / month | ~8M req/month at 512 MB / 100 ms avg | Always Free |
+| DynamoDB | > free WCU/RCU budget or > 25 GB storage | Millions of reads/writes per day | Always Free |
+| API Gateway HTTP | > 1M calls / month | 1M calls/month | 12-month only |
+| API Gateway WebSocket | > 1M messages / month | 1M messages/month | 12-month only |
+| Cognito | > 10,000 MAU / month | 10K monthly active users | Always Free |
+| S3 | > 5 GB storage or PUT/GET limits | ~2,500 file uploads / month | 12-month only |
+| CloudFront | > 1 TB egress or > 10M requests / month | ~500K page loads / month | Always Free |
+| SQS | > 1M requests / month | ~200K user actions / day | Always Free |
+| EventBridge | First custom event published | $0 — no free tier | Billed from day 1 |
+| SNS | > 1M API requests / month | High volume of alarm notifications | Always Free |
+| CloudWatch Logs | > 5 GB ingested / month | ~1M Lambda invocations / month | Always Free |
+| CloudWatch Metrics | > 10 custom metrics / month | 2–3 Lambda functions fully alarmed | Always Free |
+| X-Ray | > 100K traces recorded / month | Most apps at default sampling rate | Always Free |
+| Secrets Manager | First secret created | $0 — no free tier | $0.40/secret/month |
+| SSM Parameter Store | Never (standard) | Unlimited | Always Free |
+| Athena | First query | $0 — no free tier | $5.00/TB scanned |
+
+> **Key insight:** EventBridge, Secrets Manager, and Athena have **no free tier** — they incur costs from the first use. Budget for these explicitly. All other services in this architecture have meaningful free tiers that cover early-stage product usage.
