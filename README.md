@@ -13,12 +13,13 @@ ZenAndVillage/
 ├── zenvillage-backend/     # AWS CDK infrastructure + Lambda handlers (Node.js 22 / TypeScript)
 ├── zenvillage-web/         # React 19 PWA (Vite 8 + TypeScript + Tailwind CSS v4)
 ├── docs/
-│   ├── architecture-guide.md     # Single source of truth for all engineering decisions
-│   ├── project-definition.md     # Project identity, version, git remote
+│   ├── architecture-guide.md        # Engineering architecture (en-US — canonical)
+│   ├── architecture-guide.pt_BR.md # Engineering architecture (pt-BR — translation)
+│   ├── project-definition.md        # Project identity, version, git remote
 │   ├── knowledge-base.md            # Domain knowledge (en-US — canonical)
-│   ├── knowledge-base.pt_BR.md     # Domain knowledge (pt-BR — translation)
-│   ├── software-vision.md          # Platform requirements & business rules (en-US — canonical)
-│   └── software-vision.pt_BR.md   # Platform requirements & business rules (pt-BR — translation)
+│   ├── knowledge-base.pt_BR.md      # Domain knowledge (pt-BR — translation)
+│   ├── software-vision.md           # Platform requirements & business rules (en-US — canonical)
+│   └── software-vision.pt_BR.md    # Platform requirements & business rules (pt-BR — translation)
 ├── CHANGELOG.md
 └── CLAUDE.md               # Agent behavior rules (read by Claude Code on every session)
 ```

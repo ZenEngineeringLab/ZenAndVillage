@@ -15,8 +15,14 @@ Never hardcode project identifiers in this file or in `docs/architecture-guide.m
 
 ## Architecture Reference
 
-The full engineering architecture is documented in [`docs/architecture-guide.md`](docs/architecture-guide.md).
-It is the **single source of truth for all engineering decisions** — stack, patterns, API contracts, auth, multi-tenancy, data strategy, CI/CD, and UI stack.
+The full engineering architecture is maintained as a bilingual pair that must always stay in sync:
+
+| File | Language | Role |
+|---|---|---|
+| [`docs/architecture-guide.md`](docs/architecture-guide.md) | English (en-US) | **Canonical version** — single source of truth for all engineering decisions |
+| [`docs/architecture-guide.pt_BR.md`](docs/architecture-guide.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+
+**Sync rule:** Any edit to `architecture-guide.md` must be reflected in `architecture-guide.pt_BR.md` before the task is considered complete. The en-US file takes precedence in case of conflict. Code identifiers, file paths, and code blocks are defined in en-US and referenced (not redefined) in pt-BR.
 
 ---
 

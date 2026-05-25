@@ -5,6 +5,7 @@
 > Replace `{project}` with your project's short identifier (e.g. `myapp`, `acme`, `foobar`).
 > This document is the **single source of truth for engineering architecture**.
 > UI decisions (components, tokens, styling, icons) are governed by Section 4 of this document.
+> Every change made here must be reflected in [`architecture-guide.pt_BR.md`](architecture-guide.pt_BR.md).
 
 ---
 
