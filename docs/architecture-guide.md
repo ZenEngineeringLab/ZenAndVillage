@@ -233,17 +233,18 @@ without registering it here first.**
 
 | Frontend Feature | Lambda Domain | API Base Path | Primary Data Store | Status |
 | --- | --- | --- | --- | --- |
-| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`zenvillage-users`) | ✅ MVP |
-| `dashboard` | — | *(client-side only — no backend)* | — | ✅ MVP |
-| `tenants` | `tenants` | `/v1/tenants` | DynamoDB (`zenvillage-tenants`) | ✅ MVP |
-| `property-managers` | `property-managers` | `/v1/property-managers` | DynamoDB (`zenvillage-property-managers`) | ✅ MVP |
-| `condominiums` | `condominiums` | `/v1/condominiums` | DynamoDB (`zenvillage-condominiums`) | ✅ MVP |
-| `residents` | `residents` | `/v1/residents` | DynamoDB (`zenvillage-residents`) | ✅ MVP |
-| `employees` | `employees` | `/v1/employees` | DynamoDB (`zenvillage-employees`) | ✅ MVP |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`zenvillage-notifications`) | ✅ MVP |
-| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`zenvillage-files`) + S3 | ✅ MVP |
+| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`{project}-users`) | ✅ MVP |
+| `{feature-a}` | — | *(client-side only — no backend)* | — | ✅ MVP |
+| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) | ✅ MVP |
+| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) | ✅ MVP |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) | ✅ MVP |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 | ✅ MVP |
 | `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
-| `settings` | `settings` | `/v1/settings` | DynamoDB | 🔜 Post-MVP |
+| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB | 🔜 Post-MVP |
+
+> **Instructions:** Replace `{feature-a}`, `{feature-b}`, etc. with the actual feature names for
+> your project. Add one row per domain at project kickoff. `auth`, `notifications`, `uploads`,
+> and `preferences` are architecture-level features present in every project — keep them as-is.
 
 > **Note:** React Router v7 merged `react-router-dom` into `react-router`.
 > Import everything from `"react-router"` — `react-router-dom` is no longer needed as a separate dependency.
@@ -1290,7 +1291,7 @@ PROD FRONTEND
 │   │   ├── cognito.stack.ts
 │   │   ├── api-gateway.stack.ts
 │   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
-│   │   ├── {domain}.stack.ts           # one per domain (tenants, condominiums, …)
+│   │   ├── {domain}.stack.ts           # one per domain — one file per business domain
 │   │   └── pipeline.stack.ts           # 🔜 Post-MVP — CodePipeline CI/CD
 │   └── constructs/
 │       ├── lambda-with-powertools.ts
@@ -1303,8 +1304,8 @@ PROD FRONTEND
     │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
     ├── auth/
     │   └── pre-token-generation.handler.ts
-    ├── {domain}/                         # tenants | property-managers | condominiums
-    │   ├── list.handler.ts               # residents | employees
+    ├── {domain}/                         # one folder per business domain
+    │   ├── list.handler.ts
     │   ├── get-by-id.handler.ts
     │   ├── create.handler.ts
     │   ├── update.handler.ts
@@ -1598,7 +1599,7 @@ A single SemVer version represents a coordinated release of all components in th
 | Where | Role |
 | --- | --- |
 | `docs/project-definition.md` — `Base version` field | **Single source of truth** — change this first |
-| `zenvillage-web/package.json` — `version` field | Propagated copy — must stay in sync |
+| `{project}-web/package.json` — `version` field | Propagated copy — must stay in sync |
 | `{domain}-lambda/package.json` — `version` field (when created) | Propagated copy — must stay in sync |
 | `CHANGELOG.md` | Human-readable release history |
 | Git tag `vX.Y.Z` | Immutable release artifact — CI/CD gates on this |

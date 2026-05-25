@@ -236,17 +236,18 @@ sem registrá-lo aqui primeiro.**
 
 | Feature Frontend | Domínio Lambda | Caminho Base da API | Armazenamento Primário | Status |
 | --- | --- | --- | --- | --- |
-| `auth` | `auth` | *(Trigger Cognito — sem rotas REST)* | DynamoDB (`zenvillage-users`) | ✅ MVP |
-| `dashboard` | — | *(somente client-side — sem backend)* | — | ✅ MVP |
-| `tenants` | `tenants` | `/v1/tenants` | DynamoDB (`zenvillage-tenants`) | ✅ MVP |
-| `property-managers` | `property-managers` | `/v1/property-managers` | DynamoDB (`zenvillage-property-managers`) | ✅ MVP |
-| `condominiums` | `condominiums` | `/v1/condominiums` | DynamoDB (`zenvillage-condominiums`) | ✅ MVP |
-| `residents` | `residents` | `/v1/residents` | DynamoDB (`zenvillage-residents`) | ✅ MVP |
-| `employees` | `employees` | `/v1/employees` | DynamoDB (`zenvillage-employees`) | ✅ MVP |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`zenvillage-notifications`) | ✅ MVP |
-| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`zenvillage-files`) + S3 | ✅ MVP |
+| `auth` | `auth` | *(Trigger Cognito — sem rotas REST)* | DynamoDB (`{project}-users`) | ✅ MVP |
+| `{feature-a}` | — | *(somente client-side — sem backend)* | — | ✅ MVP |
+| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) | ✅ MVP |
+| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) | ✅ MVP |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) | ✅ MVP |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 | ✅ MVP |
 | `preferences` | — | *(somente client-side — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
-| `settings` | `settings` | `/v1/settings` | DynamoDB | 🔜 Pós-MVP |
+| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB | 🔜 Pós-MVP |
+
+> **Instruções:** Substitua `{feature-a}`, `{feature-b}`, etc. pelos nomes reais de features do
+> seu projeto. Adicione uma linha por domínio no kickoff do projeto. `auth`, `notifications`,
+> `uploads` e `preferences` são features de nível arquitetural presentes em todo projeto — mantenha-as como estão.
 
 > **Nota:** React Router v7 fundiu `react-router-dom` em `react-router`.
 > Importe tudo de `"react-router"` — `react-router-dom` não é mais necessário como dependência separada.
@@ -1293,7 +1294,7 @@ FRONTEND PROD
 │   │   ├── cognito.stack.ts
 │   │   ├── api-gateway.stack.ts
 │   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
-│   │   ├── {domain}.stack.ts           # um por domínio (tenants, condominiums, …)
+│   │   ├── {domain}.stack.ts           # um por domínio de negócio — um arquivo por domínio
 │   │   └── pipeline.stack.ts           # 🔜 Pós-MVP — CodePipeline CI/CD
 │   └── constructs/
 │       ├── lambda-with-powertools.ts
@@ -1306,8 +1307,8 @@ FRONTEND PROD
     │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
     ├── auth/
     │   └── pre-token-generation.handler.ts
-    ├── {domain}/                         # tenants | property-managers | condominiums
-    │   ├── list.handler.ts               # residents | employees
+    ├── {domain}/                         # uma pasta por domínio de negócio
+    │   ├── list.handler.ts
     │   ├── get-by-id.handler.ts
     │   ├── create.handler.ts
     │   ├── update.handler.ts
@@ -1601,7 +1602,7 @@ Uma única versão SemVer representa um release coordenado de todos os component
 | Onde | Função |
 | --- | --- |
 | `docs/project-definition.md` — campo `Base version` | **Fonte única de verdade** — altere isso primeiro |
-| `zenvillage-web/package.json` — campo `version` | Cópia propagada — deve permanecer em sincronia |
+| `{project}-web/package.json` — campo `version` | Cópia propagada — deve permanecer em sincronia |
 | `{domain}-lambda/package.json` — campo `version` (quando criado) | Cópia propagada — deve permanecer em sincronia |
 | `CHANGELOG.md` | Histórico de releases legível por humanos |
 | Tag git `vX.Y.Z` | Artefato de release imutável — pipelines CI/CD validam isso |
