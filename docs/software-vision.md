@@ -642,6 +642,9 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 | `onboarding` | Subscription approved; first condominium wizard not yet completed — account owners only |
 | `complete` | Full operational access granted |
 
+**Propagation to the frontend — JWT claim:**
+`onboarding_status` is injected into the Cognito JWT as the `custom:onboardingStatus` claim by the Pre-Token Generation Lambda (alongside `custom:tenantId`, `custom:roles`, and `custom:userId`). The frontend reads this claim immediately after sign-in and stores it in the Zustand auth store. The `AuthGuard` evaluates `onboarding_status` on every navigation to enforce the subscription gate — redirecting incomplete sessions to the appropriate step — without requiring a separate API call. For the technical implementation of the Pre-Token Generation Lambda, see `docs/architecture-guide.md` §7.
+
 ### 5.4 Role Taxonomy
 
 | Role | Level | Capabilities |

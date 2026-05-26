@@ -479,8 +479,17 @@ HTTP 204 No Content  (sem corpo)
 
 ### Lambda Pre-Token Generation — Obrigatória
 
-Sem este trigger, `tenantId` e `roles` não existem no JWT e todo o sistema
-de multi-tenancy falha silenciosamente.
+Sem este trigger, `tenantId`, `roles` e `onboardingStatus` não existem no JWT e todo
+o sistema de multi-tenancy e subscription gate falha silenciosamente.
+
+**Claims injetados:**
+
+| Claim | Tipo | Descrição |
+| --- | --- | --- |
+| `custom:tenantId` | `string` | UUID do tenant ativo; validado pelo Lambda Authorizer em toda requisição |
+| `custom:roles` | `string` (array JSON) | Array serializado das strings de papel do usuário |
+| `custom:userId` | `string` | UUID interno do usuário (distinto do `sub` do Cognito) |
+| `custom:onboardingStatus` | `string` | Valor atual de `onboarding_status`; lido pelo `AuthGuard` do frontend para aplicar o subscription gate sem chamada de API adicional |
 
 ```typescript
 // lambda/auth/pre-token-generation.handler.ts
@@ -491,9 +500,10 @@ export const handler = async (event: PreTokenGenerationTriggerEvent) => {
   event.response = {
     claimsOverrideDetails: {
       claimsToAddOrOverride: {
-        'custom:tenantId': user.organizationId,
-        'custom:roles':    JSON.stringify(user.roles),
-        'custom:userId':   user.id,
+        'custom:tenantId':         user.tenantId,
+        'custom:roles':            JSON.stringify(user.roles),
+        'custom:userId':           user.id,
+        'custom:onboardingStatus': user.onboardingStatus,
       },
     },
   };

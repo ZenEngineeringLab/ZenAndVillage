@@ -645,6 +645,9 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 | `onboarding` | Assinatura aprovada; assistente do primeiro condomínio não concluído — apenas proprietários de conta |
 | `complete` | Acesso operacional completo concedido |
 
+**Propagação ao frontend — claim JWT:**
+`onboarding_status` é injetado no JWT do Cognito como o claim `custom:onboardingStatus` pela Lambda Pre-Token Generation (junto com `custom:tenantId`, `custom:roles` e `custom:userId`). O frontend lê esse claim imediatamente após o sign-in e o armazena no auth store Zustand. O `AuthGuard` avalia `onboarding_status` em cada navegação para aplicar o subscription gate — redirecionando sessões incompletas para a etapa correspondente — sem necessidade de chamada de API adicional. Para a implementação técnica da Lambda Pre-Token Generation, consulte `docs/architecture-guide.md` §7.
+
 ### 5.4 Taxonomia de Papéis
 
 | Papel | Nível | Capacidades |
