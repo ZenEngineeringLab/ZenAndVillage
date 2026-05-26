@@ -52,6 +52,25 @@ Contains: product vision, multi-tenancy **business model** (hierarchy, plans, te
 
 ---
 
+## Documentation Hygiene
+
+**Never append version notes, review dates, or internal-use footers to any file in `docs/`.** Lines of the form:
+
+```
+*Document for internal development use. Last review: … — vX.Y (…)*
+```
+
+are forbidden. They duplicate information already captured in git history and CHANGELOG.md, drift out of sync immediately, and add noise that readers must filter out.
+
+**Where change history belongs:**
+
+- **`CHANGELOG.md`** — the single place where notable changes to the project (including significant documentation updates) are recorded. Add an entry here when opening a pull request, not as an inline footnote inside the edited document.
+- **Git commit messages** — every commit already records what changed, when, and why. That is the audit trail for document edits.
+
+**Rule:** when editing any `docs/*.md` file, do not add, update, or preserve any trailing footnote that mentions a version number, a review date, or the phrase "internal development use". If such a note already exists in a file being edited, remove it as part of the same change.
+
+---
+
 ## Language Policy
 
 **All project artifacts must be written in American English (en-US)**, regardless of the language the user uses in conversation.
