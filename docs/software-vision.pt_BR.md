@@ -48,7 +48,7 @@ ZenAndVillage é uma **plataforma SaaS B2B2C com IA** para gestão de condomíni
 
 | Stakeholder | Valor |
 |---|---|
-| **Administradora** | Dashboard consolidado de todos os condomínios; gestão automatizada de inadimplência; controle de conformidade; marca white-label para seus clientes |
+| **Administradora** | Dashboard consolidado de todos os condomínios; gestão automatizada de inadimplência; controle de conformidade |
 | **Síndico** | Plataforma única para financeiro, manutenção, funcionários, documentos legais e moradores; trilha de auditoria completa para responsabilidade legal |
 | **Morador / Proprietário** | App transparente para gestão de boletos, reservas, ocorrências e comunicação em tempo real |
 | **Conselho Fiscal** | Acesso direto a relatórios financeiros e logs de auditoria |
@@ -114,8 +114,8 @@ Toda conta L1 é a mesma entidade no modelo de dados. O que diferencia um síndi
 | Perfil | Plano Típico | max_condos | Observações |
 |---|---|---|---|
 | Síndico Individual | Solo / Starter | 1 | Gerencia um único condomínio diretamente |
-| Pequena Administradora | Professional | 5–15 | Visão consolidada; pode habilitar white-label |
-| Grande Administradora | Enterprise | Ilimitado | White-label completo; acesso à API; suporte dedicado |
+| Pequena Administradora | Professional | 5–15 | Visão consolidada; acesso à API |
+| Grande Administradora | Enterprise | Ilimitado | Acesso à API; suporte dedicado |
 
 ### 2.4 Isolamento de Dados
 
@@ -173,7 +173,6 @@ Encerramento: exportação de dados → dados retidos pelo período contratual �
 | `enabled_modules` | Lista de módulos disponíveis para o tenant |
 | `data_retention_months` | Quantos meses de histórico de dados são retidos |
 | `support_level` | Nível de SLA de suporte: `basic`, `priority`, `dedicated` |
-| `white_label` | Marca personalizada habilitada (bool) |
 | `api_access` | Acesso à API REST para integrações (bool) |
 
 > Os nomes de campos das entidades seguem a versão canônica em inglês (`software-vision.md`).
@@ -187,7 +186,6 @@ max_condos, max_units_total, max_admin_users,
 enabled_modules: [module_id],
 data_retention_months,
 support_level (basic | priority | dedicated),
-white_label (bool),
 api_access (bool),
 status (active | discontinued),
 public (bool)
@@ -202,10 +200,6 @@ responsible_name, responsible_email,
 plan_id, subscription_status (pending_approval | trial | active | delinquent | canceled | suspended),
 subscription_start_date, trial_end_date?,
 billing_cycle (monthly | annual),
-white_label_config?: {
-  platform_name, logo_url, primary_color, secondary_color,
-  custom_domain, custom_sender_email
-},
 usage_limits: { active_condos, total_units, admin_users },
 status (active | suspended | canceled)
 ```
@@ -229,24 +223,7 @@ next_billing_date?
 
 > **Observação:** `payment_method` é coletado para fins de registro e integração futura com um broker de pagamentos. Na versão atual, a ativação é realizada manualmente pelo `platform_admin` e este campo não é processado automaticamente.
 
-### 2.7 White-Label & Personalização
-
-Tenants com o módulo `white_label` habilitado podem personalizar a experiência da plataforma para seus condomínios:
-
-- **Nome da plataforma:** substituir "ZenAndVillage" pela marca da administradora
-- **Logo:** próprio logo exibido no app e nos e-mails
-- **Paleta de cores:** cores primária e secundária da identidade visual
-- **Domínio personalizado:** app acessível em `app.nomeadministradora.com.br`
-- **E-mail remetente:** comunicados enviados de `noreply@nomeadministradora.com.br`
-- **Tela de splash personalizada:** tela de carregamento do app mobile
-
-#### Regras de Negócio — White-Label
-
-- **RN-WL-001:** A personalização é por tenant (L1); todos os condomínios do tenant herdam a mesma marca.
-- **RN-WL-002:** Condomínios independentes sem o módulo white-label utilizam a identidade padrão ZenAndVillage.
-- **RN-WL-003:** O rodapé do app deve manter uma referência discreta "Powered by ZenAndVillage" no modo white-label, exceto em contratos enterprise que explicitamente dispensem esse requisito.
-
-#### Regras de Negócio — Multi-Tenancy
+### 2.7 Regras de Negócio — Multi-Tenancy
 
 - **RN-MT-001:** Toda requisição à API deve validar o `tenant_id` antes de qualquer operação de dados (detalhes técnicos em `architecture-guide.md`).
 - **RN-MT-002:** Consultas ao banco de dados sem filtro de `tenant_id` são proibidas em código de produção.
@@ -270,7 +247,7 @@ O ZenAndVillage é estruturado em **13 bounded contexts** (domínios de negócio
 ```
 ┌──────────────────────────────────────────────────────────┐
 │               PLATAFORMA & MULTI-TENANCY                 │
-│         Plan · Tenant · Subscription · WhiteLabel        │
+│              Plan · Tenant · Subscription                 │
 └──────────────────────┬───────────────────────────────────┘
                        │ owns
           ┌────────────▼────────────┐
@@ -1166,4 +1143,4 @@ success (bool), failure_reason?
 
 ---
 
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.4 (fluxo de pagamento automatizado substituído por aprovação manual do platform admin; adicionado `pending_approval` em Tenant, Subscription e onboarding_status; entidade Subscription ganha approved_by_id, approved_at, rejection_reason; regras RN-ONB atualizadas para refletir modelo de ativação manual).*
+*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.5 (funcionalidade White-Label & Personalização removida: excluída Seção 2.7, regras RN-WL, campo white_label do Plan e da tabela de dimensões, bloco white_label_config da entidade Tenant, e referências a white-label nas tabelas de Proposta de Valor e Perfis).*
