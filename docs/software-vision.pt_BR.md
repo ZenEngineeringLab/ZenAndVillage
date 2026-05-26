@@ -1171,8 +1171,8 @@ A aplicação autenticada utiliza um **shell em duas camadas**:
 | Zona | Descrição |
 |---|---|
 | **Header** | Faixa fixa de 56 px cobrindo toda a largura do viewport; sempre visível |
-| **Sidebar** | Faixa vertical recolhível; 224 px expandida (`w-56`) ou trilho de ícones de 56 px (`w-14`); recolhe automaticamente em viewports com menos de 1024 px |
-| **Área de conteúdo** | Região rolável à direita da sidebar; conteúdo limitado a `max-w-7xl` com padding de 24 px |
+| **Sidebar** | Faixa vertical recolhível; 224 px expandida ou trilho de ícones de 56 px; recolhe automaticamente em viewports com menos de 1024 px |
+| **Área de conteúdo** | Região rolável à direita da sidebar; conteúdo limitado a uma largura máxima de 1280 px com padding de 24 px |
 | **Banner de tenant suspenso** | Barra com estilo destrutivo exibida abaixo do header (acima do conteúdo) quando `Tenant.subscription_status = suspended`; não substitui o header |
 
 ### 18.2 Header
@@ -1249,7 +1249,7 @@ Popover ancorado abaixo-direita do gatilho do usuário (largura: 288 px). O cont
 
 ### 18.6 Página de Preferências
 
-Rota: `/preferences`. Acessível via Menu do Usuário → Preferências. Conteúdo limitado a 672 px (`max-w-2xl`).
+Rota: `/preferences`. Acessível via Menu do Usuário → Preferências. Conteúdo limitado a 672 px.
 
 Sete seções de configuração, separadas por divisores horizontais:
 
@@ -1264,7 +1264,7 @@ Sete seções de configuração, separadas por divisores horizontais:
 | **Aparência** | Claro, Escuro, Automático | Automático |
 | **Idioma** | pt_BR, en_US, Automático | Automático |
 
-O **preset de cores** sobrescreve apenas a cor primária e os cinco tokens de paleta de gráficos (`--chart-1` a `--chart-5`); todos os outros tokens de tema permanecem inalterados. O menu **invertido** aplica fundo escuro à sidebar em modo claro. O destaque **negrito** utiliza a cor primária ativa para o item de navegação selecionado. **Automático** em aparência segue a configuração `prefers-color-scheme` do sistema operacional; **Automático** em idioma segue a preferência de idioma do navegador.
+O **preset de cores** sobrescreve apenas a cor primária e os cinco tokens de paleta de gráficos; todos os outros tokens de tema permanecem inalterados. O menu **invertido** aplica fundo escuro à sidebar em modo claro. O destaque **negrito** utiliza a cor primária ativa para o item de navegação selecionado. **Automático** em aparência segue a configuração `prefers-color-scheme` do sistema operacional; **Automático** em idioma segue a preferência de idioma do navegador.
 
 Todas as preferências são armazenadas no lado do cliente no store da aplicação. Persistência de preferências no servidor não está implementada na versão atual.
 
@@ -1280,8 +1280,5 @@ Rota: `/`. Página de destino padrão após o login. Trata-se de uma **visão ge
 | **Crescimento + mix (2/3 + 1/3)** | Gráfico de área: crescimento de contas tenant nos últimos 6 meses. Gráfico donut: distribuição de planos (Starter / Pro / Enterprise). |
 | **Análise (três colunas iguais)** | Donut: status financeiro dos moradores (adimplentes vs. inadimplentes). Donut: tipos de condomínio (residencial / comercial / misto). Barra horizontal: distribuição de funções de funcionários. |
 
-Todas as cores dos gráficos utilizam as variáveis CSS `--chart-1` a `--chart-5`, sobrescritas pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
+Todas as cores dos gráficos utilizam os cinco tokens de paleta de gráficos, sobrescritos pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
 
----
-
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.6 (adicionada Seção 18 Shell da Aplicação & Design de Interface: estrutura de layout, composição do header, zonas e itens de navegação da sidebar, painel de notificações, menu do usuário com seletor de tenant, configurações da página de preferências e layout do dashboard — derivados da implementação zenvillage-web).*

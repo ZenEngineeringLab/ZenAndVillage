@@ -1168,8 +1168,8 @@ The authenticated application uses a **two-layer shell**:
 | Zone | Description |
 |---|---|
 | **Header** | Fixed 56 px strip spanning the full viewport width; always visible |
-| **Sidebar** | Collapsible vertical strip; 224 px expanded (`w-56`) or 56 px icon-rail (`w-14`); auto-collapses on viewports narrower than 1024 px |
-| **Content area** | Scrollable region to the right of the sidebar; page content constrained to `max-w-7xl` with 24 px padding |
+| **Sidebar** | Collapsible vertical strip; 224 px expanded or 56 px icon-rail; auto-collapses on viewports narrower than 1024 px |
+| **Content area** | Scrollable region to the right of the sidebar; page content constrained to a maximum width of 1280 px with 24 px padding |
 | **Suspended tenant banner** | Destructive-styled warning bar rendered below the header (above content) when `Tenant.subscription_status = suspended`; does not replace the header |
 
 ### 18.2 Header
@@ -1246,7 +1246,7 @@ A popover anchored below-right of the user trigger (width: 288 px). Content is d
 
 ### 18.6 Preferences Page
 
-Route: `/preferences`. Accessible via the User Menu → Preferences. Content is constrained to 672 px (`max-w-2xl`).
+Route: `/preferences`. Accessible via the User Menu → Preferences. Content is constrained to 672 px.
 
 Seven settings sections, each separated by a horizontal divider:
 
@@ -1261,7 +1261,7 @@ Seven settings sections, each separated by a horizontal divider:
 | **Appearance** | Light, Dark, Auto | Auto |
 | **Language** | pt_BR, en_US, Auto | Auto |
 
-**Color preset** overrides only the primary color and the five chart palette tokens (`--chart-1` through `--chart-5`); all other theme tokens are unchanged. **Inverted** menu color applies a dark sidebar background in light mode. **Bold** menu accent uses the active primary color for the selected navigation item highlight. **Auto** appearance follows the OS `prefers-color-scheme` setting; **Auto** language follows the browser's language preference.
+**Color preset** overrides only the primary color and the five chart palette tokens; all other theme tokens are unchanged. **Inverted** menu color applies a dark sidebar background in light mode. **Bold** menu accent uses the active primary color for the selected navigation item highlight. **Auto** appearance follows the OS `prefers-color-scheme` setting; **Auto** language follows the browser's language preference.
 
 All preferences are stored client-side in the application store. Server-side preference persistence is not implemented in the current version.
 
@@ -1277,8 +1277,5 @@ Route: `/`. Default landing page after login. This is a **platform-level overvie
 | **Growth + mix (2/3 + 1/3)** | Area chart: tenant account growth over 6 months. Donut chart: plan distribution (Starter / Pro / Enterprise). |
 | **Analytics (three equal columns)** | Donut: resident financial status (current vs. delinquent). Donut: condominium types (residential / commercial / mixed). Horizontal bar: employee roles breakdown. |
 
-All chart colors use CSS variables `--chart-1` through `--chart-5`, overridden by the active color preset so charts respond correctly to all theme choices.
+All chart colors use the five chart palette tokens, overridden by the active color preset so charts respond correctly to all theme choices.
 
----
-
-*Document for internal development use. Last review: May 2026 — v1.6 (added Section 18 Application Shell & UI Design: layout structure, header composition, sidebar zones and navigation items, notification panel, user menu with tenant selector, preferences page settings, and dashboard layout — sourced from the zenvillage-web implementation).*

@@ -2,7 +2,7 @@
 ## PWA Frontend + Serverless AWS
 
 > **Como usar este documento**
-> Substitua `{project}` pelo identificador curto do seu projeto (ex.: `myapp`, `acme`, `foobar`).
+> `{project}` é um placeholder intencional — **não** o substitua diretamente neste arquivo. Agentes e ferramentas o resolvem no momento da tarefa a partir de `docs/project-definition.md`. Isso mantém o guia reutilizável entre projetos sem hardcode de identificadores aqui.
 > Este documento é a **fonte única de verdade para a arquitetura de engenharia**.
 > Decisões de UI (componentes, tokens, estilização, ícones) são regidas pela Seção 15 deste documento.
 

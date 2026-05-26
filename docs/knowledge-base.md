@@ -1121,6 +1121,3 @@ Reorder Point = Average Daily Consumption × Lead Time (days) + Minimum Stock
 - STJ — Condominium case law (parking spaces, 2024)
 - São Paulo Court of Justice — LGPD in condominiums (2024–2025)
 
----
-
-*Document for internal development use. Review periodically to stay current with legislative and regulatory changes. Last review: May 2026 — v2.0 (restructured: domain-only; software requirements and entities moved to `software-vision.md`).*

@@ -2,7 +2,7 @@
 ## Frontend PWA + Serverless AWS
 
 > **How to use this document**
-> Replace `{project}` with your project's short identifier (e.g. `myapp`, `acme`, `foobar`).
+> `{project}` is an intentional placeholder — do **not** replace it directly in this file. Agents and tooling resolve it at task time from `docs/project-definition.md`. This keeps the guide reusable across projects without hardcoding any identifier here.
 > This document is the **single source of truth for engineering architecture**.
 > UI decisions (components, tokens, styling, icons) are governed by Section 15 of this document.
 > Every change made here must be reflected in [`architecture-guide.pt_BR.md`](architecture-guide.pt_BR.md).

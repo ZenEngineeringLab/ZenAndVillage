@@ -1122,6 +1122,3 @@ Ponto de Pedido = Consumo Médio Diário × Prazo de Entrega (dias) + Estoque M�
 - STJ — Jurisprudência condominial (vagas de garagem, 2024)
 - TJSP — Jurisprudência LGPD em condomínios (2024–2025)
 
----
-
-*Documento para uso interno de desenvolvimento. Revisar periodicamente para manter atualização com alterações legislativas e normativas. Última revisão: Maio 2026 — v2.0 (reestruturado: apenas domínio; requisitos de software e entidades movidos para `software-vision.pt_BR.md`).*
