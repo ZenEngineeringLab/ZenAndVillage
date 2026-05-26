@@ -159,6 +159,42 @@ Steps 1–4 must land in the same commit. Never tag before committing, never pus
 
 ---
 
+## CHANGELOG Maintenance Policy
+
+`CHANGELOG.md` must be kept current throughout the life of a feature branch — not only at release time.
+
+### When to update
+
+Update `CHANGELOG.md` **in the same commit** as the change it documents. Every incremental commit that touches user-visible behavior, adds a new capability, fixes a bug, or removes something must include a corresponding entry in the `[Unreleased]` section.
+
+Do **not** batch changelog entries at the end of a branch. Each entry belongs alongside the commit that introduced it.
+
+### How to write entries
+
+Use the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) categories. Pick the most accurate one:
+
+| Category | Use when |
+|---|---|
+| `Added` | New feature, new route, new component, new domain, new config option |
+| `Changed` | Behavior change in an existing feature, schema migration, UI redesign |
+| `Fixed` | Bug fix — describe the symptom that was corrected |
+| `Removed` | Feature, route, field, or dependency deleted |
+| `Deprecated` | Something marked for future removal |
+| `Security` | Vulnerability fix or security hardening |
+
+Write entries from the user/operator perspective, not the implementation perspective. Describe what changed in the product, not which files were edited.
+
+**Good:** `Added resident financial status badge to the Residents list view`
+**Bad:** `Updated ResidentCard.tsx to include FinancialStatusBadge component`
+
+Group multiple small entries under the same category rather than writing one entry per file touched.
+
+### At release time
+
+When cutting a release (following the Version bump flow), rename `[Unreleased]` to `[{version}] - {date}`, add the new empty `[Unreleased]` section above it, and update the comparison links at the bottom of the file.
+
+---
+
 ## Incremental Commit Policy
 
 When working on a feature branch, commit and push incrementally — do not accumulate all changes into a single end-of-task commit.
@@ -200,13 +236,7 @@ Append this section to every PR body. Collect the data from git history and the 
 
 ### Estimated human effort (without AI assistance)
 
-| Seniority | Estimated time | Headcount |
-|---|---|---|
-| Junior | {hours}h | {n} |
-| Mid-level | {hours}h | {n} |
-| Senior | {hours}h | {n} |
-
-> **Total estimated effort:** {total_hours}h across all seniority levels — equivalent to approximately {total_days} work days (8h/day) or {total_weeks} work weeks (40h/week).
+> **Estimated effort:** {hours}h — equivalent to approximately {total_days} work days (8h/day) or {total_weeks} work weeks (40h/week).
 ```
 
 **How to populate each field:**
@@ -214,13 +244,12 @@ Append this section to every PR body. Collect the data from git history and the 
 - **Lines of code manipulated** — run `git diff --stat origin/main...HEAD` and sum the insertions and deletions shown in the final totals line. Exclude lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) from the count.
 - **Branch duration** — use `git log --diff-filter=A --follow --format="%ad" --date=short -- .` on the first commit of the branch to get the start date; the PR date is today's date.
 - **Technologies involved** — list every language, framework, library, and toolchain touched by the diff (e.g. TypeScript, React, Next.js, Tailwind CSS, Prisma, PostgreSQL, Docker). Derive from changed file extensions and import statements; do not list technologies present in the repo but untouched by this PR.
-- **Estimated human effort** — reason from the scope of the diff (number of new components, API routes, schema changes, config files, test coverage) to produce a realistic estimate of how long a human engineer at each seniority level would need to deliver the same result working alone, without AI assistance. Use the following reference ranges:
-  - Junior: typically 3–5× longer than senior
-  - Mid-level: typically 1.5–2.5× longer than senior
-  - Senior: baseline — estimate the senior time first, then derive the others
-  - Express time in hours (e.g. `8h`, `2h`). If the scope is very small (< 1 h senior), use `< 1h`.
-  - Headcount should almost always be 1 per seniority tier unless the scope clearly requires parallel work.
-- **Total estimated effort** — sum the estimated hours for all three seniority tiers (Junior + Mid-level + Senior). Then compute:
-  - `{total_days}` = `{total_hours}` ÷ 8, rounded to one decimal place
-  - `{total_weeks}` = `{total_hours}` ÷ 40, rounded to one decimal place
-  - If any tier uses `< 1h`, treat it as `0.5h` for arithmetic purposes and note the approximation inline.
+- **Estimated human effort** — produce a single realistic estimate of how long a human engineer would need to deliver the same result working alone, without AI assistance. Base the estimate on:
+  - **Volume:** total lines of code manipulated (added + removed), weighted by complexity (boilerplate vs. logic-heavy code).
+  - **Breadth:** number of distinct technologies involved — each additional technology adds ramp-up and integration overhead.
+  - **Scope indicators:** number of new components, API routes, schema changes, config files, and test coverage added.
+  - Express the result in hours (e.g. `8h`, `2h`). If the scope is very small (< 1h), use `< 1h`.
+- **Total estimated effort** — use the single estimated hours value from above. Then compute:
+  - `{total_days}` = `{hours}` ÷ 8, rounded to one decimal place
+  - `{total_weeks}` = `{hours}` ÷ 40, rounded to one decimal place
+  - If the estimate is `< 1h`, treat it as `0.5h` for arithmetic purposes and note the approximation inline.

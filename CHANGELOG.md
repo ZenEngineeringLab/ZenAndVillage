@@ -9,6 +9,34 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Architecture guide pt_BR translation** — full Portuguese translation of `docs/architecture-guide.md` covering all 25 sections; both files are now maintained as a bilingual pair
+- **Architecture Section 26 — AWS Cost Reference** — comprehensive pricing reference for all 14 services in the stack (Lambda, DynamoDB, API Gateway HTTP + WebSocket, Cognito, S3, CloudFront, SQS, EventBridge, SNS, CloudWatch, X-Ray, Secrets Manager, SSM Parameter Store, Athena) with free tier limits, exact pricing after free tier (us-east-1), and practical scale estimates; available in both EN and pt_BR
+- **`docs/software-vision.md`** (and pt_BR) — new dedicated document for platform requirements, business rules (RN-XXX codes), and data domain entities, extracted from the monolithic knowledge base
+- **User registration and onboarding flow** (software-vision §3) — complete account owner funnel: email/password and federated (Google/Facebook/Apple) paths, subscription gate, first-condominium wizard, and `onboarding_status` state machine with RN-ONB-001–008
+- **Resident and authorized person onboarding flow** (software-vision §3.7) — invite-based journey distinct from the subscription funnel; introduces the `authorized_person` role (QR credential + biometric photo only, no operational module access), `is_primary` flag, and `ResidentInvite` entity with full token lifecycle
+- **Application Shell & UI Design section** in the software vision — documents established layout structure (header + collapsible sidebar + content area), header composition, sidebar zones, notification panel, user menu sections, preferences page with all eight setting categories and defaults, and dashboard layout
+
+### Changed
+- **Architecture guide restructured** into a logical 7-part reader-oriented progression: Foundation → Structure → Backend Core → Data & Messaging → Client Channels → Frontend → Observability & Ops; all internal cross-references updated accordingly
+- **Architecture guide made fully project-agnostic** — all ZenAndVillage-specific references replaced with `{project}` placeholders in the feature map, project structure, and versioning sections; the guide can now be reused across projects by changing only `docs/project-definition.md`
+- **Knowledge base narrowed to domain-only content** — entity schemas, RN-XXX business rules, and platform requirements removed; `docs/knowledge-base.md` now covers only Brazilian condo law, actor/role definitions, governance processes, financial concepts, HR/labor rules, building operations, and LGPD obligations
+- **Software vision restructured around 13 DDD bounded contexts** — each context owns its aggregate root, entities, and business rules; added Domain Map section with context diagram and directory table
+- **Subscription activation changed to manual platform admin approval** — removed payment broker integration; added `pending_approval` and `rejected` statuses to `Subscription` and `Tenant`; updated onboarding funnel and lifecycle diagram; rejection path requires `rejection_reason` and resets `onboarding_status` to `pending_subscription`
+- **Application Shell section promoted to §2** in the software vision (was §18), immediately after Product Vision, reflecting its platform-level scope; remaining sections renumbered §3–§18
+- **App logo SVGs updated** — both light and dark variants refreshed in frontend assets and source files
+- **Agent behavior: CHANGELOG.md** must now be updated in the same commit as each change throughout the feature branch lifecycle, not only at release time
+- **Agent behavior: PR estimated human effort** now uses a single hour estimate derived from lines of code and technologies involved, replacing the three-tier seniority breakdown
+- **Agent behavior: version footnotes forbidden** — trailing footnotes with version numbers, review dates, or "internal development use" phrases are prohibited in all `docs/*.md` files
+
+### Removed
+- **White-Label & Customization feature** from the software vision — removed `white_label` from Plan entity, `white_label_config` from Tenant entity, RN-WL-001/002/003 rules, and all related references
+- **Project-specific MVP status markers** from the architecture guide — section-level MVP annotations removed to keep the guide implementation-neutral
+- **`scripts/reorder-arch.mjs`** one-off helper script no longer needed after the architecture guide restructure
+
+### Renamed
+- pt_BR documentation files renamed from `*-pt_BR.md` to `*.pt_BR.md` (dot-separated locale suffix) for consistency
+
 ## [0.2.0] - 2026-05-22
 
 ### Added
