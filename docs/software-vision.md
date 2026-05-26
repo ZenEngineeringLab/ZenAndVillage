@@ -170,7 +170,12 @@ Closure: data export made available → data retained for contractual period →
 
 ### 3.1 Onboarding Funnel Overview
 
-Every new user progresses through a linear funnel. No operational access is granted until the subscription is active and the first condominium is configured.
+This section covers two distinct onboarding journeys:
+
+- **Sections 3.2–3.6:** Account owner funnel (syndics, managers, administradoras) — starts at the public landing page, requires a subscription.
+- **Section 3.7:** Resident and authorized person funnel — starts from an invite sent inside a condominium, requires no subscription.
+
+**Account owner funnel.** Every new account owner progresses through a linear funnel. No operational access is granted until the subscription is active and the first condominium is configured.
 
 ```
 [Landing Page]
@@ -258,9 +263,72 @@ The `onboarding_status` field on the `User` entity tracks funnel position:
 | Status | Meaning |
 |---|---|
 | `pending_verification` | Registered via email+password; email not yet confirmed |
-| `pending_subscription` | Identity verified (or federated); no active subscription yet |
-| `onboarding` | Subscription active; first condominium wizard not yet completed |
-| `complete` | At least one condominium configured; full operational access granted |
+| `pending_subscription` | Identity verified (or federated); no active subscription yet — applies to account owners only |
+| `onboarding` | Subscription active; first condominium wizard not yet completed — applies to account owners only |
+| `complete` | Full operational access granted (account owner: first condo configured; resident: invite accepted) |
+
+> Residents invited via Section 3.7 skip `pending_subscription` and `onboarding` entirely. After identity verification (or federated login) and invite acceptance, their status advances directly to `complete`.
+
+---
+
+### 3.7 Resident and Authorized Person Onboarding
+
+This flow is triggered entirely from within an active condominium, not from the public landing page. No subscription or payment is required.
+
+#### Step 1 — Invitation by condo staff
+
+A user holding the `condo_syndic`, `condo_manager`, or `condo_staff` role sends an email invite to the unit's primary resident.
+
+- The invite specifies the target unit and the role to be granted (`resident_owner` or `resident_tenant`).
+- Only one user per role type may hold `is_primary = true` on a given unit at any time.
+- The system creates a `ResidentInvite` record bound to the invitee's email address.
+
+#### Step 2 — Registration / login
+
+The invitee receives an email with a unique, time-limited invite link.
+
+- Clicking the link opens the platform's registration or login screen with the invite token pre-loaded.
+- The invitee may register via **email+password** or **federated login** (Google, Facebook, Apple) — same methods as Section 3.2.
+- **The invite token is bound to the email it was sent to.** Authentication with a different email rejects the token.
+- Email confirmation step: required for email+password; skipped for federated (identity pre-verified).
+
+#### Step 3 — Unit linkage
+
+Once authenticated, the invite token is consumed automatically:
+
+1. The user is linked to the unit with the designated role and `is_primary = true`.
+2. `onboarding_status` advances to `complete`.
+3. Full resident access to all modules included in the tenant's plan is granted.
+4. A **Resident does not need their own subscription** — access is inherited through the tenant's active subscription via the unit linkage.
+
+#### Step 4 — Inviting additional occupants
+
+The primary resident (`is_primary = true`) may invite additional people to the same unit:
+
+| Invitee type | Role granted | Access level |
+|---|---|---|
+| Co-resident (owner / tenant) | `resident_owner` or `resident_tenant` | Full resident access; `is_primary = false` |
+| Authorized person | `authorized_person` | QR credential generation + biometric photo upload only |
+
+Condo staff (`condo_syndic`, `condo_manager`, `condo_staff`) may also invite authorized persons directly without going through the primary resident.
+
+#### Multi-unit residency
+
+A single platform user may be linked to more than one unit, across the same condominium or across different condominiums. Each unit linkage carries its own role and `is_primary` flag independently.
+
+```
+[Invite email sent by condo staff / primary resident]
+      ↓
+[Invitee clicks invite link]
+      ↓
+[Registration / Login]  (email+password OR federated)
+      ↓
+[Identity Verification]  ← email path only; skipped for federated
+      ↓
+[Invite token consumed → unit linkage created]
+      ↓
+[onboarding_status = complete → operational access]
+```
 
 ---
 
@@ -281,6 +349,7 @@ The `onboarding_status` field on the `User` entity tracks funnel position:
 | `condo_staff` | L2 | Internal employee (superintendent, doorman); limited operational access |
 | `resident_owner` | L4/L5 | Unit owner; access to all resident-facing features |
 | `resident_tenant` | L4/L5 | Unit tenant; access to resident features excluding owner-only financial data |
+| `authorized_person` | L4/L5 | Person authorized by a resident; may generate QR code credential and upload biometric photo only; no operational module access |
 
 ### 4.2 Permission Inheritance Rules
 
@@ -288,6 +357,8 @@ The `onboarding_status` field on the `User` entity tracks funnel position:
 - `condo_syndic` has access only to the condominium(s) they are explicitly linked to.
 - A user may hold different roles in different condominiums (e.g., `condo_syndic` in Condo A, `condo_council` in Condo B).
 - Residents (`resident_owner`, `resident_tenant`) only access data for their own unit(s); they never access data from other units.
+- `authorized_person` access is strictly limited to credential management (QR code + biometric photo); they cannot view notices, financials, reservations, incidents, or any other module.
+- Each unit linkage carries an `is_primary` flag. Exactly one user per role type (`resident_owner` or `resident_tenant`) may hold `is_primary = true` per unit at a time; this user is the formal contact for that unit.
 - Cross-tenant access is strictly prohibited; no user of one tenant may access another tenant's data, not even `platform_support` without explicit, audited authorization.
 
 ### 4.3 Suspension Behavior for End Users
@@ -482,6 +553,7 @@ roles: [{
   tenant_id,
   condo_id?,
   unit_id?,
+  is_primary?,        -- true for the primary resident of a unit (one per role type per unit)
   starts_at, ends_at?
 }],
 notification_preferences: {channels, schedules, types}
@@ -793,6 +865,23 @@ status (in_progress | completed | with_discrepancies),
 report_url?
 ```
 
+### Entity: `ResidentInvite`
+
+```
+id, condo_id, tenant_id,
+unit_id,
+invited_by_id,
+invited_by_role (condo_syndic | condo_manager | condo_staff | resident_owner | resident_tenant),
+invitee_email,
+invitee_role (resident_owner | resident_tenant | authorized_person),
+is_primary (bool),          -- whether this invite grants primary residency on the unit
+token,                      -- unique, time-limited hash; single-use
+status (pending | accepted | expired | revoked),
+sent_at, expires_at,
+accepted_at?,
+revoked_by_id?, revoked_at?
+```
+
 ---
 
 ## 9. Business Rules
@@ -804,6 +893,7 @@ report_url?
 - **RN-COM-003:** Every formal notice (summons, delinquency, fines) must have a registered read receipt for legal proof purposes.
 - **RN-COM-004:** The history of all notices sent must be archived with date, time, recipients, and content.
 - **RN-COM-005:** Emergency alerts (water, gas, structural) must trigger simultaneously across all active channels (app + SMS + email).
+- **RN-COM-006:** Notices are delivered to users with `resident_owner` or `resident_tenant` roles on the target unit. Users with `authorized_person` role do not receive operational notices.
 
 ### 9.2 Space Reservations
 
@@ -816,6 +906,7 @@ report_url?
 - **RN-RES-007:** The reservation calendar must be publicly visible (free/occupied status only) without exposing the reservant's identity.
 - **RN-RES-008:** Reservations for dates more than 30 days in advance require confirmation within 7 days of the date.
 - **RN-RES-009:** Reservations on holidays or weekends may have different rules (fees, hours) as configured per condominium.
+- **RN-RES-010:** Only users with `resident_owner` or `resident_tenant` roles may make reservations. Users with `authorized_person` role cannot reserve common areas.
 
 ### 9.3 Incidents and Complaints
 
@@ -859,10 +950,11 @@ report_url?
 
 ### 9.7 Security and Access
 
-- **RN-SEG-001:** Facial biometrics require individual, explicit consent; an alternative access method must exist for those who decline.
+- **RN-SEG-001:** Facial biometrics require individual, explicit consent; an alternative access method must exist for those who decline. This rule applies to all users who upload biometric photos, including those with the `authorized_person` role.
 - **RN-SEG-002:** Camera footage may only be shared with authorities via formal request; never directly to unit owners.
 - **RN-SEG-003:** Visitor data must have a defined retention period and be deleted after the period.
 - **RN-SEG-004:** Cameras may not be positioned to capture private areas or apartment interiors.
+- **RN-SEG-005:** An `authorized_person`'s QR credential is valid only while their `ResidentInvite` status is `accepted` and their role linkage is active; revocation of the linkage immediately invalidates the credential.
 
 ### 9.8 Maintenance
 
@@ -937,6 +1029,19 @@ report_url?
 - **RN-ONB-007:** A `tenant_owner` may hold roles in other tenants' condominiums as a non-owner role (e.g., `condo_manager`); each subscription and each role assignment is independent.
 - **RN-ONB-008:** The plan's `max_condos` is enforced at condominium creation time; attempting to create a condominium beyond the limit is blocked with a clear upgrade prompt.
 
+### 9.16 Resident Onboarding and Invite
+
+- **RN-MOD-001:** The first (primary) resident invite for a unit must be issued by a user holding `condo_syndic`, `condo_manager`, or `condo_staff` role on that condominium.
+- **RN-MOD-002:** Each unit may have at most one active primary resident per role type (`resident_owner` or `resident_tenant`) at any time (`is_primary = true`).
+- **RN-MOD-003:** The primary resident of a unit may invite co-residents (`resident_owner` or `resident_tenant`, with `is_primary = false`) and authorized persons.
+- **RN-MOD-004:** A `ResidentInvite` token is single-use and expires 7 days after issuance; expired tokens cannot be redeemed and must be re-issued.
+- **RN-MOD-005:** The invite token is bound to the email address it was sent to; authentication with a different email rejects the token regardless of account type.
+- **RN-MOD-006:** Residents do not require their own subscription; access is inherited through the tenant's active subscription via the unit linkage. If the tenant's subscription is suspended, resident read access is preserved per RN-MT-006.
+- **RN-MOD-007:** A platform user may hold active unit linkages in multiple units across the same or different condominiums; each linkage is independent and carries its own role and `is_primary` flag.
+- **RN-MOD-008:** Removing a resident from a unit revokes all their role linkages to that unit and invalidates any associated credentials (QR codes, biometric enrollments) but preserves their platform account and any linkages to other units.
+- **RN-MOD-009:** The primary resident may revoke invites they issued. A `condo_syndic` or `condo_manager` may revoke any unit invite or resident linkage regardless of who issued it.
+- **RN-MOD-010:** `authorized_person` access is strictly limited to QR code credential generation and biometric photo upload. No operational modules (notices, reservations, financials, incidents, polls, assemblies) are accessible to this role.
+
 ---
 
 ## 10. Audit and Traceability
@@ -966,4 +1071,4 @@ success (bool), failure_reason?
 
 ---
 
-*Document for internal development use. Last review: May 2026 — v1.1 (added Section 3 User Registration and Onboarding; clarified Subscription as the L1 hierarchy layer; updated User entity with auth_provider and onboarding_status fields; added RN-ONB business rules).*
+*Document for internal development use. Last review: May 2026 — v1.2 (added Section 3.7 Resident and Authorized Person Onboarding; added `authorized_person` role; added `is_primary` flag to User.roles; added `ResidentInvite` entity; added RN-MOD business rules; added RN-COM-006, RN-RES-010, RN-SEG-005 for cross-module impact).*

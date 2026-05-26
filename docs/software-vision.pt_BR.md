@@ -171,7 +171,12 @@ Encerramento: exportação de dados disponibilizada → dados retidos pelo perí
 
 ### 3.1 Visão Geral do Funil de Onboarding
 
-Todo novo usuário percorre um funil linear. Nenhum acesso operacional é concedido até que a assinatura esteja ativa e o primeiro condomínio esteja configurado.
+Esta seção cobre dois fluxos de onboarding distintos:
+
+- **Seções 3.2–3.6:** Funil do proprietário de conta (síndicos, gestores, administradoras) — inicia na landing page pública; exige assinatura.
+- **Seção 3.7:** Funil de moradores e pessoas autorizadas — inicia a partir de um convite enviado dentro de um condomínio ativo; não exige assinatura.
+
+**Funil do proprietário de conta.** Todo novo proprietário de conta percorre um funil linear. Nenhum acesso operacional é concedido até que a assinatura esteja ativa e o primeiro condomínio esteja configurado.
 
 ```
 [Landing Page]
@@ -259,9 +264,72 @@ O campo `onboarding_status` na entidade `User` rastreia a posição do usuário 
 | Status | Significado |
 |---|---|
 | `pending_verification` | Cadastrado via e-mail+senha; e-mail ainda não confirmado |
-| `pending_subscription` | Identidade verificada (ou federada); sem assinatura ativa |
-| `onboarding` | Assinatura ativa; assistente do primeiro condomínio não concluído |
-| `complete` | Ao menos um condomínio configurado; acesso operacional completo concedido |
+| `pending_subscription` | Identidade verificada (ou federada); sem assinatura ativa — aplica-se apenas a proprietários de conta |
+| `onboarding` | Assinatura ativa; assistente do primeiro condomínio não concluído — aplica-se apenas a proprietários de conta |
+| `complete` | Acesso operacional completo concedido (proprietário de conta: primeiro condomínio configurado; morador: convite aceito) |
+
+> Moradores convidados via Seção 3.7 pulam `pending_subscription` e `onboarding` inteiramente. Após verificação de identidade (ou login federado) e aceitação do convite, o status avança diretamente para `complete`.
+
+---
+
+### 3.7 Onboarding de Moradores e Pessoas Autorizadas
+
+Este fluxo é acionado inteiramente de dentro de um condomínio ativo, não pela landing page pública. Não requer assinatura nem pagamento.
+
+#### Passo 1 — Convite pela equipe do condomínio
+
+Um usuário com papel `condo_syndic`, `condo_manager` ou `condo_staff` envia um convite por e-mail ao morador principal da unidade.
+
+- O convite especifica a unidade-alvo e o papel a ser concedido (`resident_owner` ou `resident_tenant`).
+- Apenas um usuário por tipo de papel pode ter `is_primary = true` em uma unidade por vez.
+- O sistema cria um registro `ResidentInvite` vinculado ao endereço de e-mail do convidado.
+
+#### Passo 2 — Cadastro / login
+
+O convidado recebe um e-mail com um link de convite único e com validade limitada.
+
+- Clicar no link abre a tela de cadastro ou login da plataforma com o token de convite pré-carregado.
+- O convidado pode se cadastrar via **e-mail+senha** ou **login federado** (Google, Facebook, Apple) — mesmos métodos da Seção 3.2.
+- **O token de convite está vinculado ao e-mail para o qual foi enviado.** Autenticação com outro e-mail rejeita o token.
+- Confirmação de e-mail: obrigatória para e-mail+senha; ignorada para federado (identidade pré-verificada).
+
+#### Passo 3 — Vinculação à unidade
+
+Após autenticação, o token de convite é consumido automaticamente:
+
+1. O usuário é vinculado à unidade com o papel designado e `is_primary = true`.
+2. `onboarding_status` avança para `complete`.
+3. Acesso completo de morador a todos os módulos incluídos no plano do tenant é concedido.
+4. **O morador não precisa de assinatura própria** — o acesso é herdado pela assinatura ativa do tenant via vínculo com a unidade.
+
+#### Passo 4 — Convidar ocupantes adicionais
+
+O morador principal (`is_primary = true`) pode convidar outras pessoas para a mesma unidade:
+
+| Tipo do convidado | Papel concedido | Nível de acesso |
+|---|---|---|
+| Comorador (proprietário / inquilino) | `resident_owner` ou `resident_tenant` | Acesso completo de morador; `is_primary = false` |
+| Pessoa autorizada | `authorized_person` | Geração de credencial QR Code + upload de foto biométrica apenas |
+
+A equipe do condomínio (`condo_syndic`, `condo_manager`, `condo_staff`) também pode convidar pessoas autorizadas diretamente, sem passar pelo morador principal.
+
+#### Residência em múltiplas unidades
+
+Um único usuário da plataforma pode estar vinculado a mais de uma unidade, no mesmo condomínio ou em condomínios diferentes. Cada vínculo de unidade carrega seu próprio papel e flag `is_primary` de forma independente.
+
+```
+[E-mail de convite enviado pela equipe do condomínio / morador principal]
+      ↓
+[Convidado clica no link do convite]
+      ↓
+[Cadastro / Login]  (e-mail+senha OU login federado)
+      ↓
+[Verificação de Identidade]  ← apenas para e-mail+senha; ignorada para federado
+      ↓
+[Token de convite consumido → vínculo com a unidade criado]
+      ↓
+[onboarding_status = complete → acesso operacional]
+```
 
 ---
 
@@ -282,6 +350,7 @@ O campo `onboarding_status` na entidade `User` rastreia a posição do usuário 
 | `condo_staff` | L2 | Funcionário interno (zelador, porteiro); acesso operacional limitado |
 | `resident_owner` | L4/L5 | Proprietário de unidade; acesso a todos os recursos do morador |
 | `resident_tenant` | L4/L5 | Inquilino de unidade; acesso a recursos do morador exceto dados financeiros exclusivos do proprietário |
+| `authorized_person` | L4/L5 | Pessoa autorizada por um morador; pode apenas gerar credencial QR Code e fazer upload de foto biométrica; sem acesso a módulos operacionais |
 
 ### 4.2 Regras de Herança de Permissão
 
@@ -289,6 +358,8 @@ O campo `onboarding_status` na entidade `User` rastreia a posição do usuário 
 - `condo_syndic` tem acesso apenas ao(s) condomínio(s) ao(s) qual(is) está explicitamente vinculado.
 - Um usuário pode ter papéis diferentes em condomínios distintos (ex: `condo_syndic` no Condomínio A, `condo_council` no Condomínio B).
 - Moradores (`resident_owner`, `resident_tenant`) acessam apenas dados da(s) própria(s) unidade(s); nunca dados de outras unidades.
+- O acesso de `authorized_person` é estritamente limitado ao gerenciamento de credencial (QR Code + foto biométrica); sem acesso a comunicados, financeiro, reservas, ocorrências ou qualquer outro módulo.
+- Cada vínculo de unidade possui uma flag `is_primary`. Exatamente um usuário por tipo de papel (`resident_owner` ou `resident_tenant`) pode ter `is_primary = true` por unidade por vez; esse usuário é o contato formal da unidade.
 - Acesso entre tenants é estritamente proibido; nenhum usuário de um tenant pode acessar dados de outro, nem mesmo `platform_support` sem autorização explícita e auditada.
 
 ### 4.3 Comportamento na Suspensão para Usuários Finais
@@ -487,6 +558,7 @@ roles: [{
   tenant_id,
   condo_id?,
   unit_id?,
+  is_primary?,        -- true para o morador principal de uma unidade (um por tipo de papel por unidade)
   starts_at, ends_at?
 }],
 notification_preferences: {channels, schedules, types}
@@ -798,6 +870,23 @@ status (in_progress | completed | with_discrepancies),
 report_url?
 ```
 
+### Entidade: `ResidentInvite`
+
+```
+id, condo_id, tenant_id,
+unit_id,
+invited_by_id,
+invited_by_role (condo_syndic | condo_manager | condo_staff | resident_owner | resident_tenant),
+invitee_email,
+invitee_role (resident_owner | resident_tenant | authorized_person),
+is_primary (bool),          -- se este convite concede a residência principal na unidade
+token,                      -- hash único com validade limitada; uso único
+status (pending | accepted | expired | revoked),
+sent_at, expires_at,
+accepted_at?,
+revoked_by_id?, revoked_at?
+```
+
 ---
 
 ## 9. Regras de Negócio
@@ -809,6 +898,7 @@ report_url?
 - **RN-COM-003:** Todo comunicado formal (convocação, inadimplência, multas) deve ter confirmação de leitura registrada para fins de comprovação legal.
 - **RN-COM-004:** O histórico de todos os comunicados enviados deve ser arquivado com data, hora, destinatários e conteúdo.
 - **RN-COM-005:** Alertas de emergência (água, gás, estrutura) devem disparar simultaneamente em todos os canais ativos (app + SMS + e-mail).
+- **RN-COM-006:** Comunicados são entregues a usuários com papel `resident_owner` ou `resident_tenant` na unidade-alvo. Usuários com papel `authorized_person` não recebem comunicados operacionais.
 
 ### 9.2 Reserva de Espaços
 
@@ -821,6 +911,7 @@ report_url?
 - **RN-RES-007:** O calendário de disponibilidade deve ser público (livre/ocupado) sem expor a identidade do reservante.
 - **RN-RES-008:** Reservas para datas com mais de 30 dias de antecedência requerem confirmação em até 7 dias antes da data.
 - **RN-RES-009:** Reservas em feriados ou fins de semana podem ter regras distintas (taxas, horários) configuráveis por condomínio.
+- **RN-RES-010:** Apenas usuários com papel `resident_owner` ou `resident_tenant` podem realizar reservas. Usuários com papel `authorized_person` não podem reservar áreas comuns.
 
 ### 9.3 Ocorrências e Reclamações
 
@@ -864,10 +955,11 @@ report_url?
 
 ### 9.7 Segurança e Acesso
 
-- **RN-SEG-001:** O uso de biometria facial exige consentimento individual e explícito; deve haver meio alternativo de acesso para quem recusar.
+- **RN-SEG-001:** O uso de biometria facial exige consentimento individual e explícito; deve haver meio alternativo de acesso para quem recusar. Esta regra aplica-se a todos os usuários que fazem upload de foto biométrica, inclusive aqueles com papel `authorized_person`.
 - **RN-SEG-002:** Imagens de câmeras só podem ser compartilhadas com autoridades via requisição formal; nunca diretamente a condôminos.
 - **RN-SEG-003:** Dados de visitantes devem ter prazo de retenção definido e ser excluídos após o período.
 - **RN-SEG-004:** Câmeras não podem ser posicionadas de modo a capturar áreas privativas ou interior dos apartamentos.
+- **RN-SEG-005:** A credencial QR Code de uma `authorized_person` é válida apenas enquanto o status do `ResidentInvite` for `accepted` e o vínculo de papel estiver ativo; a revogação do vínculo invalida a credencial imediatamente.
 
 ### 9.8 Manutenção
 
@@ -942,6 +1034,19 @@ report_url?
 - **RN-ONB-007:** Um `tenant_owner` pode ter papéis em condomínios de outros tenants como papel não-proprietário (ex: `condo_manager`); cada assinatura e cada atribuição de papel são independentes.
 - **RN-ONB-008:** O `max_condos` do plano é verificado no momento da criação do condomínio; tentativas de criar condomínios além do limite são bloqueadas com prompt claro de upgrade.
 
+### 9.16 Onboarding e Convite de Moradores
+
+- **RN-MOD-001:** O primeiro convite de morador principal de uma unidade deve ser emitido por um usuário com papel `condo_syndic`, `condo_manager` ou `condo_staff` naquele condomínio.
+- **RN-MOD-002:** Cada unidade pode ter no máximo um morador principal ativo por tipo de papel (`resident_owner` ou `resident_tenant`) por vez (`is_primary = true`).
+- **RN-MOD-003:** O morador principal de uma unidade pode convidar comoradores (`resident_owner` ou `resident_tenant`, com `is_primary = false`) e pessoas autorizadas.
+- **RN-MOD-004:** Um token `ResidentInvite` é de uso único e expira 7 dias após a emissão; tokens expirados não podem ser resgatados e devem ser re-emitidos.
+- **RN-MOD-005:** O token de convite está vinculado ao endereço de e-mail para o qual foi enviado; autenticação com outro e-mail rejeita o token independentemente do tipo de conta.
+- **RN-MOD-006:** Moradores não precisam de assinatura própria; o acesso é herdado pela assinatura ativa do tenant via vínculo com a unidade. Se a assinatura do tenant for suspensa, o acesso de leitura dos moradores é preservado conforme RN-MT-006.
+- **RN-MOD-007:** Um usuário da plataforma pode ter vínculos de unidade ativos em múltiplas unidades, no mesmo condomínio ou em condomínios diferentes; cada vínculo é independente e possui seu próprio papel e flag `is_primary`.
+- **RN-MOD-008:** A remoção de um morador de uma unidade revoga todos os vínculos de papel dele naquela unidade e invalida as credenciais associadas (QR Codes, matrículas biométricas), mas preserva a conta na plataforma e eventuais vínculos com outras unidades.
+- **RN-MOD-009:** O morador principal pode revogar convites que emitiu. Um `condo_syndic` ou `condo_manager` pode revogar qualquer convite ou vínculo de morador de uma unidade, independentemente de quem o emitiu.
+- **RN-MOD-010:** O acesso de `authorized_person` é estritamente limitado a geração de credencial QR Code e upload de foto biométrica. Nenhum módulo operacional (comunicados, reservas, financeiro, ocorrências, enquetes, assembleias) é acessível para este papel.
+
 ---
 
 ## 10. Auditoria e Rastreabilidade
@@ -971,4 +1076,4 @@ success (bool), failure_reason?
 
 ---
 
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.1 (adicionada Seção 3 Cadastro e Onboarding de Usuários; hierarquia L1 renomeada para Conta de Assinatura; entidade User atualizada com campos auth_provider e onboarding_status; adicionadas regras de negócio RN-ONB).*
+*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.2 (adicionada Seção 3.7 Onboarding de Moradores e Pessoas Autorizadas; adicionado papel `authorized_person`; adicionada flag `is_primary` em User.roles; adicionada entidade `ResidentInvite`; adicionadas regras RN-MOD; adicionadas RN-COM-006, RN-RES-010, RN-SEG-005 para impacto entre módulos).*
