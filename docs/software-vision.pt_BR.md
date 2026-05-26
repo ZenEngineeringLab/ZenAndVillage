@@ -126,10 +126,17 @@ Toda conta L1 é a mesma entidade no modelo de dados. O que diferencia um síndi
 
 ### 2.5 Ciclo de Vida do Tenant
 
+> **Versão atual — sem integração com broker de pagamentos.** A ativação da assinatura é realizada manualmente por um `platform_admin` após análise da solicitação. Não há processamento automatizado de pagamentos.
+
 ```
-Cadastro → Verificação de Identidade → Seleção de Plano & Checkout
+Cadastro → Verificação de Identidade → Seleção de Plano & Envio
       ↓
-Conta Ativada  (status: trial ou active)
+Solicitação de Assinatura Enviada  (status: pending_approval)
+      ↓
+Análise pelo Platform Admin
+      ↓ aprovado                         ↓ rejeitado
+Conta Ativada                       Rejeição com motivo
+(status: trial ou active)           (usuário pode reenviar)
       ↓
 Assistente de Configuração do Primeiro Condomínio
       ↓
@@ -147,8 +154,9 @@ Encerramento: exportação de dados → dados retidos pelo período contratual �
 
 | Status | Descrição | Capacidades |
 |---|---|---|
-| `trial` | Período gratuito de avaliação | Acesso completo com limites reduzidos |
-| `active` | Assinatura ativa e em dia | Acesso completo conforme plano |
+| `pending_approval` | Plano selecionado; aguardando aprovação do platform admin | Nenhuma; usuário vê tela de confirmação de pendência |
+| `trial` | Período de avaliação aprovado | Acesso completo com limites reduzidos |
+| `active` | Assinatura aprovada e ativa | Acesso completo conforme plano |
 | `delinquent` | Pagamento vencido; dentro do período de carência | Acesso completo; avisos de cobrança exibidos |
 | `suspended` | Carência encerrada sem pagamento | Somente leitura; sem criação ou edição |
 | `canceled` | Cancelamento solicitado | Apenas exportação de dados; sem acesso operacional |
@@ -191,7 +199,7 @@ public (bool)
 id, name, type (management_company | independent_condo),
 tax_id (cnpj), contact_email, phone,
 responsible_name, responsible_email,
-plan_id, subscription_status (trial | active | delinquent | canceled | suspended),
+plan_id, subscription_status (pending_approval | trial | active | delinquent | canceled | suspended),
 subscription_start_date, trial_end_date?,
 billing_cycle (monthly | annual),
 white_label_config?: {
@@ -206,14 +214,20 @@ status (active | suspended | canceled)
 
 ```
 id, tenant_id, plan_id,
-starts_at, ends_at?,
+requested_at,
+starts_at?, ends_at?,
 cycle (monthly | annual),
-contracted_amount, discount?,
-status (trial | active | expired | canceled),
+contracted_amount?, discount?,
+status (pending_approval | trial | active | rejected | expired | canceled),
+approved_by_id?,         -- usuário platform_admin que aprovou ou rejeitou
+approved_at?,
+rejection_reason?,       -- preenchido quando status = rejected
+payment_method?,         -- informativo apenas; sem processamento automatizado na versão atual
 payment_history: [{date, amount, status, reference}],
-next_billing_date?,
-payment_method (card | bank_slip | pix | transfer)
+next_billing_date?
 ```
+
+> **Observação:** `payment_method` é coletado para fins de registro e integração futura com um broker de pagamentos. Na versão atual, a ativação é realizada manualmente pelo `platform_admin` e este campo não é processado automaticamente.
 
 ### 2.7 White-Label & Personalização
 
@@ -329,9 +343,13 @@ Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma 
       ↓
 [Verificação de Identidade]  ← apenas para e-mail+senha; ignorada para federado
       ↓
-[Seleção de Plano & Checkout]
+[Seleção de Plano & Envio]
       ↓
-[Conta Ativada]   (registros de Tenant + Subscription criados)
+[Solicitação de Assinatura Enviada]  (onboarding_status = pending_approval)
+      ↓
+[Platform Admin Analisa e Aprova]   ← etapa manual; sem broker de pagamentos
+      ↓
+[Conta Ativada]   (usuário notificado por e-mail)
       ↓
 [Assistente de Configuração do Primeiro Condomínio]
       ↓
@@ -354,13 +372,26 @@ Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma 
 4. A identidade é pré-verificada; a confirmação de e-mail é ignorada.
 5. Se o e-mail retornado pertencer a uma conta local existente, o usuário deve vincular as contas explicitamente — nenhuma fusão silenciosa ocorre.
 
-**Gate de assinatura:** Após autenticação, usuários sem assinatura ativa são direcionados para a seleção de plano. Nenhum condomínio pode ser criado ou acessado até que um plano seja selecionado e o pagamento confirmado (ou trial ativado).
+**Gate de assinatura:** Após autenticação, usuários sem assinatura ativa são direcionados para a seleção de plano. Nenhum condomínio pode ser criado ou acessado até que a solicitação de assinatura seja aprovada pelo platform admin.
 
-**Ativação da conta:** Após pagamento (ou trial):
-1. Um registro `Tenant` é criado; o usuário é vinculado como `tenant_owner`.
-2. Um registro `Subscription` é criado (`status = trial` ou `active`).
+**Envio da solicitação de assinatura:** Após seleção e envio do plano:
+1. Um registro `Tenant` é criado com `subscription_status = pending_approval`; o usuário é vinculado como `tenant_owner`.
+2. Um registro `Subscription` é criado com `status = pending_approval` e timestamp `requested_at`.
+3. `onboarding_status` avança para `pending_approval`.
+4. O `platform_admin` recebe uma notificação da nova solicitação.
+5. O usuário vê uma tela de confirmação informando que a solicitação está em análise manual; nenhum acesso operacional é concedido durante esse período.
+
+**Ativação da conta — pelo platform admin:** Após aprovação:
+1. O `platform_admin` define `Subscription.status` como `trial` ou `active` e registra `approved_by_id` e `approved_at`.
+2. `Tenant.subscription_status` é atualizado de acordo.
 3. `onboarding_status` avança para `onboarding`.
-4. O usuário é redirecionado para o Assistente de Configuração do Primeiro Condomínio.
+4. O usuário é notificado por e-mail de que sua conta está ativa e pode prosseguir.
+5. O usuário é redirecionado para o Assistente de Configuração do Primeiro Condomínio no próximo login.
+
+**Rejeição:** Se o platform admin rejeitar a solicitação:
+1. `Subscription.status` é definido como `rejected`; `rejection_reason` é registrado.
+2. O usuário é notificado por e-mail com o motivo da rejeição.
+3. `onboarding_status` retorna para `pending_subscription` para que o usuário possa selecionar outro plano e reenviar.
 
 **Assistente de Configuração do Primeiro Condomínio:**
 1. Identidade do condomínio: nome, CNPJ (opcional), endereço, cidade, estado.
@@ -409,8 +440,9 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 | Status | Significado |
 |---|---|
 | `pending_verification` | Cadastrado via e-mail+senha; e-mail não confirmado |
-| `pending_subscription` | Identidade verificada (ou federada); sem assinatura ativa — apenas proprietários de conta |
-| `onboarding` | Assinatura ativa; assistente do primeiro condomínio não concluído — apenas proprietários de conta |
+| `pending_subscription` | Identidade verificada (ou federada); plano ainda não selecionado — apenas proprietários de conta |
+| `pending_approval` | Plano selecionado e enviado; aguardando aprovação do platform admin — apenas proprietários de conta |
+| `onboarding` | Assinatura aprovada; assistente do primeiro condomínio não concluído — apenas proprietários de conta |
 | `complete` | Acesso operacional completo concedido |
 
 ### 4.4 Taxonomia de Papéis
@@ -483,12 +515,16 @@ revoked_by_id?, revoked_at?
 
 ### 4.6 Regras de Negócio
 
-- **RN-ONB-001:** Um usuário sem assinatura ativa (`onboarding_status = pending_subscription`) não pode criar, acessar nem interagir com nenhum dado de condomínio.
+- **RN-ONB-001:** Um usuário com `onboarding_status` igual a `pending_subscription`, `pending_approval` ou `onboarding` (assistente não concluído) não pode criar, acessar nem interagir com nenhum dado de condomínio.
 - **RN-ONB-002:** Identidade federada é tratada como pré-verificada; a etapa de confirmação de e-mail é ignorada.
 - **RN-ONB-003:** Se um provedor federado retornar um e-mail já cadastrado como conta local, o usuário deve vincular as contas explicitamente; fusão silenciosa é proibida.
-- **RN-ONB-004:** A ativação do trial não exige dados de pagamento; a conversão para assinatura paga exige forma de pagamento válida antes do encerramento do trial.
+- **RN-ONB-004:** Não há processamento automatizado de pagamentos na versão atual. A ativação da assinatura é realizada manualmente pelo `platform_admin`; o campo `payment_method` é coletado para fins de registro e integração futura com broker de pagamentos.
 - **RN-ONB-005:** O Assistente de Configuração do Primeiro Condomínio deve ser concluído antes de acessar qualquer módulo operacional.
 - **RN-ONB-006:** O `max_condos` do plano é verificado no momento da criação do condomínio; tentativas de criar condomínios além do limite são bloqueadas com prompt claro de upgrade.
+- **RN-ONB-007:** Após a seleção do plano, a solicitação de assinatura entra em estado `pending_approval`; nenhum acesso operacional é concedido até que um `platform_admin` aprove explicitamente a solicitação.
+- **RN-ONB-008:** Apenas `platform_admin` pode aprovar ou rejeitar solicitações de assinatura; `platform_support` não possui essa capacidade.
+- **RN-ONB-009:** Na rejeição, o `rejection_reason` é obrigatório e é comunicado ao usuário por e-mail; o `onboarding_status` do usuário retorna para `pending_subscription` para que ele possa reenviar.
+- **RN-ONB-010:** A aprovação pelo `platform_admin` define `Subscription.status` como `trial` (avaliação) ou `active` (completo); a distinção fica a critério do admin com base no acordo comercial estabelecido.
 - **RN-MOD-001:** O primeiro convite de morador principal de uma unidade deve ser emitido por um usuário com papel `condo_syndic`, `condo_manager` ou `condo_staff`.
 - **RN-MOD-002:** Cada unidade pode ter no máximo um morador principal ativo por tipo de papel por vez (`is_primary = true`).
 - **RN-MOD-003:** O morador principal pode convidar comoradores e pessoas autorizadas para a mesma unidade.
@@ -1130,4 +1166,4 @@ success (bool), failure_reason?
 
 ---
 
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.3 (reestruturado com bounded contexts DDD; cada domínio agora é dono de suas entidades e regras de negócio; Seção 3 com Mapa de Domínios adicionada; domínio de Assembleia formalizado; OccupantTenant renomeado de Tenant para evitar colisão com o Tenant de plataforma; Employee movido para o domínio RH & Trabalhista).*
+*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.4 (fluxo de pagamento automatizado substituído por aprovação manual do platform admin; adicionado `pending_approval` em Tenant, Subscription e onboarding_status; entidade Subscription ganha approved_by_id, approved_at, rejection_reason; regras RN-ONB atualizadas para refletir modelo de ativação manual).*

@@ -125,10 +125,17 @@ Every L1 account is the same entity in the data model. What differentiates an in
 
 ### 2.5 Tenant Lifecycle
 
+> **Current version — no payment broker integration.** Subscription activation is performed manually by a `platform_admin` after reviewing the request. There is no automated payment processing.
+
 ```
-Registration → Identity Verification → Plan Selection & Checkout
+Registration → Identity Verification → Plan Selection & Submission
       ↓
-Account Activated  (status: trial or active)
+Subscription Request Submitted  (status: pending_approval)
+      ↓
+Platform Admin Review
+      ↓ approved                         ↓ rejected
+Account Activated                   Rejection with reason
+(status: trial or active)           (user may resubmit)
       ↓
 First Condominium Setup Wizard
       ↓
@@ -146,8 +153,9 @@ Closure: data export → data retained for contractual period → deletion
 
 | Status | Description | Capabilities |
 |---|---|---|
-| `trial` | Free evaluation period | Full access with reduced limits |
-| `active` | Active and current subscription | Full access per plan |
+| `pending_approval` | Plan selected; awaiting platform admin approval | None; user sees a pending confirmation screen |
+| `trial` | Approved free evaluation period | Full access with reduced limits |
+| `active` | Active and approved subscription | Full access per plan |
 | `delinquent` | Payment overdue; within grace period | Full access; billing warnings displayed |
 | `suspended` | Grace period ended without payment | Read-only; no creation or editing |
 | `canceled` | Cancellation requested | Data export only; no operational access |
@@ -188,7 +196,7 @@ public (bool)
 id, name, type (management_company | independent_condo),
 tax_id (cnpj), contact_email, phone,
 responsible_name, responsible_email,
-plan_id, subscription_status (trial | active | delinquent | canceled | suspended),
+plan_id, subscription_status (pending_approval | trial | active | delinquent | canceled | suspended),
 subscription_start_date, trial_end_date?,
 billing_cycle (monthly | annual),
 white_label_config?: {
@@ -203,14 +211,20 @@ status (active | suspended | canceled)
 
 ```
 id, tenant_id, plan_id,
-starts_at, ends_at?,
+requested_at,
+starts_at?, ends_at?,
 cycle (monthly | annual),
-contracted_amount, discount?,
-status (trial | active | expired | canceled),
+contracted_amount?, discount?,
+status (pending_approval | trial | active | rejected | expired | canceled),
+approved_by_id?,         -- platform_admin user who approved or rejected
+approved_at?,
+rejection_reason?,       -- populated when status = rejected
+payment_method?,         -- informational only; no automated processing in current version
 payment_history: [{date, amount, status, reference}],
-next_billing_date?,
-payment_method (card | bank_slip | pix | transfer)
+next_billing_date?
 ```
+
+> **Note:** `payment_method` is collected for record-keeping and future integration with a payment broker. In the current version, activation is performed manually by a `platform_admin` and this field is not processed automatically.
 
 ### 2.7 White-Label & Customization
 
@@ -326,9 +340,13 @@ Applies to syndics, managers, and administradoras who create and own a subscript
       ↓
 [Identity Verification]   ← email path only; skipped for federated
       ↓
-[Plan Selection & Checkout]
+[Plan Selection & Submission]
       ↓
-[Account Activated]   (Tenant + Subscription records created)
+[Subscription Request Submitted]  (onboarding_status = pending_approval)
+      ↓
+[Platform Admin Reviews and Approves]   ← manual step; no payment broker
+      ↓
+[Account Activated]   (user notified by email)
       ↓
 [First Condominium Setup Wizard]
       ↓
@@ -351,13 +369,26 @@ Applies to syndics, managers, and administradoras who create and own a subscript
 4. Identity is pre-verified; email confirmation step is skipped.
 5. If the returned email belongs to an existing local account, the user must explicitly link the provider — no silent account merge.
 
-**Subscription gate:** After authentication, users without an active subscription land on the plan selection screen. This is a hard gate; no condominium can be created or accessed until a plan is selected and payment is confirmed (or trial activated).
+**Subscription gate:** After authentication, users without an active subscription land on the plan selection screen. This is a hard gate; no condominium can be created or accessed until the subscription request is approved by the platform admin.
 
-**Account activation:** After payment (or trial):
-1. A `Tenant` record is created; user is linked as `tenant_owner`.
-2. A `Subscription` record is created (`status = trial` or `active`).
+**Subscription request:** After plan selection and submission:
+1. A `Tenant` record is created with `subscription_status = pending_approval`; user is linked as `tenant_owner`.
+2. A `Subscription` record is created with `status = pending_approval` and `requested_at` timestamp.
+3. `onboarding_status` advances to `pending_approval`.
+4. The `platform_admin` receives a notification of the new subscription request.
+5. User sees a confirmation screen informing them that their request is pending manual review; no operational access is granted during this period.
+
+**Account activation — by platform admin:** Upon approval:
+1. `platform_admin` sets `Subscription.status` to `trial` or `active` and records `approved_by_id` and `approved_at`.
+2. `Tenant.subscription_status` is updated accordingly.
 3. `onboarding_status` advances to `onboarding`.
-4. User is redirected to the First Condominium Setup Wizard.
+4. User is notified by email that their account is active and may proceed.
+5. User is redirected to the First Condominium Setup Wizard on next login.
+
+**Rejection:** If the platform admin rejects the request:
+1. `Subscription.status` is set to `rejected`; `rejection_reason` is recorded.
+2. User is notified by email with the rejection reason.
+3. `onboarding_status` returns to `pending_subscription` so the user may select a different plan and resubmit.
 
 **First Condominium Setup Wizard:**
 1. Condominium identity: name, CNPJ (optional), address, city, state.
@@ -406,8 +437,9 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 | Status | Meaning |
 |---|---|
 | `pending_verification` | Registered via email+password; email not yet confirmed |
-| `pending_subscription` | Identity verified (or federated); no active subscription yet — account owners only |
-| `onboarding` | Subscription active; first condominium wizard not yet completed — account owners only |
+| `pending_subscription` | Identity verified (or federated); plan not yet selected — account owners only |
+| `pending_approval` | Plan selected and submitted; awaiting platform admin approval — account owners only |
+| `onboarding` | Subscription approved; first condominium wizard not yet completed — account owners only |
 | `complete` | Full operational access granted |
 
 ### 4.4 Role Taxonomy
@@ -480,12 +512,16 @@ revoked_by_id?, revoked_at?
 
 ### 4.6 Business Rules
 
-- **RN-ONB-001:** A user without an active subscription (`onboarding_status = pending_subscription`) cannot create, access, or interact with any condominium data.
+- **RN-ONB-001:** A user with `onboarding_status` of `pending_subscription`, `pending_approval`, or `onboarding` (wizard not yet complete) cannot create, access, or interact with any condominium data.
 - **RN-ONB-002:** Federated identity is treated as pre-verified; the email confirmation step is skipped.
 - **RN-ONB-003:** If a federated provider returns an email already registered as a local account, the user must explicitly link the accounts; silent merging is prohibited.
-- **RN-ONB-004:** Trial activation does not require payment details; conversion to paid requires a valid payment method before trial ends.
+- **RN-ONB-004:** There is no automated payment processing in the current version. Subscription activation is performed manually by a `platform_admin`; the `payment_method` field is collected for record-keeping and future broker integration only.
 - **RN-ONB-005:** The First Condominium Setup Wizard must be completed before accessing any operational module.
 - **RN-ONB-006:** The plan's `max_condos` is enforced at condominium creation time; exceeding the limit is blocked with a clear upgrade prompt.
+- **RN-ONB-007:** After plan selection, the subscription request enters `pending_approval` state; no operational access is granted until a `platform_admin` explicitly approves the request.
+- **RN-ONB-008:** Only `platform_admin` may approve or reject subscription requests; `platform_support` does not have this capability.
+- **RN-ONB-009:** On rejection, the `rejection_reason` is mandatory and is communicated to the user by email; the user's `onboarding_status` returns to `pending_subscription` so they may resubmit.
+- **RN-ONB-010:** A `platform_admin` approval sets `Subscription.status` to `trial` (evaluation) or `active` (full); the distinction is at the admin's discretion based on the agreed commercial arrangement.
 - **RN-MOD-001:** The first primary resident invite for a unit must be issued by a user with `condo_syndic`, `condo_manager`, or `condo_staff` role.
 - **RN-MOD-002:** Each unit may have at most one active primary resident per role type (`resident_owner` or `resident_tenant`) at any time.
 - **RN-MOD-003:** The primary resident may invite co-residents and authorized persons to the same unit.
@@ -1127,4 +1163,4 @@ success (bool), failure_reason?
 
 ---
 
-*Document for internal development use. Last review: May 2026 — v1.3 (restructured using DDD bounded contexts; each domain now owns its entities and business rules; added Domain Map in Section 3; Assembly domain formalized; OccupantTenant renamed from Tenant to avoid collision with platform Tenant; Employee moved to HR & Labor domain).*
+*Document for internal development use. Last review: May 2026 — v1.4 (replaced automated payment flow with manual platform admin approval; added `pending_approval` to Tenant, Subscription, and onboarding_status; Subscription entity gains approved_by_id, approved_at, rejection_reason; updated RN-ONB rules to reflect manual activation model).*
