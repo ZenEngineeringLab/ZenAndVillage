@@ -116,7 +116,9 @@ A sidebar possui três zonas:
 | Expandida | Logo horizontal completo; variante clara (`/logo-light.svg`) em modo claro, variante escura (`/logo-dark.svg`) em modo escuro |
 | Recolhida | Logo ícone quadrado (`/logo-icon.svg`) |
 
-**Navegação principal (meio, flex-grow):** links para as funcionalidades principais.
+**Navegação principal (meio, flex-grow):** links para as funcionalidades principais. O conjunto de itens exibido depende do papel do usuário autenticado.
+
+*Navegação padrão (todos os papéis exceto `platform_admin`):*
 
 | Rótulo | Rota |
 |---|---|
@@ -126,6 +128,15 @@ A sidebar possui três zonas:
 | Condominiums | `/condominiums` |
 | Residents | `/residents` |
 | Employees | `/employees` |
+
+*Navegação do administrador de plataforma (somente papel `platform_admin`) — substitui integralmente o conjunto padrão:*
+
+| Rótulo | Rota |
+|---|---|
+| Visão Geral | `/admin` |
+| Solicitações de Assinatura | `/admin/subscriptions` |
+| Tenants | `/admin/tenants` |
+| Planos | `/admin/plans` |
 
 **Navegação utilitária (rodapé, acima de um separador):**
 
@@ -195,6 +206,69 @@ Rota: `/`. Página de destino padrão após o login. Trata-se de uma **visão ge
 | **Análise (três colunas iguais)** | Donut: status financeiro dos moradores (adimplentes vs. inadimplentes). Donut: tipos de condomínio (residencial / comercial / misto). Barra horizontal: distribuição de funções de funcionários. |
 
 Todas as cores dos gráficos utilizam os cinco tokens de paleta de gráficos, sobrescritos pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
+
+### 2.8 Área do Administrador de Plataforma
+
+Prefixo de rota: `/admin`. Acessível exclusivamente a usuários com o papel `platform_admin`. O shell padrão (cabeçalho, barra lateral, preferências) é compartilhado; apenas o conjunto de navegação da barra lateral muda (ver §2.3). Se qualquer usuário sem o papel `platform_admin` navegar para uma rota sob `/admin`, será redirecionado para `/` e um toast de acesso negado (403) será exibido.
+
+#### Tela: `/admin` — Visão Geral
+
+Página inicial padrão do `platform_admin` após o login. O layout segue a estrutura do dashboard padrão (§2.7), mas com métricas de plataforma.
+
+| Linha | Componentes |
+|---|---|
+| **Cards KPI** | Quatro cards de largura igual: Aprovações Pendentes (contador com acento destrutivo quando > 0), Tenants Ativos, Tenants em Trial, Tenants Suspensos |
+| **Solicitações recentes** | Lista de largura completa das 10 solicitações de assinatura mais recentes, ordenadas por `requested_at` decrescente; cada linha exibe nome do tenant, nome do responsável, plano e badge de status; clicar navega para `/admin/subscriptions` com aquele registro pré-selecionado |
+
+#### Tela: `/admin/subscriptions` — Solicitações de Assinatura
+
+Lista filtrável e paginada de todos os registros de `Subscription`.
+
+**Colunas da lista:** nome do tenant, nome do responsável, plano, ciclo de cobrança, `requested_at`, badge de status.
+
+**Filtro padrão:** `status = pending_approval`. O usuário pode alternar para Todos, Aprovados, Rejeitados.
+
+**Painel de detalhe:** Um sheet lateral direito (448 px) é aberto ao selecionar uma linha. Exibe:
+
+| Seção | Campos exibidos |
+|---|---|
+| Tenant | name, type, tax_id (CNPJ), contact_email, phone, responsible_name, responsible_email |
+| Assinatura | nome do plano, billing_cycle, requested_at, payment_method (somente leitura) |
+| Ações | Disponíveis somente quando `status = pending_approval` (ver abaixo) |
+
+**Ação de aprovação:** Dois botões separados — "Aprovar como Trial" e "Aprovar como Ativo". Cada opção requer confirmação via diálogo. Ao confirmar: `Subscription.status` é atualizado, `approved_by_id` e `approved_at` são registrados, `Tenant.subscription_status` é atualizado e o usuário recebe e-mail de ativação. O painel fecha e a lista é atualizada.
+
+**Ação de rejeição:** Botão "Rejeitar" (estilo destrutivo). Abre um diálogo com um campo de texto `rejection_reason` obrigatório (mínimo 20 caracteres). Ao confirmar: `Subscription.status = rejected`, `rejection_reason` é armazenado, o usuário recebe e-mail de rejeição com o motivo e `User.onboarding_status` retorna para `pending_subscription`.
+
+#### Tela: `/admin/tenants` — Gerenciamento de Tenants
+
+Lista cross-tenant completa de todos os registros de `Tenant`. Este é o único contexto na aplicação onde registros de múltiplos tenants são exibidos simultaneamente.
+
+**Colunas da lista:** name, type, nome do plano, badge de subscription_status, condôminos ativos / máximo de condôminos, created_at.
+
+**Filtros:** subscription_status (Todos, Ativo, Trial, Inadimplente, Suspenso, Cancelado), type (Todos, Administradora, Condomínio Independente).
+
+**Painel de detalhe:** Sheet lateral direito (448 px) com todos os campos da entidade `Tenant` (somente leitura). Abaixo dos campos, uma seção **Ações de Status** exibe apenas as transições válidas a partir do estado atual:
+
+| Status atual | Ações disponíveis |
+|---|---|
+| `active` | Suspender (com motivo), Cancelar (com motivo) |
+| `trial` | Ativar (converte para `active`), Suspender (com motivo), Cancelar (com motivo) |
+| `delinquent` | Ativar (limpa inadimplência), Suspender (com motivo) |
+| `suspended` | Reativar (retorna para `active`) |
+| `canceled` | — (estado terminal; nenhuma ação disponível) |
+
+Todas as ações de mudança de status abrem um diálogo de confirmação. "Motivo" é opcional para Ativar/Reativar; obrigatório (mínimo 10 caracteres) para Suspender e Cancelar. O motivo é armazenado em um `status_change_log` no registro do Tenant e exibido em uma seção de histórico no painel de detalhe.
+
+#### Tela: `/admin/plans` — Gerenciamento de Planos
+
+Lista de todos os registros de `Plan`, incluindo os `discontinued`.
+
+**Colunas da lista:** name, monthly_price, annual_price, max_condos, support_level, badge de status, badge público.
+
+**Formulário de criação / edição** (sheet, 448 px): todos os campos da entidade `Plan`. O toggle `public` controla se o plano aparece na tela de seleção de plano do fluxo de auto-cadastro.
+
+**Ação de descontinuar:** substitui o botão "Excluir". Um plano não pode ser excluído permanentemente — apenas definido como `discontinued`. O diálogo de confirmação avisa que novas assinaturas neste plano serão bloqueadas, mas os assinantes existentes não serão afetados.
 
 ---
 
@@ -376,6 +450,16 @@ next_billing_date?
 - **RN-CT-002:** Relatórios consolidados só agregam dados dentro do mesmo tenant.
 - **RN-CT-003:** Um condomínio não pode ser transferido entre tenants sem processo formal de migração e consentimento por escrito do síndico responsável.
 - **RN-CT-004:** A plataforma (L0) pode acessar dados de qualquer tenant apenas para fins de suporte, com registro imutável de auditoria.
+
+### 3.8 Regras de Negócio — Operações do Administrador de Plataforma
+
+- **RN-ADM-001:** Apenas usuários com o papel `platform_admin` podem acessar qualquer rota sob `/admin`. Qualquer outro papel que tente navegar para lá é redirecionado para `/` com um toast de acesso negado (403); os itens de navegação do administrador de plataforma nunca são renderizados na barra lateral para papéis não-admin.
+- **RN-ADM-002:** Uma ação de aprovação deve especificar `trial` ou `active` como o `Subscription.status` resultante; o administrador não pode deixar o status ambíguo. A escolha reflete o acordo comercial firmado e fica a critério do administrador.
+- **RN-ADM-003:** Uma ação de rejeição exige um `rejection_reason` não vazio de pelo menos 20 caracteres. O motivo é armazenado no registro de `Subscription` e comunicado ao usuário por e-mail de forma literal.
+- **RN-ADM-004:** Um registro de `Plan` não pode ser excluído permanentemente. Definir um plano como `discontinued` impede novas assinaturas, mas não altera nenhum registro existente de `Subscription` ou `Tenant`.
+- **RN-ADM-005:** `canceled` é um `Tenant.subscription_status` terminal. Nenhuma ação do administrador pode retornar um tenant cancelado a qualquer estado ativo; uma nova solicitação de assinatura deve ser enviada.
+- **RN-ADM-006:** Todas as transições de status iniciadas pelo administrador em um registro de `Tenant` devem produzir uma entrada imutável em um `status_change_log` contendo: ator (id do usuário `platform_admin`), status anterior, novo status, timestamp e motivo (quando fornecido). Esse log é exibido em modo somente leitura no painel de detalhe do tenant e alimenta o domínio de Auditoria & Rastreabilidade (§18).
+- **RN-ADM-007:** A lista `/admin/tenants` é o único contexto na aplicação que renderiza registros pertencentes a mais de um tenant simultaneamente. Todas as outras telas aplicam escopo por tenant único.
 
 ---
 

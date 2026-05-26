@@ -115,7 +115,9 @@ The sidebar has three zones:
 | Expanded | Full horizontal logo; light variant (`/logo-light.svg`) in light mode, dark variant (`/logo-dark.svg`) in dark mode |
 | Collapsed | Square icon-only logo (`/logo-icon.svg`) |
 
-**Main navigation (middle, flex-grow):** primary feature links.
+**Main navigation (middle, flex-grow):** primary feature links. The set of items rendered depends on the authenticated user's role.
+
+*Standard navigation (all roles except `platform_admin`):*
 
 | Label | Route |
 |---|---|
@@ -125,6 +127,15 @@ The sidebar has three zones:
 | Condominiums | `/condominiums` |
 | Residents | `/residents` |
 | Employees | `/employees` |
+
+*Platform admin navigation (role `platform_admin` only) — replaces the standard set entirely:*
+
+| Label | Route |
+|---|---|
+| Overview | `/admin` |
+| Subscription Requests | `/admin/subscriptions` |
+| Tenants | `/admin/tenants` |
+| Plans | `/admin/plans` |
 
 **Utility navigation (bottom, above a separator):**
 
@@ -194,6 +205,69 @@ Route: `/`. Default landing page after login. This is a **platform-level overvie
 | **Analytics (three equal columns)** | Donut: resident financial status (current vs. delinquent). Donut: condominium types (residential / commercial / mixed). Horizontal bar: employee roles breakdown. |
 
 All chart colors use the five chart palette tokens, overridden by the active color preset so charts respond correctly to all theme choices.
+
+### 2.8 Platform Admin Area
+
+Route prefix: `/admin`. Accessible exclusively to users with the `platform_admin` role. The standard shell (header, sidebar, preferences) is shared; only the sidebar navigation set changes (see §2.3). If any non-`platform_admin` user navigates to a route under `/admin`, they are redirected to `/` and a 403 access-denied toast is displayed.
+
+#### Screen: `/admin` — Overview
+
+The default landing page for `platform_admin` after login. Layout mirrors the standard dashboard structure (§2.7) but with platform-level metrics.
+
+| Row | Components |
+|---|---|
+| **KPI cards** | Four equal-width cards: Pending Approvals (count, destructive accent when > 0), Active Tenants, Trial Tenants, Suspended Tenants |
+| **Recent requests** | Full-width list of the 10 most recent subscription requests sorted by `requested_at` descending; each row shows tenant name, responsible name, plan, and status badge; clicking navigates to `/admin/subscriptions` with that record pre-selected |
+
+#### Screen: `/admin/subscriptions` — Subscription Requests
+
+Filterable, paginated list of all `Subscription` records.
+
+**List columns:** Tenant name, responsible name, plan, billing cycle, `requested_at`, status badge.
+
+**Default filter:** `status = pending_approval`. User may switch to All, Approved, Rejected.
+
+**Detail panel:** A right-side sheet (448 px) opens when a row is selected. It displays:
+
+| Section | Fields shown |
+|---|---|
+| Tenant | name, type, tax_id (CNPJ), contact_email, phone, responsible_name, responsible_email |
+| Subscription | plan name, billing_cycle, requested_at, payment_method (read-only) |
+| Actions | Available only when `status = pending_approval` (see below) |
+
+**Approval action:** A split button or two separate buttons — "Approve as Trial" and "Approve as Active". Either option requires confirmation via a dialog. On confirm: `Subscription.status` is updated, `approved_by_id` and `approved_at` are recorded, `Tenant.subscription_status` is updated, and the user receives an activation email. The detail panel closes and the list refreshes.
+
+**Rejection action:** A "Reject" button (destructive styling). Opens a dialog with a required `rejection_reason` text area (minimum 20 characters). On confirm: `Subscription.status = rejected`, `rejection_reason` is stored, the user receives a rejection email with the reason, and `User.onboarding_status` reverts to `pending_subscription`.
+
+#### Screen: `/admin/tenants` — Tenant Management
+
+Full cross-tenant list of all `Tenant` records. This is the only context in the application where records from multiple tenants are displayed simultaneously.
+
+**List columns:** name, type, plan name, subscription_status badge, active condos / max condos, created_at.
+
+**Filters:** subscription_status (All, Active, Trial, Delinquent, Suspended, Canceled), type (All, Management Company, Independent).
+
+**Detail panel:** A right-side sheet (448 px) with all `Tenant` entity fields (read-only). Below the fields, a **Status Actions** section shows only the valid transitions from the current state:
+
+| Current status | Available actions |
+|---|---|
+| `active` | Suspend (with reason), Cancel (with reason) |
+| `trial` | Activate (converts to `active`), Suspend (with reason), Cancel (with reason) |
+| `delinquent` | Activate (clears delinquency), Suspend (with reason) |
+| `suspended` | Reactivate (returns to `active`) |
+| `canceled` | — (terminal state; no actions available) |
+
+All status-change actions open a confirmation dialog. "Reason" is optional for Activate/Reactivate; required (minimum 10 characters) for Suspend and Cancel. The reason is stored in a `status_change_log` on the Tenant record and appears in the detail panel's history section.
+
+#### Screen: `/admin/plans` — Plan Management
+
+List of all `Plan` records, including `discontinued` ones.
+
+**List columns:** name, monthly_price, annual_price, max_condos, support_level, status badge, public badge.
+
+**Create / Edit form** (sheet, 448 px): all `Plan` entity fields. The `public` toggle controls whether the plan appears on the self-service sign-up plan-selection screen.
+
+**Discontinue action:** replaces a "Delete" button. A plan may not be hard-deleted — only set to `discontinued`. The confirmation dialog warns that new subscriptions to this plan will be blocked but existing subscribers are unaffected.
 
 ---
 
@@ -373,6 +447,16 @@ next_billing_date?
 - **RN-CT-002:** Consolidated reports only aggregate data within the same tenant.
 - **RN-CT-003:** A condominium may not be transferred between tenants without a formal migration process with the responsible syndic's written consent.
 - **RN-CT-004:** The platform (L0) may access any tenant's data solely for support purposes, with an immutable audit log entry recorded.
+
+### 3.8 Business Rules — Platform Admin Operations
+
+- **RN-ADM-001:** Only users with the `platform_admin` role may access any route under `/admin`. Any other role attempting to navigate there is redirected to `/` with a 403 access-denied toast; the platform admin navigation is never rendered in the sidebar for non-admin roles.
+- **RN-ADM-002:** An approval action must specify either `trial` or `active` as the resulting `Subscription.status`; the admin may not leave the status ambiguous. The choice reflects the agreed commercial arrangement and is at the admin's discretion.
+- **RN-ADM-003:** A rejection action requires a non-empty `rejection_reason` of at least 20 characters. The reason is stored on the `Subscription` record and communicated to the user by email verbatim.
+- **RN-ADM-004:** A `Plan` record may not be hard-deleted. Setting a plan to `discontinued` prevents new subscriptions but does not alter any existing `Subscription` or `Tenant` record.
+- **RN-ADM-005:** `canceled` is a terminal `Tenant.subscription_status`. No admin action may return a canceled tenant to any active state; a new subscription request must be submitted instead.
+- **RN-ADM-006:** All admin-initiated status transitions on a `Tenant` record must produce an immutable entry in a `status_change_log` containing: actor (`platform_admin` user id), previous status, new status, timestamp, and reason (when provided). This log is displayed read-only in the tenant detail panel and feeds the Audit & Traceability domain (§18).
+- **RN-ADM-007:** The `/admin/tenants` list is the only view in the application that renders records belonging to more than one tenant simultaneously. All other screens enforce single-tenant scoping.
 
 ---
 
