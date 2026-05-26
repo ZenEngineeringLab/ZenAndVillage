@@ -3,7 +3,7 @@
 > **Versão pt_BR.** Este documento é a tradução em Português Brasileiro (pt_BR) de [`software-vision.md`](software-vision.md).
 > Toda edição feita em `software-vision.md` deve ser refletida neste arquivo, e vice-versa.
 > Em caso de conflito de conteúdo, a versão em inglês (`software-vision.md`) é a canônica.
-> Este documento segue a metodologia DDD (Domain-Driven Design): cada seção a partir da Seção 4 representa um bounded context com seus próprios agregados, entidades e regras de negócio.
+> Este documento segue a metodologia DDD (Domain-Driven Design): cada seção a partir da Seção 5 representa um bounded context com seus próprios agregados, entidades e regras de negócio.
 > Para conhecimento de domínio condominial, consulte [`knowledge-base.pt_BR.md`](knowledge-base.pt_BR.md).
 > Para decisões técnicas de implementação, consulte [`architecture-guide.md`](architecture-guide.md).
 
@@ -12,23 +12,23 @@
 ## Índice
 
 1. [Visão do Produto](#1-visão-do-produto)
-2. [Plataforma & Multi-Tenancy](#2-plataforma--multi-tenancy)
-3. [Mapa de Domínios](#3-mapa-de-domínios)
-4. [Domínio: Identity & Access](#4-domínio-identity--access)
-5. [Domínio: Condomínio](#5-domínio-condomínio)
-6. [Domínio: Financeiro](#6-domínio-financeiro)
-7. [Domínio: Comunicação](#7-domínio-comunicação)
-8. [Domínio: Portaria & Controle de Acesso](#8-domínio-portaria--controle-de-acesso)
-9. [Domínio: Reservas](#9-domínio-reservas)
-10. [Domínio: Ocorrências](#10-domínio-ocorrências)
-11. [Domínio: Enquetes](#11-domínio-enquetes)
-12. [Domínio: Assembleia Digital](#12-domínio-assembleia-digital)
-13. [Domínio: Manutenção](#13-domínio-manutenção)
-14. [Domínio: RH & Trabalhista](#14-domínio-rh--trabalhista)
-15. [Domínio: Gestão de Patrimônio](#15-domínio-gestão-de-patrimônio)
-16. [Domínio: Estoque de Consumíveis](#16-domínio-estoque-de-consumíveis)
-17. [Auditoria & Rastreabilidade](#17-auditoria--rastreabilidade)
-18. [Shell da Aplicação & Design de Interface](#18-shell-da-aplicação--design-de-interface)
+2. [Shell da Aplicação & Design de Interface](#2-shell-da-aplicação--design-de-interface)
+3. [Plataforma & Multi-Tenancy](#3-plataforma--multi-tenancy)
+4. [Mapa de Domínios](#4-mapa-de-domínios)
+5. [Domínio: Identity & Access](#5-domínio-identity--access)
+6. [Domínio: Condomínio](#6-domínio-condomínio)
+7. [Domínio: Financeiro](#7-domínio-financeiro)
+8. [Domínio: Comunicação](#8-domínio-comunicação)
+9. [Domínio: Portaria & Controle de Acesso](#9-domínio-portaria--controle-de-acesso)
+10. [Domínio: Reservas](#10-domínio-reservas)
+11. [Domínio: Ocorrências](#11-domínio-ocorrências)
+12. [Domínio: Enquetes](#12-domínio-enquetes)
+13. [Domínio: Assembleia Digital](#13-domínio-assembleia-digital)
+14. [Domínio: Manutenção](#14-domínio-manutenção)
+15. [Domínio: RH & Trabalhista](#15-domínio-rh--trabalhista)
+16. [Domínio: Gestão de Patrimônio](#16-domínio-gestão-de-patrimônio)
+17. [Domínio: Estoque de Consumíveis](#17-domínio-estoque-de-consumíveis)
+18. [Auditoria & Rastreabilidade](#18-auditoria--rastreabilidade)
 
 ---
 
@@ -60,9 +60,147 @@ ZenAndVillage é uma **plataforma SaaS B2B2C com IA** para gestão de condomíni
 
 ---
 
-## 2. Plataforma & Multi-Tenancy
+## 2. Shell da Aplicação & Design de Interface
 
-### 2.1 Visão Geral do Modelo
+Esta seção documenta as decisões de design estabelecidas para a experiência da aplicação web autenticada. Essas decisões foram confirmadas na implementação e devem ser preservadas em todo desenvolvimento futuro. Para escolhas de stack técnica (React, Tailwind CSS, Zustand, shadcn/ui), consulte `docs/architecture-guide.md`.
+
+### 2.1 Estrutura de Layout
+
+A aplicação autenticada utiliza um **shell em duas camadas**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│              HEADER  (56 px, largura total)              │
+├─────────────┬────────────────────────────────────────────┤
+│             │  [Banner de tenant suspenso — condicional] │
+│  SIDEBAR    ├────────────────────────────────────────────┤
+│             │                                            │
+│  224 px     │          ÁREA DE CONTEÚDO PRINCIPAL        │
+│  expandida  │          max-w-7xl · padding 24 px         │
+│   56 px     │                                            │
+│  recolhida  │                                            │
+└─────────────┴────────────────────────────────────────────┘
+```
+
+| Zona | Descrição |
+|---|---|
+| **Header** | Faixa fixa de 56 px cobrindo toda a largura do viewport; sempre visível |
+| **Sidebar** | Faixa vertical recolhível; 224 px expandida ou trilho de ícones de 56 px; recolhe automaticamente em viewports com menos de 1024 px |
+| **Área de conteúdo** | Região rolável à direita da sidebar; conteúdo limitado a uma largura máxima de 1280 px com padding de 24 px |
+| **Banner de tenant suspenso** | Barra com estilo destrutivo exibida abaixo do header (acima do conteúdo) quando `Tenant.subscription_status = suspended`; não substitui o header |
+
+### 2.2 Header
+
+O header contém, da esquerda para a direita:
+
+| Elemento | Posição | Comportamento |
+|---|---|---|
+| **Botão hambúrguer** | Esquerda | Alterna a sidebar entre expandida e recolhida |
+| **Espaçador flexível** | Centro | Empurra os controles do lado direito para a borda direita |
+| **Campo de busca** | Direita | Input inline em telas `md+` (208 px → 256 px em `lg`); colapsa para botão ícone em telas menores, que abre um popover animado (288 px de largura). Dica de atalho de teclado exibida dentro da variante inline. |
+| **Separador vertical** | Direita | Divisor visual |
+| **Sino de notificações** | Direita | Ícone de sino com badge numérico de não lidas (limitado a "9+"); abre/fecha o Painel de Notificações |
+| **Separador vertical** | Direita | Divisor visual |
+| **Gatilho do menu do usuário** | Direita | Avatar (iniciais em fundo com cor primária) + nome + nome do tenant ativo (oculto em mobile) + ícone chevron; abre/fecha o Menu do Usuário |
+
+O Painel de Notificações e o Menu do Usuário são **mutuamente exclusivos** — abrir um fecha o outro.
+
+### 2.3 Sidebar
+
+A sidebar possui três zonas:
+
+**Zona de logo (topo, 56 px — alinhada com a altura do header):**
+
+| Estado | Asset |
+|---|---|
+| Expandida | Logo horizontal completo; variante clara (`/logo-light.svg`) em modo claro, variante escura (`/logo-dark.svg`) em modo escuro |
+| Recolhida | Logo ícone quadrado (`/logo-icon.svg`) |
+
+**Navegação principal (meio, flex-grow):** links para as funcionalidades principais.
+
+| Rótulo | Rota |
+|---|---|
+| Dashboard | `/` |
+| Tenants | `/tenants` |
+| Property Managers | `/property-managers` |
+| Condominiums | `/condominiums` |
+| Residents | `/residents` |
+| Employees | `/employees` |
+
+**Navegação utilitária (rodapé, acima de um separador):**
+
+| Rótulo | Rota |
+|---|---|
+| Settings | `/settings` |
+| Help | `/help` |
+
+No estado recolhido, os rótulos dos itens ficam ocultos e os ícones ficam centralizados; cada ícone carrega um `aria-label` com o texto do rótulo para acessibilidade. A rota ativa é destacada com fundo em tom primário e peso de fonte negrito.
+
+### 2.4 Painel de Notificações
+
+Popover ancorado abaixo-direita do sino (largura: 320 px).
+
+**Estrutura:**
+
+| Zona | Conteúdo |
+|---|---|
+| **Linha de cabeçalho** | Título "Notificações" + botão de ação "Marcar todas como lidas" |
+| **Lista rolável** | Altura máxima 320 px; cada item exibe indicador de não lida (cor primária quando não lida, transparente quando lida), título, descrição e timestamp relativo (`Xmin atrás` / `Xh atrás` / `Xd atrás`). Clicar em um item o marca como lido. |
+| **Rodapé** | Link "Ver todas" para a página de histórico completo de notificações |
+
+O painel fecha ao clicar fora ou ao pressionar Escape. Um estado vazio é exibido quando não há notificações.
+
+### 2.5 Menu do Usuário
+
+Popover ancorado abaixo-direita do gatilho do usuário (largura: 288 px). O conteúdo é dividido por separadores em quatro seções:
+
+| # | Seção | Conteúdo |
+|---|---|---|
+| 1 | **Cabeçalho de identidade** | Nome e e-mail do usuário — não interativo, somente leitura |
+| 2 | **Preferências** | Link único que navega para `/preferences`; fecha o menu |
+| 3 | **Seletor de tenant** | Exibido apenas quando o usuário tem acesso a mais de um tenant. Rótulo de seção "Trocar conta". Lista todos os tenants acessíveis; o tenant ativo aparece em negrito com um checkmark. Selecionar outro tenant atualiza `activeTenantId` na sessão e dispara um recarregamento completo da página para descarregar dados com escopo de tenant. |
+| 4 | **Sair** | Estilo destrutivo; limpa o store de sessão local e navega para `/login` |
+
+### 2.6 Página de Preferências
+
+Rota: `/preferences`. Acessível via Menu do Usuário → Preferências. Conteúdo limitado a 672 px.
+
+Sete seções de configuração, separadas por divisores horizontais:
+
+| Seção | Opções | Padrão |
+|---|---|---|
+| **Preset de cores** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
+| **Raio de borda** | Nenhum (0 px), Pequeno (7 px), Padrão (10 px), Grande (14 px) | Padrão |
+| **Cor do menu** | Padrão, Invertido | Padrão |
+| **Destaque do menu** | Sutil, Negrito | Sutil |
+| **Fonte de títulos** | Inter, Oxanium, Lora | Inter |
+| **Fonte de corpo** | Inter, Oxanium, Lora | Inter |
+| **Aparência** | Claro, Escuro, Automático | Automático |
+| **Idioma** | pt_BR, en_US, Automático | Automático |
+
+O **preset de cores** sobrescreve apenas a cor primária e os cinco tokens de paleta de gráficos; todos os outros tokens de tema permanecem inalterados. O menu **invertido** aplica fundo escuro à sidebar em modo claro. O destaque **negrito** utiliza a cor primária ativa para o item de navegação selecionado. **Automático** em aparência segue a configuração `prefers-color-scheme` do sistema operacional; **Automático** em idioma segue a preferência de idioma do navegador.
+
+Todas as preferências são armazenadas no lado do cliente no store da aplicação. Persistência de preferências no servidor não está implementada na versão atual.
+
+### 2.7 Dashboard
+
+Rota: `/`. Página de destino padrão após o login. Trata-se de uma **visão geral no nível da plataforma** para `platform_admin` e `tenant_admin`; não é uma visão operacional por condomínio.
+
+**Layout — três linhas verticais:**
+
+| Linha | Componentes |
+|---|---|
+| **Cards KPI** | Quatro cards de largura igual em grid responsivo (1 col → 2 col → 4 col em `sm` / `lg`). Métricas: Tenants, Condomínios, Moradores, Funcionários. Cada card exibe o total atual e o delta mensal. |
+| **Crescimento + mix (2/3 + 1/3)** | Gráfico de área: crescimento de contas tenant nos últimos 6 meses. Gráfico donut: distribuição de planos (Starter / Pro / Enterprise). |
+| **Análise (três colunas iguais)** | Donut: status financeiro dos moradores (adimplentes vs. inadimplentes). Donut: tipos de condomínio (residencial / comercial / misto). Barra horizontal: distribuição de funções de funcionários. |
+
+Todas as cores dos gráficos utilizam os cinco tokens de paleta de gráficos, sobrescritos pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
+
+---
+
+## 3. Plataforma & Multi-Tenancy
+
+### 3.1 Visão Geral do Modelo
 
 O ZenAndVillage opera como um modelo **multi-tenant hierárquico**. A hierarquia natural é:
 
@@ -88,7 +226,7 @@ XYZ         ABC          Individual
 [C1][C2]   [C3][C4]        1 condo
 ```
 
-### 2.2 Hierarquia
+### 3.2 Hierarquia
 
 ```
 Plataforma (ZenAndVillage)
@@ -108,7 +246,7 @@ Plataforma (ZenAndVillage)
 | **L4** | Unidade | Apartamento, sala, loja, vaga de garagem |
 | **L5** | Usuário Final | Morador, proprietário, ocupante — vinculado a uma ou mais unidades |
 
-### 2.3 Perfis de Conta de Assinatura
+### 3.3 Perfis de Conta de Assinatura
 
 Toda conta L1 é a mesma entidade no modelo de dados. O que diferencia um síndico individual de uma administradora é exclusivamente o **plano contratado** — especificamente o limite `max_condos` do plano.
 
@@ -118,14 +256,14 @@ Toda conta L1 é a mesma entidade no modelo de dados. O que diferencia um síndi
 | Pequena Administradora | Professional | 5–15 | Visão consolidada; acesso à API |
 | Grande Administradora | Enterprise | Ilimitado | Acesso à API; suporte dedicado |
 
-### 2.4 Isolamento de Dados
+### 3.4 Isolamento de Dados
 
 - Cada registro pertence exatamente a um tenant e, quando aplicável, a um condomínio.
 - Nenhum tenant pode acessar dados de outro tenant em nenhuma circunstância.
 - A equipe da plataforma (L0) pode acessar dados de qualquer tenant apenas para fins de suporte, com registro obrigatório de auditoria.
 - Agregação de dados entre tenants é proibida; relatórios só agregam dados dentro do mesmo tenant.
 
-### 2.5 Ciclo de Vida do Tenant
+### 3.5 Ciclo de Vida do Tenant
 
 > **Versão atual — sem integração com broker de pagamentos.** A ativação da assinatura é realizada manualmente por um `platform_admin` após análise da solicitação. Não há processamento automatizado de pagamentos.
 
@@ -162,7 +300,7 @@ Encerramento: exportação de dados → dados retidos pelo período contratual �
 | `suspended` | Carência encerrada sem pagamento | Somente leitura; sem criação ou edição |
 | `canceled` | Cancelamento solicitado | Apenas exportação de dados; sem acesso operacional |
 
-### 2.6 Planos & Assinaturas
+### 3.6 Planos & Assinaturas
 
 #### Dimensões de Limite do Plano
 
@@ -224,7 +362,7 @@ next_billing_date?
 
 > **Observação:** `payment_method` é coletado para fins de registro e integração futura com um broker de pagamentos. Na versão atual, a ativação é realizada manualmente pelo `platform_admin` e este campo não é processado automaticamente.
 
-### 2.7 Regras de Negócio — Multi-Tenancy
+### 3.7 Regras de Negócio — Multi-Tenancy
 
 - **RN-MT-001:** Toda requisição à API deve validar o `tenant_id` antes de qualquer operação de dados (detalhes técnicos em `architecture-guide.md`).
 - **RN-MT-002:** Consultas ao banco de dados sem filtro de `tenant_id` são proibidas em código de produção.
@@ -241,7 +379,7 @@ next_billing_date?
 
 ---
 
-## 3. Mapa de Domínios
+## 4. Mapa de Domínios
 
 O ZenAndVillage é estruturado em **13 bounded contexts** (domínios de negócio), cada um proprietário de seus agregados, entidades e regras de negócio. Dependências entre domínios são explícitas e unidirecionais.
 
@@ -286,31 +424,31 @@ O ZenAndVillage é estruturado em **13 bounded contexts** (domínios de negócio
 
 | # | Domínio | Agregado Raiz | Seção |
 |---|---|---|---|
-| 1 | Identity & Access | `User` | §4 |
-| 2 | Condomínio | `Condominium` | §5 |
-| 3 | Financeiro | `CondoCharge` | §6 |
-| 4 | Comunicação | `Notice` | §7 |
-| 5 | Portaria & Controle de Acesso | `AccessLog` | §8 |
-| 6 | Reservas | `AreaReservation` | §9 |
-| 7 | Ocorrências | `Incident` | §10 |
-| 8 | Enquetes | `Poll` | §11 |
-| 9 | Assembleia Digital | `Assembly` | §12 |
-| 10 | Manutenção | `MaintenanceWorkOrder` | §13 |
-| 11 | RH & Trabalhista | `Employee` | §14 |
-| 12 | Gestão de Patrimônio | `Asset` | §15 |
-| 13 | Estoque de Consumíveis | `StockProduct` | §16 |
+| 1 | Identity & Access | `User` | §5 |
+| 2 | Condomínio | `Condominium` | §6 |
+| 3 | Financeiro | `CondoCharge` | §7 |
+| 4 | Comunicação | `Notice` | §8 |
+| 5 | Portaria & Controle de Acesso | `AccessLog` | §9 |
+| 6 | Reservas | `AreaReservation` | §10 |
+| 7 | Ocorrências | `Incident` | §11 |
+| 8 | Enquetes | `Poll` | §12 |
+| 9 | Assembleia Digital | `Assembly` | §13 |
+| 10 | Manutenção | `MaintenanceWorkOrder` | §14 |
+| 11 | RH & Trabalhista | `Employee` | §15 |
+| 12 | Gestão de Patrimônio | `Asset` | §16 |
+| 13 | Estoque de Consumíveis | `StockProduct` | §17 |
 
 > **Disponibilidade de módulos:** módulos não incluídos no plano do tenant devem retornar `403 Feature not available in current plan`. Acesso parcial ou degradado não é permitido.
 
 ---
 
-## 4. Domínio: Identity & Access
+## 5. Domínio: Identity & Access
 
 **Agregado raiz:** `User`
 
 Este domínio é proprietário da autenticação, autorização, ciclo de vida de usuários e todos os fluxos de onboarding — tanto o funil de assinatura do proprietário de conta quanto o fluxo de convite para moradores.
 
-### 4.1 Onboarding do Proprietário de Conta
+### 5.1 Onboarding do Proprietário de Conta
 
 Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma conta de assinatura.
 
@@ -377,7 +515,7 @@ Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma 
 3. O `tenant_owner` recebe automaticamente o papel `condo_syndic` neste condomínio.
 4. `onboarding_status` avança para `complete`; acesso operacional completo é concedido.
 
-### 4.2 Onboarding de Moradores e Pessoas Autorizadas
+### 5.2 Onboarding de Moradores e Pessoas Autorizadas
 
 Acionado de dentro de um condomínio ativo. Não requer assinatura nem pagamento.
 
@@ -400,7 +538,7 @@ Acionado de dentro de um condomínio ativo. Não requer assinatura nem pagamento
 - Apenas um usuário por tipo de papel pode ter `is_primary = true` em uma unidade por vez.
 - Um registro `ResidentInvite` é criado vinculado ao e-mail do convidado.
 
-**Passo 2 — Cadastro/login:** Mesmos métodos da Seção 4.1. O token está vinculado ao e-mail do convite; autenticação com outro e-mail rejeita o token.
+**Passo 2 — Cadastro/login:** Mesmos métodos da Seção 5.1. O token está vinculado ao e-mail do convite; autenticação com outro e-mail rejeita o token.
 
 **Passo 3 — Vínculo com a unidade:** O token é consumido; o usuário é vinculado à unidade com o papel designado e `is_primary = true`. `onboarding_status` → `complete`. Moradores herdam o acesso pela assinatura do tenant — não precisam de assinatura pessoal.
 
@@ -413,7 +551,7 @@ Acionado de dentro de um condomínio ativo. Não requer assinatura nem pagamento
 
 A equipe do condomínio também pode convidar pessoas autorizadas diretamente. Um usuário pode estar vinculado a múltiplas unidades; cada vínculo é independente.
 
-### 4.3 Status de Onboarding
+### 5.3 Status de Onboarding
 
 | Status | Significado |
 |---|---|
@@ -423,7 +561,7 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 | `onboarding` | Assinatura aprovada; assistente do primeiro condomínio não concluído — apenas proprietários de conta |
 | `complete` | Acesso operacional completo concedido |
 
-### 4.4 Taxonomia de Papéis
+### 5.4 Taxonomia de Papéis
 
 | Papel | Nível | Capacidades |
 |---|---|---|
@@ -450,7 +588,7 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 - Em caso de suspensão do tenant, moradores (L5) mantêm acesso de leitura (boletos, histórico, comunicados).
 - Acesso entre tenants é estritamente proibido.
 
-### 4.5 Entidades
+### 5.5 Entidades
 
 #### Entidade: `User` — Agregado Raiz
 
@@ -491,7 +629,7 @@ accepted_at?,
 revoked_by_id?, revoked_at?
 ```
 
-### 4.6 Regras de Negócio
+### 5.6 Regras de Negócio
 
 - **RN-ONB-001:** Um usuário com `onboarding_status` igual a `pending_subscription`, `pending_approval` ou `onboarding` (assistente não concluído) não pode criar, acessar nem interagir com nenhum dado de condomínio.
 - **RN-ONB-002:** Identidade federada é tratada como pré-verificada; a etapa de confirmação de e-mail é ignorada.
@@ -516,13 +654,13 @@ revoked_by_id?, revoked_at?
 
 ---
 
-## 5. Domínio: Condomínio
+## 6. Domínio: Condomínio
 
 **Agregado raiz:** `Condominium`
 
 Este domínio é proprietário da estrutura física e jurídica do condomínio: o edifício, suas unidades, proprietários e ocupantes. É o domínio fundacional referenciado por todos os outros domínios operacionais para escopo.
 
-### 5.1 Entidades
+### 6.1 Entidades
 
 #### Entidade: `Condominium` — Agregado Raiz
 
@@ -569,7 +707,7 @@ unit_id, lease_start_date, lease_end_date,
 lease_contract_url
 ```
 
-### 5.2 Regras de Negócio — Governança
+### 6.2 Regras de Negócio — Governança
 
 - **RN-GOV-001:** Alterações na Convenção exigem aprovação de 2/3 de TODOS os condôminos.
 - **RN-GOV-002:** A pauta de assembleia é fechada; apenas itens do edital oficial podem ser votados.
@@ -580,13 +718,13 @@ lease_contract_url
 
 ---
 
-## 6. Domínio: Financeiro
+## 7. Domínio: Financeiro
 
 **Agregado raiz:** `CondoCharge`
 
 Este domínio é proprietário da cobrança de cotas condominiais, controle de inadimplência, gestão orçamentária e fundo de reserva. O estado de inadimplência produzido aqui é consumido pelos domínios de Reservas e Assembleia Digital.
 
-### 6.1 Entidades
+### 7.1 Entidades
 
 #### Entidade: `CondoCharge` — Agregado Raiz
 
@@ -600,7 +738,7 @@ paid_at?, late_fine?, interest?,
 bill_url
 ```
 
-### 6.2 Regras de Negócio
+### 7.2 Regras de Negócio
 
 - **RN-FIN-001:** Cota condominial vencida gera automaticamente multa de 2% + juros de 1% ao mês após o vencimento (Art. 1.336 CC).
 - **RN-FIN-002:** Condômino com débito em aberto não pode votar em assembleia (flag `financial_status = delinquent` em `Owner`).
@@ -611,13 +749,13 @@ bill_url
 
 ---
 
-## 7. Domínio: Comunicação
+## 8. Domínio: Comunicação
 
 **Agregado raiz:** `Notice`
 
 Este domínio é proprietário de todas as comunicações de saída para moradores: comunicados formais, alertas de inadimplência, convocações, broadcasts de emergência e anúncios gerais.
 
-### 7.1 Entidades
+### 8.1 Entidades
 
 #### Entidade: `Notice` — Agregado Raiz
 
@@ -636,7 +774,7 @@ attachments: [url],
 status (draft | scheduled | sent | expired)
 ```
 
-### 7.2 Regras de Negócio
+### 8.2 Regras de Negócio
 
 - **RN-COM-001:** Convocações de assembleia devem ser enviadas pelo canal formal definido na convenção (e-mail + app + mural).
 - **RN-COM-002:** Comunicados sobre inadimplência devem ser enviados exclusivamente ao responsável pela unidade, nunca em grupos coletivos.
@@ -647,13 +785,13 @@ status (draft | scheduled | sent | expired)
 
 ---
 
-## 8. Domínio: Portaria & Controle de Acesso
+## 9. Domínio: Portaria & Controle de Acesso
 
 **Agregado raiz:** `AccessLog`
 
 Este domínio é proprietário do acesso físico ao condomínio: registro de entradas/saídas, gestão de visitantes, credenciais QR Code e matrícula biométrica. Consome dados de credencial do domínio Identity & Access.
 
-### 8.1 Entidades
+### 9.1 Entidades
 
 #### Entidade: `AccessLog` — Agregado Raiz
 
@@ -669,7 +807,7 @@ photo_url?,
 vehicle_plate?
 ```
 
-### 8.2 Regras de Negócio
+### 9.2 Regras de Negócio
 
 - **RN-SEG-001:** O uso de biometria facial exige consentimento individual e explícito; deve haver meio alternativo de acesso para quem recusar. Esta regra aplica-se a todos os usuários que fazem upload de foto biométrica, inclusive aqueles com papel `authorized_person`.
 - **RN-SEG-002:** Imagens de câmeras só podem ser compartilhadas com autoridades via requisição formal; nunca diretamente a condôminos.
@@ -679,13 +817,13 @@ vehicle_plate?
 
 ---
 
-## 9. Domínio: Reservas
+## 10. Domínio: Reservas
 
 **Agregado raiz:** `AreaReservation`
 
 Este domínio é proprietário da configuração de áreas comuns e da gestão de reservas. Consome o estado de inadimplência do domínio Financeiro e o status de manutenção do domínio Manutenção.
 
-### 9.1 Entidades
+### 10.1 Entidades
 
 #### Entidade: `CommonArea`
 
@@ -722,7 +860,7 @@ notes,
 notifications_sent: [{type, sent_at}]
 ```
 
-### 9.2 Regras de Negócio
+### 10.2 Regras de Negócio
 
 - **RN-RES-001:** Condômino inadimplente não pode realizar novas reservas de áreas comuns.
 - **RN-RES-002:** Cada unidade pode ter no máximo N reservas ativas por mês; N é definido no regimento interno do condomínio.
@@ -737,13 +875,13 @@ notifications_sent: [{type, sent_at}]
 
 ---
 
-## 10. Domínio: Ocorrências
+## 11. Domínio: Ocorrências
 
 **Agregado raiz:** `Incident`
 
 Este domínio é proprietário do registro, acompanhamento e resolução de reclamações, infrações e incidentes gerais. Ocorrências de manutenção disparam ordens de serviço no domínio Manutenção.
 
-### 10.1 Entidades
+### 11.1 Entidades
 
 #### Entidade: `Incident` — Agregado Raiz
 
@@ -770,7 +908,7 @@ resident_rating? (1–5),
 rating_comment?
 ```
 
-### 10.2 Regras de Negócio
+### 11.2 Regras de Negócio
 
 - **RN-OCO-001:** Toda ocorrência registrada deve receber número de protocolo único imediatamente após o registro.
 - **RN-OCO-002:** O reclamante deve receber notificação automática a cada mudança de status.
@@ -783,13 +921,13 @@ rating_comment?
 
 ---
 
-## 11. Domínio: Enquetes
+## 12. Domínio: Enquetes
 
 **Agregado raiz:** `Poll`
 
 Este domínio é proprietário de enquetes não vinculantes com moradores. O direito de voto em enquetes é independente do status de inadimplência (diferente de assembleias formais).
 
-### 11.1 Entidades
+### 12.1 Entidades
 
 #### Entidade: `Poll` — Agregado Raiz
 
@@ -824,7 +962,7 @@ open_text?,
 ranking_options: [{option_id, position}]?
 ```
 
-### 11.2 Regras de Negócio
+### 12.2 Regras de Negócio
 
 - **RN-ENQ-001:** Enquetes são não vinculantes e não substituem votação em assembleia para decisões que exigem quórum legal.
 - **RN-ENQ-002:** Cada unidade (não cada pessoa) tem direito a um único voto por enquete, salvo configuração diferente pelo síndico.
@@ -837,13 +975,13 @@ ranking_options: [{option_id, position}]?
 
 ---
 
-## 12. Domínio: Assembleia Digital
+## 13. Domínio: Assembleia Digital
 
 **Agregado raiz:** `Assembly`
 
 Este domínio é proprietário das assembleias condominiais formais (AGO e AGE), incluindo gestão de pauta, controle de quórum, votação digital e ata. O direito de voto é condicionado ao status financeiro do domínio Financeiro.
 
-### 12.1 Entidades
+### 13.1 Entidades
 
 #### Entidade: `Assembly` — Agregado Raiz
 
@@ -858,7 +996,7 @@ minutes_url,
 status (scheduled | held | canceled)
 ```
 
-### 12.2 Regras de Negócio
+### 13.2 Regras de Negócio
 
 - **RN-ASS-001:** As convocações devem respeitar o prazo definido na convenção (mínimo 3 dias para AGE, mínimo 8 dias para AGO).
 - **RN-ASS-002:** Proprietários com `financial_status = delinquent` não podem votar em assembleias (conforme RN-FIN-002).
@@ -869,13 +1007,13 @@ status (scheduled | held | canceled)
 
 ---
 
-## 13. Domínio: Manutenção
+## 14. Domínio: Manutenção
 
 **Agregado raiz:** `MaintenanceWorkOrder`
 
 Este domínio é proprietário de manutenções programadas e corretivas, documentos de conformidade legal (AVCB, seguro, inspeções) e controle de checklists. Ordens de serviço podem ser criadas manualmente ou automaticamente pelo domínio de Ocorrências.
 
-### 13.1 Entidades
+### 14.1 Entidades
 
 #### Entidade: `MaintenanceWorkOrder` — Agregado Raiz
 
@@ -901,7 +1039,7 @@ responsible_company, file_url,
 status (valid | expired | expiring_soon)
 ```
 
-### 13.2 Regras de Negócio
+### 14.2 Regras de Negócio
 
 - **RN-MAN-001:** AVCB vencido expõe o síndico a responsabilização pessoal por qualquer sinistro.
 - **RN-MAN-002:** Elevadores devem ter manutenção preventiva mensal e inspeção semestral documentadas.
@@ -910,13 +1048,13 @@ status (valid | expired | expiring_soon)
 
 ---
 
-## 14. Domínio: RH & Trabalhista
+## 15. Domínio: RH & Trabalhista
 
 **Agregado raiz:** `Employee`
 
 Este domínio é proprietário da gestão de funcionários diretos e terceirizados do condomínio, incluindo integração com eSocial, escalas e ciclo de vida do contrato de trabalho.
 
-### 14.1 Entidades
+### 15.1 Entidades
 
 #### Entidade: `Employee` — Agregado Raiz
 
@@ -931,7 +1069,7 @@ base_salary, schedule (44h | 12x36 | part_time),
 status (active | inactive | on_leave)
 ```
 
-### 14.2 Regras de Negócio
+### 15.2 Regras de Negócio
 
 - **RN-RH-001:** Todo funcionário CLT deve ser registrado no eSocial antes do início das atividades.
 - **RN-RH-002:** O síndico não tem vínculo empregatício com o condomínio.
@@ -940,13 +1078,13 @@ status (active | inactive | on_leave)
 
 ---
 
-## 15. Domínio: Gestão de Patrimônio
+## 16. Domínio: Gestão de Patrimônio
 
 **Agregado raiz:** `Asset`
 
 Este domínio é proprietário do inventário, ciclo de vida e movimentação de todos os bens físicos adquiridos com recursos condominiais. Danos a bens podem gerar ocorrências no domínio de Ocorrências; bens vinculados a áreas comuns afetam a disponibilidade no domínio de Reservas.
 
-### 15.1 Entidades
+### 16.1 Entidades
 
 #### Entidade: `Asset` — Agregado Raiz
 
@@ -1006,7 +1144,7 @@ status (in_progress | completed),
 report_url?
 ```
 
-### 15.2 Regras de Negócio
+### 16.2 Regras de Negócio
 
 - **RN-PAT-001:** Todo bem adquirido com recursos condominiais deve ser tombado antes de entrar em uso, com a nota fiscal vinculada.
 - **RN-PAT-002:** O descarte de bens acima do valor limite definido na convenção exige aprovação em assembleia.
@@ -1020,13 +1158,13 @@ report_url?
 
 ---
 
-## 16. Domínio: Estoque de Consumíveis
+## 17. Domínio: Estoque de Consumíveis
 
 **Agregado raiz:** `StockProduct`
 
 Este domínio é proprietário do controle de estoque de suprimentos, fluxos de reposição e aprovação de pedidos de compra. Os custos são classificados por centro de custo e refletidos no balancete mensal do domínio Financeiro.
 
-### 16.1 Entidades
+### 17.1 Entidades
 
 #### Entidade: `StockProduct` — Agregado Raiz
 
@@ -1103,7 +1241,7 @@ status (in_progress | completed | with_discrepancies),
 report_url?
 ```
 
-### 16.2 Regras de Negócio
+### 17.2 Regras de Negócio
 
 - **RN-EST-001:** Toda entrada em estoque deve estar vinculada a uma nota fiscal ou documento de recebimento.
 - **RN-EST-002:** Toda saída de estoque deve ser registrada com responsável identificado e centro de custo.
@@ -1117,11 +1255,11 @@ report_url?
 
 ---
 
-## 17. Auditoria & Rastreabilidade
+## 18. Auditoria & Rastreabilidade
 
 **Preocupação transversal (cross-cutting concern).** Toda operação de escrita em todos os domínios deve gerar um registro de auditoria imutável associado ao tenant e ao usuário responsável.
 
-### 17.1 Entidade: `AuditLog`
+### 18.1 Entidade: `AuditLog`
 
 ```
 id, tenant_id, condo_id?,
@@ -1135,150 +1273,9 @@ occurred_at,
 success (bool), failure_reason?
 ```
 
-### 17.2 Regras de Negócio
+### 18.2 Regras de Negócio
 
 - **RN-AUD-001:** Registros de auditoria são **imutáveis**; nenhum usuário, nem mesmo `platform_admin`, pode excluir registros de auditoria.
 - **RN-AUD-002:** Ações sensíveis (exportação de dados, alteração de plano, acesso L0 a um tenant) devem gerar alerta em tempo real para o `tenant_owner`.
 - **RN-AUD-003:** Logs devem ser retidos pelo período definido no plano, com mínimo de 12 meses.
 - **RN-AUD-004:** Em caso de incidente de segurança, os logs devem ser suficientes para reconstruir a sequência completa de ações.
-
----
-
----
-
-## 18. Shell da Aplicação & Design de Interface
-
-Esta seção documenta as decisões de design estabelecidas para a experiência da aplicação web autenticada. Essas decisões foram confirmadas na implementação e devem ser preservadas em todo desenvolvimento futuro. Para escolhas de stack técnica (React, Tailwind CSS, Zustand, shadcn/ui), consulte `docs/architecture-guide.md`.
-
-### 18.1 Estrutura de Layout
-
-A aplicação autenticada utiliza um **shell em duas camadas**:
-
-```
-┌──────────────────────────────────────────────────────────┐
-│              HEADER  (56 px, largura total)              │
-├─────────────┬────────────────────────────────────────────┤
-│             │  [Banner de tenant suspenso — condicional] │
-│  SIDEBAR    ├────────────────────────────────────────────┤
-│             │                                            │
-│  224 px     │          ÁREA DE CONTEÚDO PRINCIPAL        │
-│  expandida  │          max-w-7xl · padding 24 px         │
-│   56 px     │                                            │
-│  recolhida  │                                            │
-└─────────────┴────────────────────────────────────────────┘
-```
-
-| Zona | Descrição |
-|---|---|
-| **Header** | Faixa fixa de 56 px cobrindo toda a largura do viewport; sempre visível |
-| **Sidebar** | Faixa vertical recolhível; 224 px expandida ou trilho de ícones de 56 px; recolhe automaticamente em viewports com menos de 1024 px |
-| **Área de conteúdo** | Região rolável à direita da sidebar; conteúdo limitado a uma largura máxima de 1280 px com padding de 24 px |
-| **Banner de tenant suspenso** | Barra com estilo destrutivo exibida abaixo do header (acima do conteúdo) quando `Tenant.subscription_status = suspended`; não substitui o header |
-
-### 18.2 Header
-
-O header contém, da esquerda para a direita:
-
-| Elemento | Posição | Comportamento |
-|---|---|---|
-| **Botão hambúrguer** | Esquerda | Alterna a sidebar entre expandida e recolhida |
-| **Espaçador flexível** | Centro | Empurra os controles do lado direito para a borda direita |
-| **Campo de busca** | Direita | Input inline em telas `md+` (208 px → 256 px em `lg`); colapsa para botão ícone em telas menores, que abre um popover animado (288 px de largura). Dica de atalho de teclado exibida dentro da variante inline. |
-| **Separador vertical** | Direita | Divisor visual |
-| **Sino de notificações** | Direita | Ícone de sino com badge numérico de não lidas (limitado a "9+"); abre/fecha o Painel de Notificações |
-| **Separador vertical** | Direita | Divisor visual |
-| **Gatilho do menu do usuário** | Direita | Avatar (iniciais em fundo com cor primária) + nome + nome do tenant ativo (oculto em mobile) + ícone chevron; abre/fecha o Menu do Usuário |
-
-O Painel de Notificações e o Menu do Usuário são **mutuamente exclusivos** — abrir um fecha o outro.
-
-### 18.3 Sidebar
-
-A sidebar possui três zonas:
-
-**Zona de logo (topo, 56 px — alinhada com a altura do header):**
-
-| Estado | Asset |
-|---|---|
-| Expandida | Logo horizontal completo; variante clara (`/logo-light.svg`) em modo claro, variante escura (`/logo-dark.svg`) em modo escuro |
-| Recolhida | Logo ícone quadrado (`/logo-icon.svg`) |
-
-**Navegação principal (meio, flex-grow):** links para as funcionalidades principais.
-
-| Rótulo | Rota |
-|---|---|
-| Dashboard | `/` |
-| Tenants | `/tenants` |
-| Property Managers | `/property-managers` |
-| Condominiums | `/condominiums` |
-| Residents | `/residents` |
-| Employees | `/employees` |
-
-**Navegação utilitária (rodapé, acima de um separador):**
-
-| Rótulo | Rota |
-|---|---|
-| Settings | `/settings` |
-| Help | `/help` |
-
-No estado recolhido, os rótulos dos itens ficam ocultos e os ícones ficam centralizados; cada ícone carrega um `aria-label` com o texto do rótulo para acessibilidade. A rota ativa é destacada com fundo em tom primário e peso de fonte negrito.
-
-### 18.4 Painel de Notificações
-
-Popover ancorado abaixo-direita do sino (largura: 320 px).
-
-**Estrutura:**
-
-| Zona | Conteúdo |
-|---|---|
-| **Linha de cabeçalho** | Título "Notificações" + botão de ação "Marcar todas como lidas" |
-| **Lista rolável** | Altura máxima 320 px; cada item exibe indicador de não lida (cor primária quando não lida, transparente quando lida), título, descrição e timestamp relativo (`Xmin atrás` / `Xh atrás` / `Xd atrás`). Clicar em um item o marca como lido. |
-| **Rodapé** | Link "Ver todas" para a página de histórico completo de notificações |
-
-O painel fecha ao clicar fora ou ao pressionar Escape. Um estado vazio é exibido quando não há notificações.
-
-### 18.5 Menu do Usuário
-
-Popover ancorado abaixo-direita do gatilho do usuário (largura: 288 px). O conteúdo é dividido por separadores em quatro seções:
-
-| # | Seção | Conteúdo |
-|---|---|---|
-| 1 | **Cabeçalho de identidade** | Nome e e-mail do usuário — não interativo, somente leitura |
-| 2 | **Preferências** | Link único que navega para `/preferences`; fecha o menu |
-| 3 | **Seletor de tenant** | Exibido apenas quando o usuário tem acesso a mais de um tenant. Rótulo de seção "Trocar conta". Lista todos os tenants acessíveis; o tenant ativo aparece em negrito com um checkmark. Selecionar outro tenant atualiza `activeTenantId` na sessão e dispara um recarregamento completo da página para descarregar dados com escopo de tenant. |
-| 4 | **Sair** | Estilo destrutivo; limpa o store de sessão local e navega para `/login` |
-
-### 18.6 Página de Preferências
-
-Rota: `/preferences`. Acessível via Menu do Usuário → Preferências. Conteúdo limitado a 672 px.
-
-Sete seções de configuração, separadas por divisores horizontais:
-
-| Seção | Opções | Padrão |
-|---|---|---|
-| **Preset de cores** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
-| **Raio de borda** | Nenhum (0 px), Pequeno (7 px), Padrão (10 px), Grande (14 px) | Padrão |
-| **Cor do menu** | Padrão, Invertido | Padrão |
-| **Destaque do menu** | Sutil, Negrito | Sutil |
-| **Fonte de títulos** | Inter, Oxanium, Lora | Inter |
-| **Fonte de corpo** | Inter, Oxanium, Lora | Inter |
-| **Aparência** | Claro, Escuro, Automático | Automático |
-| **Idioma** | pt_BR, en_US, Automático | Automático |
-
-O **preset de cores** sobrescreve apenas a cor primária e os cinco tokens de paleta de gráficos; todos os outros tokens de tema permanecem inalterados. O menu **invertido** aplica fundo escuro à sidebar em modo claro. O destaque **negrito** utiliza a cor primária ativa para o item de navegação selecionado. **Automático** em aparência segue a configuração `prefers-color-scheme` do sistema operacional; **Automático** em idioma segue a preferência de idioma do navegador.
-
-Todas as preferências são armazenadas no lado do cliente no store da aplicação. Persistência de preferências no servidor não está implementada na versão atual.
-
-### 18.7 Dashboard
-
-Rota: `/`. Página de destino padrão após o login. Trata-se de uma **visão geral no nível da plataforma** para `platform_admin` e `tenant_admin`; não é uma visão operacional por condomínio.
-
-**Layout — três linhas verticais:**
-
-| Linha | Componentes |
-|---|---|
-| **Cards KPI** | Quatro cards de largura igual em grid responsivo (1 col → 2 col → 4 col em `sm` / `lg`). Métricas: Tenants, Condomínios, Moradores, Funcionários. Cada card exibe o total atual e o delta mensal. |
-| **Crescimento + mix (2/3 + 1/3)** | Gráfico de área: crescimento de contas tenant nos últimos 6 meses. Gráfico donut: distribuição de planos (Starter / Pro / Enterprise). |
-| **Análise (três colunas iguais)** | Donut: status financeiro dos moradores (adimplentes vs. inadimplentes). Donut: tipos de condomínio (residencial / comercial / misto). Barra horizontal: distribuição de funções de funcionários. |
-
-Todas as cores dos gráficos utilizam os cinco tokens de paleta de gráficos, sobrescritos pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
-

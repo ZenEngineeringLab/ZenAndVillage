@@ -1,7 +1,7 @@
 # Software Vision: ZenAndVillage Platform
 
 > **Canonical version.** This document defines the ZenAndVillage platform in American English (en-US).
-> It is organized following Domain-Driven Design (DDD) principles: each section after Section 3 represents a bounded context with its own aggregate roots, entities, and business rules.
+> It is organized following Domain-Driven Design (DDD) principles: each section after Section 4 represents a bounded context with its own aggregate roots, entities, and business rules.
 > Every change made here must be reflected in [`software-vision.pt_BR.md`](software-vision.pt_BR.md).
 > For condominium domain knowledge (Brazilian law, roles, processes), refer to [`knowledge-base.md`](knowledge-base.md).
 > For technical implementation decisions (stack, API contracts, infrastructure), refer to [`architecture-guide.md`](architecture-guide.md).
@@ -11,23 +11,23 @@
 ## Table of Contents
 
 1. [Product Vision](#1-product-vision)
-2. [Platform & Multi-Tenancy](#2-platform--multi-tenancy)
-3. [Domain Map](#3-domain-map)
-4. [Identity & Access Domain](#4-identity--access-domain)
-5. [Condominium Domain](#5-condominium-domain)
-6. [Financial Domain](#6-financial-domain)
-7. [Communication Domain](#7-communication-domain)
-8. [Gatehouse & Access Control Domain](#8-gatehouse--access-control-domain)
-9. [Reservations Domain](#9-reservations-domain)
-10. [Incidents Domain](#10-incidents-domain)
-11. [Polls Domain](#11-polls-domain)
-12. [Digital Assembly Domain](#12-digital-assembly-domain)
-13. [Maintenance Domain](#13-maintenance-domain)
-14. [HR & Labor Domain](#14-hr--labor-domain)
-15. [Asset Management Domain](#15-asset-management-domain)
-16. [Consumable Inventory Domain](#16-consumable-inventory-domain)
-17. [Audit & Traceability](#17-audit--traceability)
-18. [Application Shell & UI Design](#18-application-shell--ui-design)
+2. [Application Shell & UI Design](#2-application-shell--ui-design)
+3. [Platform & Multi-Tenancy](#3-platform--multi-tenancy)
+4. [Domain Map](#4-domain-map)
+5. [Identity & Access Domain](#5-identity--access-domain)
+6. [Condominium Domain](#6-condominium-domain)
+7. [Financial Domain](#7-financial-domain)
+8. [Communication Domain](#8-communication-domain)
+9. [Gatehouse & Access Control Domain](#9-gatehouse--access-control-domain)
+10. [Reservations Domain](#10-reservations-domain)
+11. [Incidents Domain](#11-incidents-domain)
+12. [Polls Domain](#12-polls-domain)
+13. [Digital Assembly Domain](#13-digital-assembly-domain)
+14. [Maintenance Domain](#14-maintenance-domain)
+15. [HR & Labor Domain](#15-hr--labor-domain)
+16. [Asset Management Domain](#16-asset-management-domain)
+17. [Consumable Inventory Domain](#17-consumable-inventory-domain)
+18. [Audit & Traceability](#18-audit--traceability)
 
 ---
 
@@ -59,9 +59,147 @@ ZenAndVillage is an **AI-powered B2B2C SaaS platform** for condominium and commu
 
 ---
 
-## 2. Platform & Multi-Tenancy
+## 2. Application Shell & UI Design
 
-### 2.1 Model Overview
+This section documents the established design decisions for the authenticated web application experience. These decisions are implementation-confirmed and must be preserved across all future development. For technical stack choices (React, Tailwind CSS, Zustand, shadcn/ui), refer to `docs/architecture-guide.md`.
+
+### 2.1 Layout Structure
+
+The authenticated application uses a **two-layer shell**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                HEADER  (56 px, full-width)               │
+├─────────────┬────────────────────────────────────────────┤
+│             │  [Suspended tenant banner — conditional]   │
+│  SIDEBAR    ├────────────────────────────────────────────┤
+│             │                                            │
+│  224 px     │          MAIN CONTENT AREA                 │
+│  expanded   │          max-w-7xl · 24 px padding         │
+│   56 px     │                                            │
+│  collapsed  │                                            │
+└─────────────┴────────────────────────────────────────────┘
+```
+
+| Zone | Description |
+|---|---|
+| **Header** | Fixed 56 px strip spanning the full viewport width; always visible |
+| **Sidebar** | Collapsible vertical strip; 224 px expanded or 56 px icon-rail; auto-collapses on viewports narrower than 1024 px |
+| **Content area** | Scrollable region to the right of the sidebar; page content constrained to a maximum width of 1280 px with 24 px padding |
+| **Suspended tenant banner** | Destructive-styled warning bar rendered below the header (above content) when `Tenant.subscription_status = suspended`; does not replace the header |
+
+### 2.2 Header
+
+The header contains, from left to right:
+
+| Element | Position | Behavior |
+|---|---|---|
+| **Hamburger button** | Left | Toggles sidebar between expanded and collapsed |
+| **Flexible spacer** | Center | Pushes right-side controls to the right edge |
+| **Search field** | Right | Inline input on `md+` screens (208 px → 256 px on `lg`); collapses to an icon button on smaller screens that opens an animated popover (288 px wide). Keyboard shortcut hint shown inside the inline variant. |
+| **Vertical separator** | Right | Visual divider |
+| **Notification bell** | Right | Bell icon with numeric unread-count badge (capped at "9+"); opens/closes the Notification Panel |
+| **Vertical separator** | Right | Visual divider |
+| **User menu trigger** | Right | Avatar (initials on primary-color background) + display name + active tenant name (hidden on mobile) + chevron icon; opens/closes the User Menu |
+
+Notification Panel and User Menu are **mutually exclusive** — opening one closes the other.
+
+### 2.3 Sidebar
+
+The sidebar has three zones:
+
+**Logo zone (top, 56 px — matches header height):**
+
+| State | Asset |
+|---|---|
+| Expanded | Full horizontal logo; light variant (`/logo-light.svg`) in light mode, dark variant (`/logo-dark.svg`) in dark mode |
+| Collapsed | Square icon-only logo (`/logo-icon.svg`) |
+
+**Main navigation (middle, flex-grow):** primary feature links.
+
+| Label | Route |
+|---|---|
+| Dashboard | `/` |
+| Tenants | `/tenants` |
+| Property Managers | `/property-managers` |
+| Condominiums | `/condominiums` |
+| Residents | `/residents` |
+| Employees | `/employees` |
+
+**Utility navigation (bottom, above a separator):**
+
+| Label | Route |
+|---|---|
+| Settings | `/settings` |
+| Help | `/help` |
+
+In collapsed state, item labels are hidden and icons are centered; each icon carries an `aria-label` with the label text for accessibility. The active route is highlighted with a primary-tinted background and bold font weight.
+
+### 2.4 Notification Panel
+
+A popover anchored below-right of the bell icon (width: 320 px).
+
+**Structure:**
+
+| Zone | Content |
+|---|---|
+| **Header row** | "Notifications" title + "Mark all read" action button |
+| **Scrollable list** | Max-height 320 px; each item shows an unread indicator dot (primary color when unread, transparent when read), title, description, and relative timestamp (`Xm ago` / `Xh ago` / `Xd ago`). Clicking an item marks it as read. |
+| **Footer** | "View all" link for the full notification history page |
+
+The panel closes on outside click or Escape key. An empty state message is shown when there are no notifications.
+
+### 2.5 User Menu
+
+A popover anchored below-right of the user trigger (width: 288 px). Content is divided by separators into four sections:
+
+| # | Section | Content |
+|---|---|---|
+| 1 | **Identity header** | User display name + email — non-interactive, read-only |
+| 2 | **Preferences** | Single link navigating to `/preferences`; closes the menu |
+| 3 | **Tenant selector** | Rendered only when the user has access to more than one tenant. Header label "Switch account". Lists all accessible tenants; active tenant is bold with a checkmark. Selecting a different tenant updates `activeTenantId` in the session and triggers a full page reload to flush tenant-scoped data. |
+| 4 | **Sign out** | Destructive styling; clears the local session store and navigates to `/login` |
+
+### 2.6 Preferences Page
+
+Route: `/preferences`. Accessible via the User Menu → Preferences. Content is constrained to 672 px.
+
+Seven settings sections, each separated by a horizontal divider:
+
+| Section | Options | Default |
+|---|---|---|
+| **Color preset** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
+| **Border radius** | None (0 px), Small (7 px), Default (10 px), Large (14 px) | Default |
+| **Menu color** | Default, Inverted | Default |
+| **Menu accent** | Subtle, Bold | Subtle |
+| **Heading font** | Inter, Oxanium, Lora | Inter |
+| **Body font** | Inter, Oxanium, Lora | Inter |
+| **Appearance** | Light, Dark, Auto | Auto |
+| **Language** | pt_BR, en_US, Auto | Auto |
+
+**Color preset** overrides only the primary color and the five chart palette tokens; all other theme tokens are unchanged. **Inverted** menu color applies a dark sidebar background in light mode. **Bold** menu accent uses the active primary color for the selected navigation item highlight. **Auto** appearance follows the OS `prefers-color-scheme` setting; **Auto** language follows the browser's language preference.
+
+All preferences are stored client-side in the application store. Server-side preference persistence is not implemented in the current version.
+
+### 2.7 Dashboard
+
+Route: `/`. Default landing page after login. This is a **platform-level overview** for `platform_admin` and `tenant_admin`; it is not a per-condominium operational view.
+
+**Layout — three vertical rows:**
+
+| Row | Components |
+|---|---|
+| **KPI cards** | Four equal-width cards in a responsive grid (1 col → 2 col → 4 col at `sm` / `lg`). Metrics: Tenants, Condominiums, Residents, Employees. Each card shows current count + month-over-month delta. |
+| **Growth + mix (2/3 + 1/3)** | Area chart: tenant account growth over 6 months. Donut chart: plan distribution (Starter / Pro / Enterprise). |
+| **Analytics (three equal columns)** | Donut: resident financial status (current vs. delinquent). Donut: condominium types (residential / commercial / mixed). Horizontal bar: employee roles breakdown. |
+
+All chart colors use the five chart palette tokens, overridden by the active color preset so charts respond correctly to all theme choices.
+
+---
+
+## 3. Platform & Multi-Tenancy
+
+### 3.1 Model Overview
 
 ZenAndVillage operates as a **hierarchical multi-tenant** model. The natural reading of the hierarchy is:
 
@@ -87,7 +225,7 @@ XYZ         ABC          Syndic
 [C1][C2]   [C3][C4]        1 condo
 ```
 
-### 2.2 Hierarchy
+### 3.2 Hierarchy
 
 ```
 Platform (ZenAndVillage)
@@ -107,7 +245,7 @@ Platform (ZenAndVillage)
 | **L4** | Unit | Apartment, office, store, parking space |
 | **L5** | End User | Resident, owner, occupant — linked to one or more units |
 
-### 2.3 Subscription Account Profiles
+### 3.3 Subscription Account Profiles
 
 Every L1 account is the same entity in the data model. What differentiates an individual syndic from a property management company is exclusively the **plan they subscribe to** — specifically the plan's `max_condos` limit.
 
@@ -117,14 +255,14 @@ Every L1 account is the same entity in the data model. What differentiates an in
 | Small Management Co. | Professional | 5–15 | Consolidated view; API access |
 | Large Management Co. | Enterprise | Unlimited | API access; dedicated support |
 
-### 2.4 Data Isolation
+### 3.4 Data Isolation
 
 - Every data record belongs to exactly one tenant and, where applicable, one condominium.
 - No tenant can access another tenant's data under any circumstances.
 - The platform team (L0) may access any tenant's data only for support purposes, with a mandatory audit log entry.
 - Cross-tenant data aggregation is prohibited; reports only aggregate within the same tenant.
 
-### 2.5 Tenant Lifecycle
+### 3.5 Tenant Lifecycle
 
 > **Current version — no payment broker integration.** Subscription activation is performed manually by a `platform_admin` after reviewing the request. There is no automated payment processing.
 
@@ -161,7 +299,7 @@ Closure: data export → data retained for contractual period → deletion
 | `suspended` | Grace period ended without payment | Read-only; no creation or editing |
 | `canceled` | Cancellation requested | Data export only; no operational access |
 
-### 2.6 Plans & Subscriptions
+### 3.6 Plans & Subscriptions
 
 #### Plan Limitation Dimensions
 
@@ -221,7 +359,7 @@ next_billing_date?
 
 > **Note:** `payment_method` is collected for record-keeping and future integration with a payment broker. In the current version, activation is performed manually by a `platform_admin` and this field is not processed automatically.
 
-### 2.7 Business Rules — Multi-Tenancy
+### 3.7 Business Rules — Multi-Tenancy
 
 - **RN-MT-001:** Every API request must validate `tenant_id` before any data operation (technical detail in `architecture-guide.md`).
 - **RN-MT-002:** Database queries without a `tenant_id` filter are prohibited in production code.
@@ -238,7 +376,7 @@ next_billing_date?
 
 ---
 
-## 3. Domain Map
+## 4. Domain Map
 
 ZenAndVillage is structured around **13 bounded contexts** (business domains), each owning its aggregates, entities, and business rules. Cross-domain dependencies are explicit and unidirectional.
 
@@ -283,31 +421,31 @@ ZenAndVillage is structured around **13 bounded contexts** (business domains), e
 
 | # | Domain | Aggregate Root | Section |
 |---|---|---|---|
-| 1 | Identity & Access | `User` | §4 |
-| 2 | Condominium | `Condominium` | §5 |
-| 3 | Financial | `CondoCharge` | §6 |
-| 4 | Communication | `Notice` | §7 |
-| 5 | Gatehouse & Access Control | `AccessLog` | §8 |
-| 6 | Reservations | `AreaReservation` | §9 |
-| 7 | Incidents | `Incident` | §10 |
-| 8 | Polls | `Poll` | §11 |
-| 9 | Digital Assembly | `Assembly` | §12 |
-| 10 | Maintenance | `MaintenanceWorkOrder` | §13 |
-| 11 | HR & Labor | `Employee` | §14 |
-| 12 | Asset Management | `Asset` | §15 |
-| 13 | Consumable Inventory | `StockProduct` | §16 |
+| 1 | Identity & Access | `User` | §5 |
+| 2 | Condominium | `Condominium` | §6 |
+| 3 | Financial | `CondoCharge` | §7 |
+| 4 | Communication | `Notice` | §8 |
+| 5 | Gatehouse & Access Control | `AccessLog` | §9 |
+| 6 | Reservations | `AreaReservation` | §10 |
+| 7 | Incidents | `Incident` | §11 |
+| 8 | Polls | `Poll` | §12 |
+| 9 | Digital Assembly | `Assembly` | §13 |
+| 10 | Maintenance | `MaintenanceWorkOrder` | §14 |
+| 11 | HR & Labor | `Employee` | §15 |
+| 12 | Asset Management | `Asset` | §16 |
+| 13 | Consumable Inventory | `StockProduct` | §17 |
 
 > **Module availability:** modules not included in the tenant's plan must return `403 Feature not available in current plan`. Partial or degraded access is not permitted.
 
 ---
 
-## 4. Identity & Access Domain
+## 5. Identity & Access Domain
 
 **Aggregate root:** `User`
 
 This domain owns authentication, authorization, user lifecycle, and all onboarding flows — both the account owner subscription funnel and the invite-based resident flow.
 
-### 4.1 Account Owner Onboarding
+### 5.1 Account Owner Onboarding
 
 Applies to syndics, managers, and administradoras who create and own a subscription account.
 
@@ -374,7 +512,7 @@ Applies to syndics, managers, and administradoras who create and own a subscript
 3. The `tenant_owner` is automatically assigned `condo_syndic` on this condominium.
 4. `onboarding_status` advances to `complete`; full operational access is granted.
 
-### 4.2 Resident and Authorized Person Onboarding
+### 5.2 Resident and Authorized Person Onboarding
 
 Triggered from within an active condominium. Requires no subscription or payment.
 
@@ -397,7 +535,7 @@ Triggered from within an active condominium. Requires no subscription or payment
 - Only one user per role type may hold `is_primary = true` on a unit at a time.
 - A `ResidentInvite` record is created bound to the invitee's email.
 
-**Step 2 — Registration/login:** Same methods as Section 4.1. The invite token is bound to the invited email; authentication with a different email rejects the token.
+**Step 2 — Registration/login:** Same methods as Section 5.1. The invite token is bound to the invited email; authentication with a different email rejects the token.
 
 **Step 3 — Unit linkage:** Token is consumed; user is linked to the unit with the designated role and `is_primary = true`. `onboarding_status` → `complete`. Residents inherit access through the tenant's subscription — no personal subscription required.
 
@@ -410,7 +548,7 @@ Triggered from within an active condominium. Requires no subscription or payment
 
 Condo staff may also invite authorized persons directly. A user may be linked to multiple units across the same or different condominiums; each linkage is independent.
 
-### 4.3 Onboarding Status
+### 5.3 Onboarding Status
 
 | Status | Meaning |
 |---|---|
@@ -420,7 +558,7 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 | `onboarding` | Subscription approved; first condominium wizard not yet completed — account owners only |
 | `complete` | Full operational access granted |
 
-### 4.4 Role Taxonomy
+### 5.4 Role Taxonomy
 
 | Role | Level | Capabilities |
 |---|---|---|
@@ -447,7 +585,7 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 - When a tenant is suspended, residents (L5) retain read access (bills, history, notices).
 - Cross-tenant access is strictly prohibited.
 
-### 4.5 Entities
+### 5.5 Entities
 
 #### Entity: `User` — Aggregate Root
 
@@ -488,7 +626,7 @@ accepted_at?,
 revoked_by_id?, revoked_at?
 ```
 
-### 4.6 Business Rules
+### 5.6 Business Rules
 
 - **RN-ONB-001:** A user with `onboarding_status` of `pending_subscription`, `pending_approval`, or `onboarding` (wizard not yet complete) cannot create, access, or interact with any condominium data.
 - **RN-ONB-002:** Federated identity is treated as pre-verified; the email confirmation step is skipped.
@@ -513,13 +651,13 @@ revoked_by_id?, revoked_at?
 
 ---
 
-## 5. Condominium Domain
+## 6. Condominium Domain
 
 **Aggregate root:** `Condominium`
 
 This domain owns the physical and legal structure of the condominium: the building itself, its units, unit owners, and occupant tenants. It is the foundational domain that all other operational domains reference for scoping.
 
-### 5.1 Entities
+### 6.1 Entities
 
 #### Entity: `Condominium` — Aggregate Root
 
@@ -566,7 +704,7 @@ unit_id, lease_start_date, lease_end_date,
 lease_contract_url
 ```
 
-### 5.2 Business Rules — Governance
+### 6.2 Business Rules — Governance
 
 - **RN-GOV-001:** Bylaw amendments require approval of 2/3 of ALL condominium owners.
 - **RN-GOV-002:** The assembly agenda is closed; only items listed in the official summons may be voted on.
@@ -577,13 +715,13 @@ lease_contract_url
 
 ---
 
-## 6. Financial Domain
+## 7. Financial Domain
 
 **Aggregate root:** `CondoCharge`
 
 This domain owns condominium fee billing, delinquency tracking, budget management, and the reserve fund. Delinquency state produced here is consumed by the Reservations and Digital Assembly domains.
 
-### 6.1 Entities
+### 7.1 Entities
 
 #### Entity: `CondoCharge` — Aggregate Root
 
@@ -597,7 +735,7 @@ paid_at?, late_fine?, interest?,
 bill_url
 ```
 
-### 6.2 Business Rules
+### 7.2 Business Rules
 
 - **RN-FIN-001:** Overdue condominium fee automatically accrues a 2% fine + 1% monthly interest after the due date (Art. 1,336 CC).
 - **RN-FIN-002:** Owner with outstanding debt may not vote at assembly (`financial_status = delinquent` flag on `Owner`).
@@ -608,13 +746,13 @@ bill_url
 
 ---
 
-## 7. Communication Domain
+## 8. Communication Domain
 
 **Aggregate root:** `Notice`
 
 This domain owns all outbound communications to residents: formal notices, delinquency alerts, summons, emergency broadcasts, and general announcements.
 
-### 7.1 Entities
+### 8.1 Entities
 
 #### Entity: `Notice` — Aggregate Root
 
@@ -633,7 +771,7 @@ attachments: [url],
 status (draft | scheduled | sent | expired)
 ```
 
-### 7.2 Business Rules
+### 8.2 Business Rules
 
 - **RN-COM-001:** Assembly summons must be sent via the formal channel defined in the bylaws (email + app + bulletin board).
 - **RN-COM-002:** Delinquency notices must be sent exclusively to the responsible unit owner, never in group channels.
@@ -644,13 +782,13 @@ status (draft | scheduled | sent | expired)
 
 ---
 
-## 8. Gatehouse & Access Control Domain
+## 9. Gatehouse & Access Control Domain
 
 **Aggregate root:** `AccessLog`
 
 This domain owns physical access to the condominium: entry/exit logging, visitor management, QR code credentials, and biometric enrollment. It consumes credential data from the Identity & Access domain.
 
-### 8.1 Entities
+### 9.1 Entities
 
 #### Entity: `AccessLog` — Aggregate Root
 
@@ -666,7 +804,7 @@ photo_url?,
 vehicle_plate?
 ```
 
-### 8.2 Business Rules
+### 9.2 Business Rules
 
 - **RN-SEG-001:** Facial biometrics require individual, explicit consent; an alternative access method must exist for those who decline. This rule applies to all users uploading biometric photos, including those with the `authorized_person` role.
 - **RN-SEG-002:** Camera footage may only be shared with authorities via formal request; never directly to unit owners.
@@ -676,13 +814,13 @@ vehicle_plate?
 
 ---
 
-## 9. Reservations Domain
+## 10. Reservations Domain
 
 **Aggregate root:** `AreaReservation`
 
 This domain owns common area configuration and reservation management. It consumes delinquency state from the Financial domain and access status from the Maintenance domain.
 
-### 9.1 Entities
+### 10.1 Entities
 
 #### Entity: `CommonArea`
 
@@ -719,7 +857,7 @@ notes,
 notifications_sent: [{type, sent_at}]
 ```
 
-### 9.2 Business Rules
+### 10.2 Business Rules
 
 - **RN-RES-001:** Delinquent unit owners may not make new reservations for common areas.
 - **RN-RES-002:** Each unit may have at most N active reservations per month; N is defined in the condominium's internal regulations.
@@ -734,13 +872,13 @@ notifications_sent: [{type, sent_at}]
 
 ---
 
-## 10. Incidents Domain
+## 11. Incidents Domain
 
 **Aggregate root:** `Incident`
 
 This domain owns the registration, tracking, and resolution of complaints, violations, and general incidents. Maintenance incidents trigger work orders in the Maintenance domain.
 
-### 10.1 Entities
+### 11.1 Entities
 
 #### Entity: `Incident` — Aggregate Root
 
@@ -767,7 +905,7 @@ resident_rating? (1–5),
 rating_comment?
 ```
 
-### 10.2 Business Rules
+### 11.2 Business Rules
 
 - **RN-OCO-001:** Every filed incident must receive a unique protocol number immediately upon submission.
 - **RN-OCO-002:** The complainant must receive automatic notification at every status change.
@@ -780,13 +918,13 @@ rating_comment?
 
 ---
 
-## 11. Polls Domain
+## 12. Polls Domain
 
 **Aggregate root:** `Poll`
 
 This domain owns non-binding resident polls. Poll voting rights are independent of financial delinquency (unlike formal assemblies).
 
-### 11.1 Entities
+### 12.1 Entities
 
 #### Entity: `Poll` — Aggregate Root
 
@@ -821,7 +959,7 @@ open_text?,
 ranking_options: [{option_id, position}]?
 ```
 
-### 11.2 Business Rules
+### 12.2 Business Rules
 
 - **RN-ENQ-001:** Polls are non-binding and do not replace an assembly vote for decisions requiring a legal quorum.
 - **RN-ENQ-002:** Each unit (not each person) has the right to one vote per poll, unless the syndic configures otherwise.
@@ -834,13 +972,13 @@ ranking_options: [{option_id, position}]?
 
 ---
 
-## 12. Digital Assembly Domain
+## 13. Digital Assembly Domain
 
 **Aggregate root:** `Assembly`
 
 This domain owns formal condominium assemblies (AGO and AGE), including agenda management, quorum control, digital voting, and minutes. Voting rights are gated by financial status from the Financial domain.
 
-### 12.1 Entities
+### 13.1 Entities
 
 #### Entity: `Assembly` — Aggregate Root
 
@@ -855,7 +993,7 @@ minutes_url,
 status (scheduled | held | canceled)
 ```
 
-### 12.2 Business Rules
+### 13.2 Business Rules
 
 - **RN-ASS-001:** Assembly summons must respect the notice period defined in the bylaws (minimum 3 days for AGE, minimum 8 days for AGO).
 - **RN-ASS-002:** Owners with `financial_status = delinquent` may not vote at assemblies (per RN-FIN-002).
@@ -866,13 +1004,13 @@ status (scheduled | held | canceled)
 
 ---
 
-## 13. Maintenance Domain
+## 14. Maintenance Domain
 
 **Aggregate root:** `MaintenanceWorkOrder`
 
 This domain owns scheduled and corrective maintenance, legal compliance documents (AVCB, insurance, inspections), and checklist tracking. Work orders may be created manually or automatically by the Incidents domain.
 
-### 13.1 Entities
+### 14.1 Entities
 
 #### Entity: `MaintenanceWorkOrder` — Aggregate Root
 
@@ -898,7 +1036,7 @@ responsible_company, file_url,
 status (valid | expired | expiring_soon)
 ```
 
-### 13.2 Business Rules
+### 14.2 Business Rules
 
 - **RN-MAN-001:** Expired AVCB exposes the syndic to personal liability for any incident.
 - **RN-MAN-002:** Elevators must have documented monthly preventive maintenance and semi-annual inspections.
@@ -907,13 +1045,13 @@ status (valid | expired | expiring_soon)
 
 ---
 
-## 14. HR & Labor Domain
+## 15. HR & Labor Domain
 
 **Aggregate root:** `Employee`
 
 This domain owns direct and outsourced employee management for condominium staff, including eSocial integration, schedules, and employment contract lifecycle.
 
-### 14.1 Entities
+### 15.1 Entities
 
 #### Entity: `Employee` — Aggregate Root
 
@@ -928,7 +1066,7 @@ base_salary, schedule (44h | 12x36 | part_time),
 status (active | inactive | on_leave)
 ```
 
-### 14.2 Business Rules
+### 15.2 Business Rules
 
 - **RN-RH-001:** Every CLT employee must be registered in eSocial before starting work.
 - **RN-RH-002:** The syndic has no employment relationship with the condominium.
@@ -937,13 +1075,13 @@ status (active | inactive | on_leave)
 
 ---
 
-## 15. Asset Management Domain
+## 16. Asset Management Domain
 
 **Aggregate root:** `Asset`
 
 This domain owns the inventory, lifecycle, and movement of all physical assets acquired with condominium funds. Asset damage can generate incidents in the Incidents domain; assets linked to common areas affect availability in the Reservations domain.
 
-### 15.1 Entities
+### 16.1 Entities
 
 #### Entity: `Asset` — Aggregate Root
 
@@ -1003,7 +1141,7 @@ status (in_progress | completed),
 report_url?
 ```
 
-### 15.2 Business Rules
+### 16.2 Business Rules
 
 - **RN-PAT-001:** Every asset acquired with condominium funds must be tagged before being put into use, with the invoice linked.
 - **RN-PAT-002:** Disposal of assets above the value limit defined in the bylaws requires assembly approval.
@@ -1017,13 +1155,13 @@ report_url?
 
 ---
 
-## 16. Consumable Inventory Domain
+## 17. Consumable Inventory Domain
 
 **Aggregate root:** `StockProduct`
 
 This domain owns supply stock control, replenishment workflows, and purchase request approvals. Costs are classified by cost center and reflected in the Financial domain's monthly balance sheet.
 
-### 16.1 Entities
+### 17.1 Entities
 
 #### Entity: `StockProduct` — Aggregate Root
 
@@ -1100,7 +1238,7 @@ status (in_progress | completed | with_discrepancies),
 report_url?
 ```
 
-### 16.2 Business Rules
+### 17.2 Business Rules
 
 - **RN-EST-001:** Every stock entry must be linked to an invoice or receipt document.
 - **RN-EST-002:** Every stock exit must be recorded with an identified responsible party and a cost center.
@@ -1114,11 +1252,11 @@ report_url?
 
 ---
 
-## 17. Audit & Traceability
+## 18. Audit & Traceability
 
 **Cross-cutting concern.** Every write operation across all domains must generate an immutable audit log entry associated with the tenant and the responsible user.
 
-### 17.1 Entity: `AuditLog`
+### 18.1 Entity: `AuditLog`
 
 ```
 id, tenant_id, condo_id?,
@@ -1132,150 +1270,9 @@ occurred_at,
 success (bool), failure_reason?
 ```
 
-### 17.2 Business Rules
+### 18.2 Business Rules
 
 - **RN-AUD-001:** Audit logs are **immutable**; no user, not even `platform_admin`, may delete audit records.
 - **RN-AUD-002:** Sensitive actions (data export, plan change, L0 access to a tenant) must generate a real-time alert to the `tenant_owner`.
 - **RN-AUD-003:** Logs must be retained for the period defined in the plan, with a minimum of 12 months.
 - **RN-AUD-004:** In the event of a security incident, logs must be sufficient to reconstruct the full sequence of actions.
-
----
-
----
-
-## 18. Application Shell & UI Design
-
-This section documents the established design decisions for the authenticated web application experience. These decisions are implementation-confirmed and must be preserved across all future development. For technical stack choices (React, Tailwind CSS, Zustand, shadcn/ui), refer to `docs/architecture-guide.md`.
-
-### 18.1 Layout Structure
-
-The authenticated application uses a **two-layer shell**:
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                HEADER  (56 px, full-width)               │
-├─────────────┬────────────────────────────────────────────┤
-│             │  [Suspended tenant banner — conditional]   │
-│  SIDEBAR    ├────────────────────────────────────────────┤
-│             │                                            │
-│  224 px     │          MAIN CONTENT AREA                 │
-│  expanded   │          max-w-7xl · 24 px padding         │
-│   56 px     │                                            │
-│  collapsed  │                                            │
-└─────────────┴────────────────────────────────────────────┘
-```
-
-| Zone | Description |
-|---|---|
-| **Header** | Fixed 56 px strip spanning the full viewport width; always visible |
-| **Sidebar** | Collapsible vertical strip; 224 px expanded or 56 px icon-rail; auto-collapses on viewports narrower than 1024 px |
-| **Content area** | Scrollable region to the right of the sidebar; page content constrained to a maximum width of 1280 px with 24 px padding |
-| **Suspended tenant banner** | Destructive-styled warning bar rendered below the header (above content) when `Tenant.subscription_status = suspended`; does not replace the header |
-
-### 18.2 Header
-
-The header contains, from left to right:
-
-| Element | Position | Behavior |
-|---|---|---|
-| **Hamburger button** | Left | Toggles sidebar between expanded and collapsed |
-| **Flexible spacer** | Center | Pushes right-side controls to the right edge |
-| **Search field** | Right | Inline input on `md+` screens (208 px → 256 px on `lg`); collapses to an icon button on smaller screens that opens an animated popover (288 px wide). Keyboard shortcut hint shown inside the inline variant. |
-| **Vertical separator** | Right | Visual divider |
-| **Notification bell** | Right | Bell icon with numeric unread-count badge (capped at "9+"); opens/closes the Notification Panel |
-| **Vertical separator** | Right | Visual divider |
-| **User menu trigger** | Right | Avatar (initials on primary-color background) + display name + active tenant name (hidden on mobile) + chevron icon; opens/closes the User Menu |
-
-Notification Panel and User Menu are **mutually exclusive** — opening one closes the other.
-
-### 18.3 Sidebar
-
-The sidebar has three zones:
-
-**Logo zone (top, 56 px — matches header height):**
-
-| State | Asset |
-|---|---|
-| Expanded | Full horizontal logo; light variant (`/logo-light.svg`) in light mode, dark variant (`/logo-dark.svg`) in dark mode |
-| Collapsed | Square icon-only logo (`/logo-icon.svg`) |
-
-**Main navigation (middle, flex-grow):** primary feature links.
-
-| Label | Route |
-|---|---|
-| Dashboard | `/` |
-| Tenants | `/tenants` |
-| Property Managers | `/property-managers` |
-| Condominiums | `/condominiums` |
-| Residents | `/residents` |
-| Employees | `/employees` |
-
-**Utility navigation (bottom, above a separator):**
-
-| Label | Route |
-|---|---|
-| Settings | `/settings` |
-| Help | `/help` |
-
-In collapsed state, item labels are hidden and icons are centered; each icon carries an `aria-label` with the label text for accessibility. The active route is highlighted with a primary-tinted background and bold font weight.
-
-### 18.4 Notification Panel
-
-A popover anchored below-right of the bell icon (width: 320 px).
-
-**Structure:**
-
-| Zone | Content |
-|---|---|
-| **Header row** | "Notifications" title + "Mark all read" action button |
-| **Scrollable list** | Max-height 320 px; each item shows an unread indicator dot (primary color when unread, transparent when read), title, description, and relative timestamp (`Xm ago` / `Xh ago` / `Xd ago`). Clicking an item marks it as read. |
-| **Footer** | "View all" link for the full notification history page |
-
-The panel closes on outside click or Escape key. An empty state message is shown when there are no notifications.
-
-### 18.5 User Menu
-
-A popover anchored below-right of the user trigger (width: 288 px). Content is divided by separators into four sections:
-
-| # | Section | Content |
-|---|---|---|
-| 1 | **Identity header** | User display name + email — non-interactive, read-only |
-| 2 | **Preferences** | Single link navigating to `/preferences`; closes the menu |
-| 3 | **Tenant selector** | Rendered only when the user has access to more than one tenant. Header label "Switch account". Lists all accessible tenants; active tenant is bold with a checkmark. Selecting a different tenant updates `activeTenantId` in the session and triggers a full page reload to flush tenant-scoped data. |
-| 4 | **Sign out** | Destructive styling; clears the local session store and navigates to `/login` |
-
-### 18.6 Preferences Page
-
-Route: `/preferences`. Accessible via the User Menu → Preferences. Content is constrained to 672 px.
-
-Seven settings sections, each separated by a horizontal divider:
-
-| Section | Options | Default |
-|---|---|---|
-| **Color preset** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
-| **Border radius** | None (0 px), Small (7 px), Default (10 px), Large (14 px) | Default |
-| **Menu color** | Default, Inverted | Default |
-| **Menu accent** | Subtle, Bold | Subtle |
-| **Heading font** | Inter, Oxanium, Lora | Inter |
-| **Body font** | Inter, Oxanium, Lora | Inter |
-| **Appearance** | Light, Dark, Auto | Auto |
-| **Language** | pt_BR, en_US, Auto | Auto |
-
-**Color preset** overrides only the primary color and the five chart palette tokens; all other theme tokens are unchanged. **Inverted** menu color applies a dark sidebar background in light mode. **Bold** menu accent uses the active primary color for the selected navigation item highlight. **Auto** appearance follows the OS `prefers-color-scheme` setting; **Auto** language follows the browser's language preference.
-
-All preferences are stored client-side in the application store. Server-side preference persistence is not implemented in the current version.
-
-### 18.7 Dashboard
-
-Route: `/`. Default landing page after login. This is a **platform-level overview** for `platform_admin` and `tenant_admin`; it is not a per-condominium operational view.
-
-**Layout — three vertical rows:**
-
-| Row | Components |
-|---|---|
-| **KPI cards** | Four equal-width cards in a responsive grid (1 col → 2 col → 4 col at `sm` / `lg`). Metrics: Tenants, Condominiums, Residents, Employees. Each card shows current count + month-over-month delta. |
-| **Growth + mix (2/3 + 1/3)** | Area chart: tenant account growth over 6 months. Donut chart: plan distribution (Starter / Pro / Enterprise). |
-| **Analytics (three equal columns)** | Donut: resident financial status (current vs. delinquent). Donut: condominium types (residential / commercial / mixed). Horizontal bar: employee roles breakdown. |
-
-All chart colors use the five chart palette tokens, overridden by the active color preset so charts respond correctly to all theme choices.
-
