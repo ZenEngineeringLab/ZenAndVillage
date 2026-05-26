@@ -12,13 +12,14 @@
 
 1. [Visão do Produto](#1-visão-do-produto)
 2. [Modelo de Negócio Multi-Tenancy](#2-modelo-de-negócio-multi-tenancy)
-3. [Papéis de Usuário e Permissões](#3-papéis-de-usuário-e-permissões)
-4. [Planos e Assinaturas](#4-planos-e-assinaturas)
-5. [Módulos da Plataforma](#5-módulos-da-plataforma)
-6. [White-Label e Personalização](#6-white-label-e-personalização)
-7. [Domínio de Dados — Entidades e Atributos](#7-domínio-de-dados--entidades-e-atributos)
-8. [Regras de Negócio](#8-regras-de-negócio)
-9. [Auditoria e Rastreabilidade](#9-auditoria-e-rastreabilidade)
+3. [Cadastro e Onboarding de Usuários](#3-cadastro-e-onboarding-de-usuários)
+4. [Papéis de Usuário e Permissões](#4-papéis-de-usuário-e-permissões)
+5. [Planos e Assinaturas](#5-planos-e-assinaturas)
+6. [Módulos da Plataforma](#6-módulos-da-plataforma)
+7. [White-Label e Personalização](#7-white-label-e-personalização)
+8. [Domínio de Dados — Entidades e Atributos](#8-domínio-de-dados--entidades-e-atributos)
+9. [Regras de Negócio](#9-regras-de-negócio)
+10. [Auditoria e Rastreabilidade](#10-auditoria-e-rastreabilidade)
 
 ---
 
@@ -54,7 +55,13 @@ ZenAndVillage é uma **plataforma SaaS B2B2C com IA** para gestão de condomíni
 
 ### 2.1 Visão Geral do Modelo
 
-O ZenAndVillage opera como um modelo **multi-tenant hierárquico**. Um único deployment da plataforma atende múltiplos clientes (tenants) completamente isolados entre si.
+O ZenAndVillage opera como um modelo **multi-tenant hierárquico**. Um único deployment da plataforma atende múltiplas contas de assinatura (tenants) completamente isoladas entre si. A hierarquia natural é:
+
+```
+Plataforma → Conta de Assinatura → Condomínios → Blocos → Unidades → Moradores
+```
+
+Uma conta de assinatura (chamada **Tenant** no modelo de dados) é a unidade contratual e de faturamento: ela possui um plano, gerencia 1 a N condomínios conforme esse plano, e é completamente isolada de todas as outras contas na plataforma.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -64,49 +71,59 @@ O ZenAndVillage opera como um modelo **multi-tenant hierárquico**. Um único de
                │
    ┌───────────┼────────────┐
    ▼           ▼            ▼
-[Tenant A]  [Tenant B]   [Tenant C]
-Admin.      Admin.       Condomínio
-XYZ         ABC          Independente
-   │           │
- ┌─┴─┐       ┌─┴─┐
-[C1][C2]   [C3][C4]
-Condo.     Condo.
+[Conta A]   [Conta B]   [Conta C]
+Admin.      Admin.       Síndico
+XYZ         ABC          Individual
+   │           │              │
+ ┌─┴─┐       ┌─┴─┐          [C5]
+[C1][C2]   [C3][C4]        1 condo
 ```
 
-### 2.2 Hierarquia de Tenants
+### 2.2 Hierarquia
 
 ```
 Plataforma (ZenAndVillage)
-└── Tenant (Administradora | Condomínio Independente)
-    └── Condomínio
+└── Conta de Assinatura / Tenant
+    └── Condomínio  (1 a N, conforme max_condos do plano)
         └── Bloco / Torre
             └── Unidade
-                └── Morador / Proprietário / Inquilino
+                └── Morador / Proprietário / Ocupante
 ```
 
 | Nível | Entidade | Descrição |
 |---|---|---|
 | **L0** | Plataforma | A própria plataforma ZenAndVillage; acesso exclusivo da equipe ZenEngineeringLab |
-| **L1** | Tenant | Administradora ou condomínio independente (contrato direto com a plataforma) |
-| **L2** | Condomínio | Unidade operacional; sempre pertence a um Tenant L1 |
+| **L1** | Conta de Assinatura (Tenant) | Unidade contratual e de faturamento; possui um plano que determina quantos condomínios podem ser gerenciados |
+| **L2** | Condomínio | Unidade operacional; sempre pertence a uma conta L1 |
 | **L3** | Bloco / Torre | Agrupamento físico dentro do condomínio (opcional) |
 | **L4** | Unidade | Apartamento, sala, loja, vaga de garagem |
-| **L5** | Usuário Final | Morador, proprietário, inquilino — vinculado a uma ou mais unidades |
+| **L5** | Usuário Final | Morador, proprietário, ocupante — vinculado a uma ou mais unidades |
 
-### 2.3 Tipos de Tenant
+### 2.3 Perfis de Conta de Assinatura
 
-**Tenant Administradora (L1):**
+Toda conta L1 é a mesma entidade no modelo de dados. O que diferencia um síndico individual de uma administradora é exclusivamente o **plano contratado** — especificamente o limite `max_condos` do plano.
 
-- Gerencia N condomínios sob um único contrato.
+| Perfil | Plano Típico | max_condos | Observações |
+|---|---|---|---|
+| Síndico Individual | Solo / Starter | 1 | Gerencia um único condomínio diretamente |
+| Pequena Administradora | Professional | 5–15 | Visão consolidada; pode habilitar white-label |
+| Grande Administradora | Enterprise | Ilimitado | White-label completo; acesso à API; suporte dedicado |
+
+O campo `type` na entidade Tenant (`management_company` | `independent_condo`) é mantido para funcionalidades que diferem por perfil (ex: relatórios consolidados, elegibilidade para white-label), mas não impõe diferenças estruturais de acesso — os limites do plano são a restrição autoritativa.
+
+**Conta Administradora (L1):**
+
+- Gerencia N condomínios sob uma única assinatura.
 - Tem visão consolidada de todos os seus condomínios.
-- Pode ter marca white-label.
+- Pode habilitar marca white-label.
 - Configura padrões que os condomínios filhos podem herdar.
 
-**Tenant Condomínio Independente (L1):**
+**Conta Síndico Individual (L1):**
 
 - Edifício autogerido sem vínculo com administradora.
 - Síndico acessa diretamente, sem intermediário.
 - Utiliza a identidade padrão ZenAndVillage (sem white-label por padrão).
+- Limite de `max_condos = 1` restringe ao escopo de um único condomínio.
 
 ### 2.4 Isolamento de Dados
 
@@ -118,11 +135,17 @@ Plataforma (ZenAndVillage)
 ### 2.5 Ciclo de Vida do Tenant
 
 ```
-Cadastro / Trial
+Cadastro
       ↓
-Ativação (contrato + primeiro pagamento)
+Verificação de Identidade  (ignorada para auth federada)
       ↓
-Operação ativa
+Seleção de Plano & Checkout
+      ↓
+Conta Ativada  (status: trial ou active)
+      ↓
+Assistente de Configuração do Primeiro Condomínio
+      ↓
+Operação Ativa
       ↓
    [Inadimplência] → Pagamento vencido → Período de carência (7 dias) → Suspensão
    [Cancelamento]  → Cancelamento solicitado → Período de carência → Encerramento
@@ -144,9 +167,107 @@ Encerramento: exportação de dados disponibilizada → dados retidos pelo perí
 
 ---
 
-## 3. Papéis de Usuário e Permissões
+## 3. Cadastro e Onboarding de Usuários
 
-### 3.1 Taxonomia de Papéis
+### 3.1 Visão Geral do Funil de Onboarding
+
+Todo novo usuário percorre um funil linear. Nenhum acesso operacional é concedido até que a assinatura esteja ativa e o primeiro condomínio esteja configurado.
+
+```
+[Landing Page]
+      ↓
+[Cadastro / Login]
+      ↓  (e-mail+senha OU login federado)
+[Verificação de Identidade]   ← apenas para e-mail+senha; ignorada para federado
+      ↓
+[Seleção de Plano & Checkout]
+      ↓
+[Confirmação de Pagamento]
+      ↓
+[Conta Ativada]   (registros de Tenant + Subscription criados)
+      ↓
+[Assistente de Configuração do Primeiro Condomínio]
+      ↓
+[Acesso Operacional]
+```
+
+### 3.2 Formas de Cadastro
+
+Dois caminhos de autenticação são suportados:
+
+**E-mail e senha (conta local):**
+
+1. O usuário informa nome completo, endereço de e-mail e senha.
+2. O sistema envia um e-mail de verificação com link de validade limitada.
+3. A conta fica em estado `pending_verification` até que o link seja clicado.
+4. Contas não verificadas não podem avançar para a seleção de plano.
+5. Requisitos de senha: mínimo de 8 caracteres, ao menos uma letra maiúscula, um número e um caractere especial.
+
+**Login federado (social):**
+
+Provedores suportados: **Google**, **Facebook**, **Apple**.
+
+1. O usuário seleciona um provedor e se autentica na tela de consentimento do provedor.
+2. O provedor retorna uma identidade verificada (nome, e-mail, subject ID).
+3. Se não existir conta ZenAndVillage para o e-mail retornado, uma é criada automaticamente com `onboarding_status = pending_subscription`.
+4. A identidade é considerada pré-verificada; a etapa de confirmação de e-mail é completamente ignorada.
+5. Se o e-mail retornado já pertencer a uma conta local (e-mail+senha), o usuário deve vincular explicitamente as contas antes de obter acesso — nenhuma fusão silenciosa ocorre.
+
+### 3.3 Gate de Assinatura
+
+Após a autenticação, se o usuário não tiver assinatura ativa, ele é direcionado para a tela de seleção de plano. Este é um bloqueio obrigatório: nenhum condomínio pode ser criado ou acessado até que um plano seja selecionado e o pagamento confirmado (ou um trial ativado).
+
+**Ações permitidas no estado `pending_subscription`:**
+
+- Visualizar e comparar os planos disponíveis.
+- Selecionar um plano e avançar para o checkout.
+- Nenhuma outra funcionalidade da plataforma está disponível.
+
+**A seleção de plano é a decisão de negócio central:**
+
+Escolher um plano com `max_condos = 1` posiciona o usuário como síndico individual. Escolher um plano com limites maiores o posiciona como administradora. A plataforma não exige que o usuário declare seu perfil antecipadamente — a escolha do plano é a declaração implícita.
+
+### 3.4 Ativação da Conta
+
+Após pagamento bem-sucedido (ou ativação do trial sem pagamento):
+
+1. Um registro de **Tenant** é criado e vinculado ao usuário como `tenant_owner`.
+2. Um registro de **Subscription** é criado com `status = trial` (trial) ou `status = active` (pago).
+3. O `onboarding_status` do usuário avança para `onboarding`.
+4. O usuário é redirecionado para o **Assistente de Configuração do Primeiro Condomínio**.
+
+### 3.5 Assistente de Configuração do Primeiro Condomínio
+
+O assistente coleta os dados mínimos necessários para criar o primeiro condomínio operacional:
+
+1. **Identidade do condomínio:** nome, CNPJ (opcional nesta etapa), endereço, cidade, estado.
+2. **Estrutura:** número de unidades, número de blocos (opcional).
+3. **Atribuição de síndico:** o `tenant_owner` recebe automaticamente o papel `condo_syndic` neste condomínio.
+
+Ao concluir o assistente:
+
+- Um registro de **Condominium** é criado sob o tenant.
+- O `onboarding_status` avança para `complete`.
+- Acesso operacional completo a todos os módulos incluídos no plano é concedido.
+
+Condomínios adicionais (até o `max_condos` do plano) podem ser criados a partir do painel do tenant a qualquer momento após o onboarding.
+
+### 3.6 Status de Onboarding
+
+O campo `onboarding_status` na entidade `User` rastreia a posição do usuário no funil:
+
+| Status | Significado |
+|---|---|
+| `pending_verification` | Cadastrado via e-mail+senha; e-mail ainda não confirmado |
+| `pending_subscription` | Identidade verificada (ou federada); sem assinatura ativa |
+| `onboarding` | Assinatura ativa; assistente do primeiro condomínio não concluído |
+| `complete` | Ao menos um condomínio configurado; acesso operacional completo concedido |
+
+---
+
+## 4. Papéis de Usuário e Permissões
+
+### 4.1 Taxonomia de Papéis
 
 | Papel | Nível | Capacidades |
 |---|---|---|
@@ -162,7 +283,7 @@ Encerramento: exportação de dados disponibilizada → dados retidos pelo perí
 | `resident_owner` | L4/L5 | Proprietário de unidade; acesso a todos os recursos do morador |
 | `resident_tenant` | L4/L5 | Inquilino de unidade; acesso a recursos do morador exceto dados financeiros exclusivos do proprietário |
 
-### 3.2 Regras de Herança de Permissão
+### 4.2 Regras de Herança de Permissão
 
 - `tenant_admin` tem acesso implícito a todos os condomínios do seu tenant sem atribuição explícita por condomínio.
 - `condo_syndic` tem acesso apenas ao(s) condomínio(s) ao(s) qual(is) está explicitamente vinculado.
@@ -170,17 +291,17 @@ Encerramento: exportação de dados disponibilizada → dados retidos pelo perí
 - Moradores (`resident_owner`, `resident_tenant`) acessam apenas dados da(s) própria(s) unidade(s); nunca dados de outras unidades.
 - Acesso entre tenants é estritamente proibido; nenhum usuário de um tenant pode acessar dados de outro, nem mesmo `platform_support` sem autorização explícita e auditada.
 
-### 3.3 Comportamento na Suspensão para Usuários Finais
+### 4.3 Comportamento na Suspensão para Usuários Finais
 
 Quando um tenant é suspenso por inadimplência, os moradores (L5) mantêm acesso de leitura ao app (visualização de boletos, histórico, comunicados), para que a experiência do usuário final não seja penalizada pela inadimplência da administradora.
 
 ---
 
-## 4. Planos e Assinaturas
+## 5. Planos e Assinaturas
 
-### 4.1 Modelo de Comercialização
+### 5.1 Modelo de Comercialização
 
-As assinaturas são vendidas no nível **Tenant (L1)**. Os limites do plano se aplicam ao conjunto de condomínios gerenciados pelo tenant.
+As assinaturas são vendidas no nível **Tenant (L1)**. Os limites do plano se aplicam ao conjunto de condomínios gerenciados pelo tenant. O campo `max_condos` é o principal diferenciador entre planos para síndico individual e planos para administradoras.
 
 #### Dimensões de Limite do Plano
 
@@ -189,13 +310,13 @@ As assinaturas são vendidas no nível **Tenant (L1)**. Os limites do plano se a
 | `max_condos` | Número máximo de condomínios ativos no tenant |
 | `max_units_total` | Total de unidades em todos os condomínios |
 | `max_admin_users` | Número de usuários com papéis L1/L2 (síndicos, gestores) |
-| `enabled_modules` | Lista de módulos disponíveis para o tenant (ver Seção 5) |
+| `enabled_modules` | Lista de módulos disponíveis para o tenant (ver Seção 6) |
 | `data_retention_months` | Quantos meses de histórico de dados são retidos |
 | `support_level` | Nível de SLA de suporte: `basic`, `priority`, `dedicated` |
 | `white_label` | Marca personalizada habilitada (bool) |
 | `api_access` | Acesso à API REST para integrações (bool) |
 
-### 4.2 Entidades
+### 5.2 Entidades
 
 > Os nomes de campos seguem a versão canônica em inglês (`software-vision.md`).
 
@@ -248,7 +369,7 @@ payment_method (card | bank_slip | pix | transfer)
 
 ---
 
-## 5. Módulos da Plataforma
+## 6. Módulos da Plataforma
 
 | ID do Módulo | Nome do Módulo | Descrição |
 |---|---|---|
@@ -271,7 +392,7 @@ payment_method (card | bank_slip | pix | transfer)
 
 ---
 
-## 6. White-Label e Personalização
+## 7. White-Label e Personalização
 
 Tenants com o módulo `white_label` habilitado podem personalizar a experiência da plataforma para seus condomínios:
 
@@ -290,7 +411,7 @@ Tenants com o módulo `white_label` habilitado podem personalizar a experiência
 
 ---
 
-## 7. Domínio de Dados — Entidades e Atributos
+## 8. Domínio de Dados — Entidades e Atributos
 
 > Os nomes de campos seguem a versão canônica em inglês (`software-vision.md`), que é a referência para implementação.
 
@@ -354,7 +475,11 @@ status (active | inactive | on_leave)
 
 ```
 id, email, name, cpf?,
-password_hash, mfa_enabled (bool),
+auth_provider (local | google | facebook | apple),
+auth_provider_id?,          -- subject ID retornado pelo provedor federado
+password_hash?,             -- null para contas federadas
+mfa_enabled (bool),
+onboarding_status (pending_verification | pending_subscription | onboarding | complete),
 status (active | inactive | blocked | pending_verification),
 created_at, last_login?,
 roles: [{
@@ -675,9 +800,9 @@ report_url?
 
 ---
 
-## 8. Regras de Negócio
+## 9. Regras de Negócio
 
-### 8.1 Comunicação
+### 9.1 Comunicação
 
 - **RN-COM-001:** Convocações de assembleia devem ser enviadas pelo canal formal definido na convenção (e-mail + app + mural).
 - **RN-COM-002:** Comunicados sobre inadimplência devem ser enviados exclusivamente ao responsável pela unidade, nunca em grupos coletivos.
@@ -685,7 +810,7 @@ report_url?
 - **RN-COM-004:** O histórico de todos os comunicados enviados deve ser arquivado com data, hora, destinatários e conteúdo.
 - **RN-COM-005:** Alertas de emergência (água, gás, estrutura) devem disparar simultaneamente em todos os canais ativos (app + SMS + e-mail).
 
-### 8.2 Reserva de Espaços
+### 9.2 Reserva de Espaços
 
 - **RN-RES-001:** Condômino inadimplente não pode realizar novas reservas de áreas comuns.
 - **RN-RES-002:** Cada unidade pode ter no máximo N reservas ativas por mês; N é definido no regimento interno do condomínio.
@@ -697,7 +822,7 @@ report_url?
 - **RN-RES-008:** Reservas para datas com mais de 30 dias de antecedência requerem confirmação em até 7 dias antes da data.
 - **RN-RES-009:** Reservas em feriados ou fins de semana podem ter regras distintas (taxas, horários) configuráveis por condomínio.
 
-### 8.3 Ocorrências e Reclamações
+### 9.3 Ocorrências e Reclamações
 
 - **RN-OCO-001:** Toda ocorrência registrada deve receber número de protocolo único imediatamente após o registro.
 - **RN-OCO-002:** O reclamante deve receber notificação automática a cada mudança de status.
@@ -708,7 +833,7 @@ report_url?
 - **RN-OCO-007:** O histórico de ocorrências de uma unidade deve ser consultável pelo síndico para análise de reincidência.
 - **RN-OCO-008:** Ocorrências anônimas são permitidas apenas para denúncias; reclamações que gerem multa ao infrator exigem identificação do reclamante.
 
-### 8.4 Enquetes
+### 9.4 Enquetes
 
 - **RN-ENQ-001:** Enquetes são não vinculantes e não substituem votação em assembleia para decisões que exigem quórum legal.
 - **RN-ENQ-002:** Cada unidade (não cada pessoa) tem direito a um único voto por enquete, salvo configuração diferente pelo síndico.
@@ -719,7 +844,7 @@ report_url?
 - **RN-ENQ-007:** Condôminos inadimplentes podem participar de enquetes (diferente de assembleias formais, onde perdem o direito de voto).
 - **RN-ENQ-008:** Enquetes de satisfação com o síndico ou administradora devem ter participação garantida a todos os moradores, sem restrição.
 
-### 8.5 Financeiro
+### 9.5 Financeiro
 
 - **RN-FIN-001:** Cota condominial vencida gera automaticamente multa de 2% + juros de 1% ao mês após o vencimento (Art. 1.336 CC).
 - **RN-FIN-002:** Condômino com débito em aberto não pode votar em assembleia (flag `financial_status = delinquent`).
@@ -728,7 +853,7 @@ report_url?
 - **RN-FIN-005:** O fundo de reserva deve ter conta bancária separada da conta corrente operacional.
 - **RN-FIN-006:** O seguro de incêndio é obrigatório; sua ausência expõe o síndico a responsabilidade pessoal.
 
-### 8.6 Governança
+### 9.6 Governança
 
 - **RN-GOV-001:** Alterações na Convenção exigem aprovação de 2/3 de TODOS os condôminos.
 - **RN-GOV-002:** A pauta de assembleia é fechada; apenas itens do edital oficial podem ser votados.
@@ -737,28 +862,28 @@ report_url?
 - **RN-GOV-005:** A ata de assembleia que altera a convenção deve ser registrada em Cartório de Registro de Imóveis.
 - **RN-GOV-006:** O mandato do síndico é de no máximo 2 anos, renovável.
 
-### 8.7 Segurança e Acesso
+### 9.7 Segurança e Acesso
 
 - **RN-SEG-001:** O uso de biometria facial exige consentimento individual e explícito; deve haver meio alternativo de acesso para quem recusar.
 - **RN-SEG-002:** Imagens de câmeras só podem ser compartilhadas com autoridades via requisição formal; nunca diretamente a condôminos.
 - **RN-SEG-003:** Dados de visitantes devem ter prazo de retenção definido e ser excluídos após o período.
 - **RN-SEG-004:** Câmeras não podem ser posicionadas de modo a capturar áreas privativas ou interior dos apartamentos.
 
-### 8.8 Manutenção
+### 9.8 Manutenção
 
 - **RN-MAN-001:** AVCB vencido expõe o síndico a responsabilização pessoal por qualquer sinistro.
 - **RN-MAN-002:** Elevadores devem ter manutenção preventiva mensal e inspeção semestral documentadas.
 - **RN-MAN-003:** Reformas em unidades privativas que afetem estrutura, hidráulica ou elétrica exigem ART/RRT antes do início.
 - **RN-MAN-004:** Documentos de manutenção devem ser arquivados por no mínimo 5 anos.
 
-### 8.9 RH e Trabalhista
+### 9.9 RH e Trabalhista
 
 - **RN-RH-001:** Todo funcionário CLT deve ser registrado no eSocial antes do início das atividades.
 - **RN-RH-002:** O síndico não tem vínculo empregatício com o condomínio.
 - **RN-RH-003:** Funcionários terceirizados não podem receber ordens diretas do síndico (risco de vínculo empregatício).
 - **RN-RH-004:** Pagamento de verbas rescisórias deve ocorrer em até 10 dias após o desligamento.
 
-### 8.10 Gestão de Patrimônio
+### 9.10 Gestão de Patrimônio
 
 - **RN-PAT-001:** Todo bem adquirido com recursos condominiais deve ser tombado antes de entrar em uso, com a nota fiscal vinculada.
 - **RN-PAT-002:** O descarte de bens acima do valor limite definido na convenção exige aprovação em assembleia.
@@ -770,7 +895,7 @@ report_url?
 - **RN-PAT-008:** Dano a bem condominial causado por morador ou visitante gera ocorrência vinculada ao item, com opção de cobrar o responsável.
 - **RN-PAT-009:** Itens vinculados a áreas comuns em manutenção devem ser sinalizados como indisponíveis no módulo de reservas.
 
-### 8.11 Estoque de Consumíveis
+### 9.11 Estoque de Consumíveis
 
 - **RN-EST-001:** Toda entrada em estoque deve estar vinculada a uma nota fiscal ou documento de recebimento.
 - **RN-EST-002:** Toda saída de estoque deve ser registrada com responsável identificado e centro de custo.
@@ -782,7 +907,7 @@ report_url?
 - **RN-EST-008:** O relatório de estoque deve compor o relatório financeiro do síndico, comparando gastos reais com suprimentos vs. orçado.
 - **RN-EST-009:** As políticas de estoque (mínimo, máximo, ponto de pedido) podem ser configuradas por item, por condomínio.
 
-### 8.12 Multi-Tenancy
+### 9.12 Multi-Tenancy
 
 - **RN-MT-001:** Toda requisição à API deve validar o `tenant_id` antes de qualquer operação de dados (detalhes técnicos em `architecture-guide.md`).
 - **RN-MT-002:** Consultas ao banco de dados sem filtro de `tenant_id` são proibidas em código de produção.
@@ -793,22 +918,33 @@ report_url?
 - **RN-MT-007:** A exclusão de um tenant deve ser precedida de exportação completa dos dados em formato estruturado (JSON/CSV) disponibilizada por ao menos 30 dias.
 - **RN-MT-008:** Módulos não incluídos no plano devem retornar `403 Feature not available in current plan` — nunca exibir dados parciais.
 
-### 8.13 White-Label
+### 9.13 White-Label
 
 - **RN-WL-001:** A personalização white-label é por tenant (L1); todos os condomínios do tenant herdam a mesma marca.
 - **RN-WL-002:** Condomínios independentes sem o módulo white-label utilizam a identidade padrão ZenAndVillage.
 - **RN-WL-003:** O rodapé do app deve manter referência discreta "Powered by ZenAndVillage" no modo white-label, exceto em contratos enterprise que explicitamente dispensem.
 
-### 8.14 Entre Condomínios da Mesma Administradora
+### 9.14 Entre Condomínios da Mesma Administradora
 
 - **RN-CT-001:** `tenant_admin` nunca acessa dados de outro tenant, mesmo que as administradoras pertençam ao mesmo grupo empresarial.
 - **RN-CT-002:** Relatórios consolidados só agregam dados dentro do mesmo tenant.
 - **RN-CT-003:** Um condomínio não pode ser transferido entre tenants sem processo formal de migração e consentimento por escrito do síndico responsável.
 - **RN-CT-004:** A plataforma (L0) pode acessar dados de qualquer tenant apenas para fins de suporte, com registro imutável de auditoria.
 
+### 9.15 Cadastro e Onboarding
+
+- **RN-ONB-001:** Um usuário sem assinatura ativa (`onboarding_status = pending_subscription`) não pode criar, acessar nem interagir com nenhum dado de condomínio.
+- **RN-ONB-002:** Identidade federada (Google, Facebook, Apple) é tratada como pré-verificada; a etapa de confirmação de e-mail é completamente ignorada para essas contas.
+- **RN-ONB-003:** Se um provedor federado retornar um e-mail já cadastrado como conta local (e-mail+senha), o usuário deve vincular explicitamente as contas; fusão silenciosa de contas é proibida.
+- **RN-ONB-004:** Uma conta local e uma conta federada com o mesmo e-mail são tratadas como identidades separadas até que o usuário as vincule explicitamente.
+- **RN-ONB-005:** O Assistente de Configuração do Primeiro Condomínio deve ser concluído antes de o usuário acessar qualquer módulo operacional; contas com `onboarding_status = onboarding` estão restritas às telas do assistente.
+- **RN-ONB-006:** A ativação do trial não exige dados de pagamento no momento do cadastro; a conversão para assinatura paga exige forma de pagamento válida antes do encerramento do período de trial.
+- **RN-ONB-007:** Um `tenant_owner` pode ter papéis em condomínios de outros tenants como papel não-proprietário (ex: `condo_manager`); cada assinatura e cada atribuição de papel são independentes.
+- **RN-ONB-008:** O `max_condos` do plano é verificado no momento da criação do condomínio; tentativas de criar condomínios além do limite são bloqueadas com prompt claro de upgrade.
+
 ---
 
-## 9. Auditoria e Rastreabilidade
+## 10. Auditoria e Rastreabilidade
 
 Toda operação na plataforma deve gerar um registro de auditoria associado ao tenant e ao usuário responsável.
 
@@ -835,4 +971,4 @@ success (bool), failure_reason?
 
 ---
 
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.0 (versão inicial; conteúdo extraído e expandido de knowledge-base.md v1.4).*
+*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.1 (adicionada Seção 3 Cadastro e Onboarding de Usuários; hierarquia L1 renomeada para Conta de Assinatura; entidade User atualizada com campos auth_provider e onboarding_status; adicionadas regras de negócio RN-ONB).*

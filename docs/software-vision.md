@@ -1,6 +1,6 @@
 # Software Vision: ZenAndVillage Platform
 
-> **Canonical version.** This document defines the ZenAndVillage platform in American English (en-US): product vision, multi-tenancy business model, user roles, plans, data entities, and platform business rules.
+> **Canonical version.** This document defines the ZenAndVillage platform in American English (en-US): product vision, multi-tenancy business model, user registration and onboarding, user roles, plans, data entities, and platform business rules.
 > Every change made here must be reflected in [`software-vision.pt_BR.md`](software-vision.pt_BR.md).
 > For condominium domain knowledge (Brazilian law, roles, processes), refer to [`knowledge-base.md`](knowledge-base.md).
 > For technical implementation decisions (stack, API contracts, infrastructure), refer to [`architecture-guide.md`](architecture-guide.md).
@@ -11,13 +11,14 @@
 
 1. [Product Vision](#1-product-vision)
 2. [Multi-Tenancy Business Model](#2-multi-tenancy-business-model)
-3. [User Roles and Permissions](#3-user-roles-and-permissions)
-4. [Plans and Subscriptions](#4-plans-and-subscriptions)
-5. [Platform Modules](#5-platform-modules)
-6. [White-Label and Customization](#6-white-label-and-customization)
-7. [Data Domain — Entities and Attributes](#7-data-domain--entities-and-attributes)
-8. [Business Rules](#8-business-rules)
-9. [Audit and Traceability](#9-audit-and-traceability)
+3. [User Registration and Onboarding](#3-user-registration-and-onboarding)
+4. [User Roles and Permissions](#4-user-roles-and-permissions)
+5. [Plans and Subscriptions](#5-plans-and-subscriptions)
+6. [Platform Modules](#6-platform-modules)
+7. [White-Label and Customization](#7-white-label-and-customization)
+8. [Data Domain — Entities and Attributes](#8-data-domain--entities-and-attributes)
+9. [Business Rules](#9-business-rules)
+10. [Audit and Traceability](#10-audit-and-traceability)
 
 ---
 
@@ -53,7 +54,13 @@ ZenAndVillage is an **AI-powered B2B2C SaaS platform** for condominium and commu
 
 ### 2.1 Model Overview
 
-ZenAndVillage operates as a **hierarchical multi-tenant** model. A single platform deployment serves multiple completely isolated customers (tenants).
+ZenAndVillage operates as a **hierarchical multi-tenant** model. A single platform deployment serves multiple completely isolated subscription accounts (tenants). The natural reading of the hierarchy is:
+
+```
+Platform → Subscription Account → Condominiums → Blocks → Units → Residents
+```
+
+A subscription account (called **Tenant** in the data model) is the contractual and billing unit: it holds a plan, owns 1 to N condominiums according to that plan, and is fully isolated from every other account on the platform.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -63,49 +70,59 @@ ZenAndVillage operates as a **hierarchical multi-tenant** model. A single platfo
                │
    ┌───────────┼────────────┐
    ▼           ▼            ▼
-[Tenant A]  [Tenant B]   [Tenant C]
+[Account A] [Account B]  [Account C]
 Mgmt. Co.   Mgmt. Co.    Independent
-XYZ         ABC          Condominium
-   │           │
- ┌─┴─┐       ┌─┴─┐
-[C1][C2]   [C3][C4]
-Condo.     Condo.
+XYZ         ABC          Syndic
+   │           │              │
+ ┌─┴─┐       ┌─┴─┐          [C5]
+[C1][C2]   [C3][C4]        1 condo
 ```
 
-### 2.2 Tenant Hierarchy
+### 2.2 Hierarchy
 
 ```
 Platform (ZenAndVillage)
-└── Tenant (Management Company | Independent Condominium)
-    └── Condominium
+└── Subscription Account / Tenant
+    └── Condominium  (1 to N, governed by plan's max_condos)
         └── Block / Tower
             └── Unit
-                └── Resident / Owner / Tenant
+                └── Resident / Owner / Occupant
 ```
 
 | Level | Entity | Description |
 |---|---|---|
 | **L0** | Platform | ZenAndVillage platform itself; exclusive access by ZenEngineeringLab team |
-| **L1** | Tenant | Property management company or independent condominium (direct contract with the platform) |
-| **L2** | Condominium | Operational unit; always belongs to an L1 Tenant |
+| **L1** | Subscription Account (Tenant) | The contractual and billing unit; owns a plan that determines how many condominiums may be managed |
+| **L2** | Condominium | Operational unit; always belongs to one L1 account |
 | **L3** | Block / Tower | Physical grouping within the condominium (optional) |
 | **L4** | Unit | Apartment, office, store, parking space |
-| **L5** | End User | Resident, owner, tenant — linked to one or more units |
+| **L5** | End User | Resident, owner, occupant — linked to one or more units |
 
-### 2.3 Tenant Types
+### 2.3 Subscription Account Profiles
 
-**Management Company Tenant (L1):**
+Every L1 account is the same entity in the data model. What differentiates an individual syndic from a property management company is exclusively the **plan they subscribe to** — specifically the plan's `max_condos` limit.
 
-- Manages N condominiums under one contract.
+| Profile | Typical Plan | max_condos | Notes |
+|---|---|---|---|
+| Individual Syndic | Solo / Starter | 1 | Manages a single condominium directly |
+| Small Management Co. | Professional | 5–15 | Consolidated view; may enable white-label |
+| Large Management Co. | Enterprise | Unlimited | Full white-label; API access; dedicated support |
+
+The `type` field on the Tenant entity (`management_company` | `independent_condo`) is retained for features that differ by profile (e.g., consolidated reporting, white-label eligibility) but it does not impose structural access differences — the plan limits are the authoritative constraint.
+
+**Management Company Account (L1):**
+
+- Manages N condominiums under one subscription.
 - Has a consolidated view across all their condominiums.
-- May have white-label branding.
+- May enable white-label branding.
 - Configures defaults that child condominiums may inherit.
 
-**Independent Condominium Tenant (L1):**
+**Independent Syndic Account (L1):**
 
 - Self-managed building not linked to a management company.
 - Syndic accesses directly without an intermediary.
 - Uses the default ZenAndVillage identity (no white-label by default).
+- Plan limit of `max_condos = 1` enforces single-condominium scope.
 
 ### 2.4 Data Isolation
 
@@ -117,11 +134,17 @@ Platform (ZenAndVillage)
 ### 2.5 Tenant Lifecycle
 
 ```
-Registration / Trial
+Registration
       ↓
-Activation (contract + first payment)
+Identity Verification  (skipped for federated auth)
       ↓
-Active operation
+Plan Selection & Checkout
+      ↓
+Account Activated  (status: trial or active)
+      ↓
+First Condominium Setup Wizard
+      ↓
+Active Operation
       ↓
    [Delinquency] → Payment overdue → Grace period (7 days) → Suspension
    [Cancellation] → Cancellation requested → Grace period → Closure
@@ -143,9 +166,107 @@ Closure: data export made available → data retained for contractual period →
 
 ---
 
-## 3. User Roles and Permissions
+## 3. User Registration and Onboarding
 
-### 3.1 Role Taxonomy
+### 3.1 Onboarding Funnel Overview
+
+Every new user progresses through a linear funnel. No operational access is granted until the subscription is active and the first condominium is configured.
+
+```
+[Landing Page]
+      ↓
+[Registration / Sign-in]
+      ↓  (email+password OR federated)
+[Identity Verification]   ← email path only; skipped for federated
+      ↓
+[Plan Selection & Checkout]
+      ↓
+[Payment Confirmation]
+      ↓
+[Account Activated]   (Tenant + Subscription records created)
+      ↓
+[First Condominium Setup Wizard]
+      ↓
+[Operational Access]
+```
+
+### 3.2 Registration Methods
+
+Two authentication paths are supported:
+
+**Email and password (local account):**
+
+1. User provides full name, email address, and password.
+2. System sends a verification email with a time-limited link.
+3. Account is in `pending_verification` state until the link is clicked.
+4. Unverified accounts cannot proceed to plan selection.
+5. Password requirements: minimum 8 characters, at least one uppercase letter, one number, and one special character.
+
+**Federated (social) login:**
+
+Supported providers: **Google**, **Facebook**, **Apple**.
+
+1. User selects a provider and authenticates on the provider's consent screen.
+2. The provider returns a verified identity (name, email, subject ID).
+3. If no ZenAndVillage account exists for the returned email, one is created automatically with `onboarding_status = pending_subscription`.
+4. Identity is considered pre-verified; the email confirmation step is skipped entirely.
+5. If the returned email already belongs to a local (email+password) account, the user must explicitly link the provider before access is granted — no silent merge occurs.
+
+### 3.3 Subscription Gate
+
+After authentication, if the user has no active subscription, they land on the plan selection screen. This is a hard gate: no condominium can be created or accessed until a plan is selected and payment is confirmed (or a trial is activated).
+
+**Permitted actions in `pending_subscription` state:**
+
+- View and compare available plans.
+- Select a plan and proceed to checkout.
+- No other platform functionality is available.
+
+**Plan selection is the key business decision:**
+
+Choosing a plan with `max_condos = 1` positions the user as an individual syndic. Choosing a plan with higher limits positions them as a property management company. The platform does not require the user to declare their profile upfront — the plan choice is the implicit declaration.
+
+### 3.4 Account Activation
+
+After successful payment (or trial activation without payment):
+
+1. A **Tenant** record is created and linked to the user as `tenant_owner`.
+2. A **Subscription** record is created with `status = trial` (trial) or `status = active` (paid).
+3. `onboarding_status` on the User is advanced to `onboarding`.
+4. The user is redirected to the **First Condominium Setup Wizard**.
+
+### 3.5 First Condominium Setup Wizard
+
+The wizard collects the minimum data required to create the first operational condominium:
+
+1. **Condominium identity:** name, CNPJ (optional at this stage), address, city, state.
+2. **Structure:** number of units, number of blocks (optional).
+3. **Syndic assignment:** the `tenant_owner` is automatically assigned the `condo_syndic` role on this condominium.
+
+Upon wizard completion:
+
+- A **Condominium** record is created under the tenant.
+- `onboarding_status` is advanced to `complete`.
+- Full operational access to all modules included in the plan is granted.
+
+Additional condominiums (up to the plan's `max_condos`) may be created from the tenant dashboard at any time after onboarding is complete.
+
+### 3.6 Onboarding Status
+
+The `onboarding_status` field on the `User` entity tracks funnel position:
+
+| Status | Meaning |
+|---|---|
+| `pending_verification` | Registered via email+password; email not yet confirmed |
+| `pending_subscription` | Identity verified (or federated); no active subscription yet |
+| `onboarding` | Subscription active; first condominium wizard not yet completed |
+| `complete` | At least one condominium configured; full operational access granted |
+
+---
+
+## 4. User Roles and Permissions
+
+### 4.1 Role Taxonomy
 
 | Role | Level | Capabilities |
 |---|---|---|
@@ -161,7 +282,7 @@ Closure: data export made available → data retained for contractual period →
 | `resident_owner` | L4/L5 | Unit owner; access to all resident-facing features |
 | `resident_tenant` | L4/L5 | Unit tenant; access to resident features excluding owner-only financial data |
 
-### 3.2 Permission Inheritance Rules
+### 4.2 Permission Inheritance Rules
 
 - `tenant_admin` has implicit access to all condominiums within their tenant without explicit per-condominium assignment.
 - `condo_syndic` has access only to the condominium(s) they are explicitly linked to.
@@ -169,17 +290,17 @@ Closure: data export made available → data retained for contractual period →
 - Residents (`resident_owner`, `resident_tenant`) only access data for their own unit(s); they never access data from other units.
 - Cross-tenant access is strictly prohibited; no user of one tenant may access another tenant's data, not even `platform_support` without explicit, audited authorization.
 
-### 3.3 Suspension Behavior for End Users
+### 4.3 Suspension Behavior for End Users
 
 When a tenant is suspended due to delinquency, residents (L5) retain read access to the app (view bills, history, notices) so the end-user experience is not penalized by the management company's payment status.
 
 ---
 
-## 4. Plans and Subscriptions
+## 5. Plans and Subscriptions
 
-### 4.1 Commercialization Model
+### 5.1 Commercialization Model
 
-Subscriptions are sold at the **Tenant (L1)** level. Plan limits apply to the entire set of condominiums managed by the tenant.
+Subscriptions are sold at the **Tenant (L1)** level. Plan limits apply to the entire set of condominiums managed by the tenant. The `max_condos` field is the primary differentiator between individual syndic plans and management company plans.
 
 #### Plan Limitation Dimensions
 
@@ -188,13 +309,13 @@ Subscriptions are sold at the **Tenant (L1)** level. Plan limits apply to the en
 | `max_condos` | Maximum number of active condominiums in the tenant |
 | `max_units_total` | Total units across all condominiums |
 | `max_admin_users` | Number of users with L1/L2 roles (syndics, managers) |
-| `enabled_modules` | List of modules available to the tenant (see Section 5) |
+| `enabled_modules` | List of modules available to the tenant (see Section 6) |
 | `data_retention_months` | How many months of historical data is retained |
 | `support_level` | Support SLA level: `basic`, `priority`, `dedicated` |
 | `white_label` | Custom branding enabled (bool) |
 | `api_access` | REST API access for integrations (bool) |
 
-### 4.2 Entities
+### 5.2 Entities
 
 #### Entity: `Plan`
 
@@ -245,7 +366,7 @@ payment_method (card | bank_slip | pix | transfer)
 
 ---
 
-## 5. Platform Modules
+## 6. Platform Modules
 
 | Module ID | Module Name | Description |
 |---|---|---|
@@ -268,7 +389,7 @@ payment_method (card | bank_slip | pix | transfer)
 
 ---
 
-## 6. White-Label and Customization
+## 7. White-Label and Customization
 
 Tenants with the `white_label` module enabled may customize the platform experience for their condominiums:
 
@@ -287,7 +408,7 @@ Tenants with the `white_label` module enabled may customize the platform experie
 
 ---
 
-## 7. Data Domain — Entities and Attributes
+## 8. Data Domain — Entities and Attributes
 
 ### Entity: `Condominium`
 
@@ -349,7 +470,11 @@ status (active | inactive | on_leave)
 
 ```
 id, email, name, cpf?,
-password_hash, mfa_enabled (bool),
+auth_provider (local | google | facebook | apple),
+auth_provider_id?,          -- subject ID returned by the federated provider
+password_hash?,             -- null for federated accounts
+mfa_enabled (bool),
+onboarding_status (pending_verification | pending_subscription | onboarding | complete),
 status (active | inactive | blocked | pending_verification),
 created_at, last_login?,
 roles: [{
@@ -670,9 +795,9 @@ report_url?
 
 ---
 
-## 8. Business Rules
+## 9. Business Rules
 
-### 8.1 Communication
+### 9.1 Communication
 
 - **RN-COM-001:** Assembly summons must be sent via the formal channel defined in the bylaws (email + app + bulletin board).
 - **RN-COM-002:** Delinquency notices must be sent exclusively to the responsible unit owner, never in group channels.
@@ -680,7 +805,7 @@ report_url?
 - **RN-COM-004:** The history of all notices sent must be archived with date, time, recipients, and content.
 - **RN-COM-005:** Emergency alerts (water, gas, structural) must trigger simultaneously across all active channels (app + SMS + email).
 
-### 8.2 Space Reservations
+### 9.2 Space Reservations
 
 - **RN-RES-001:** Delinquent unit owners may not make new reservations for common areas.
 - **RN-RES-002:** Each unit may have at most N active reservations per month; N is defined in the condominium's internal regulations.
@@ -692,7 +817,7 @@ report_url?
 - **RN-RES-008:** Reservations for dates more than 30 days in advance require confirmation within 7 days of the date.
 - **RN-RES-009:** Reservations on holidays or weekends may have different rules (fees, hours) as configured per condominium.
 
-### 8.3 Incidents and Complaints
+### 9.3 Incidents and Complaints
 
 - **RN-OCO-001:** Every filed incident must receive a unique protocol number immediately upon submission.
 - **RN-OCO-002:** The complainant must receive automatic notification at every status change.
@@ -703,7 +828,7 @@ report_url?
 - **RN-OCO-007:** The incident history for a unit must be queryable by the syndic for repeat-offense analysis.
 - **RN-OCO-008:** Anonymous incidents are permitted for reports only; complaints that result in a fine to the offender require the complainant to be identified.
 
-### 8.4 Polls
+### 9.4 Polls
 
 - **RN-ENQ-001:** Polls are non-binding and do not replace an assembly vote for decisions requiring a legal quorum.
 - **RN-ENQ-002:** Each unit (not each person) has the right to one vote per poll, unless the syndic configures otherwise.
@@ -714,7 +839,7 @@ report_url?
 - **RN-ENQ-007:** Delinquent owners may participate in polls (unlike formal assemblies, where they lose voting rights).
 - **RN-ENQ-008:** Satisfaction polls about the syndic or management company must be available to all residents with no restrictions.
 
-### 8.5 Financial
+### 9.5 Financial
 
 - **RN-FIN-001:** Overdue condominium fee automatically accrues a 2% fine + 1% monthly interest after the due date (Art. 1,336 CC).
 - **RN-FIN-002:** Owner with outstanding debt may not vote at assembly (`financial_status = delinquent` flag).
@@ -723,7 +848,7 @@ report_url?
 - **RN-FIN-005:** The reserve fund must have a separate bank account from the operational checking account.
 - **RN-FIN-006:** Fire insurance is mandatory; its absence exposes the syndic to personal liability.
 
-### 8.6 Governance
+### 9.6 Governance
 
 - **RN-GOV-001:** Bylaw amendments require approval of 2/3 of ALL condominium owners.
 - **RN-GOV-002:** The assembly agenda is closed; only items listed in the official summons may be voted on.
@@ -732,28 +857,28 @@ report_url?
 - **RN-GOV-005:** Assembly minutes that amend bylaws must be registered at the Real Estate Registry Office.
 - **RN-GOV-006:** The syndic's term is at most 2 years, renewable.
 
-### 8.7 Security and Access
+### 9.7 Security and Access
 
 - **RN-SEG-001:** Facial biometrics require individual, explicit consent; an alternative access method must exist for those who decline.
 - **RN-SEG-002:** Camera footage may only be shared with authorities via formal request; never directly to unit owners.
 - **RN-SEG-003:** Visitor data must have a defined retention period and be deleted after the period.
 - **RN-SEG-004:** Cameras may not be positioned to capture private areas or apartment interiors.
 
-### 8.8 Maintenance
+### 9.8 Maintenance
 
 - **RN-MAN-001:** Expired AVCB exposes the syndic to personal liability for any incident.
 - **RN-MAN-002:** Elevators must have documented monthly preventive maintenance and semi-annual inspections.
 - **RN-MAN-003:** Renovations in private units affecting structure, plumbing, or electrical require ART/RRT before starting.
 - **RN-MAN-004:** Maintenance documents must be kept for at least 5 years.
 
-### 8.9 HR and Labor
+### 9.9 HR and Labor
 
 - **RN-RH-001:** Every CLT employee must be registered in eSocial before starting work.
 - **RN-RH-002:** The syndic has no employment relationship with the condominium.
 - **RN-RH-003:** Outsourced employees may not receive direct orders from the syndic (risk of establishing a direct employment relationship).
 - **RN-RH-004:** Termination amounts must be paid within 10 days of dismissal.
 
-### 8.10 Asset Management
+### 9.10 Asset Management
 
 - **RN-PAT-001:** Every asset acquired with condominium funds must be tagged before being put into use, with the invoice linked.
 - **RN-PAT-002:** Disposal of assets above the value limit defined in the bylaws requires assembly approval.
@@ -765,7 +890,7 @@ report_url?
 - **RN-PAT-008:** Damage to a condominium asset caused by a resident or visitor generates a linked incident with the option to charge the responsible party.
 - **RN-PAT-009:** Items linked to common areas under maintenance must be flagged as unavailable in the reservations module.
 
-### 8.11 Consumable Inventory
+### 9.11 Consumable Inventory
 
 - **RN-EST-001:** Every stock entry must be linked to an invoice or receipt document.
 - **RN-EST-002:** Every stock exit must be recorded with an identified responsible party and a cost center.
@@ -777,7 +902,7 @@ report_url?
 - **RN-EST-008:** The inventory report must be part of the syndic's financial report, showing actual supply spending vs. budgeted.
 - **RN-EST-009:** Stock policies (minimum, maximum, reorder point) may be configured per item, per condominium.
 
-### 8.12 Multi-Tenancy
+### 9.12 Multi-Tenancy
 
 - **RN-MT-001:** Every API request must validate `tenant_id` before any data operation (technical detail in `architecture-guide.md`).
 - **RN-MT-002:** Database queries without a `tenant_id` filter are prohibited in production code.
@@ -788,22 +913,33 @@ report_url?
 - **RN-MT-007:** Tenant deletion must be preceded by a full data export in structured format (JSON/CSV) made available for at least 30 days.
 - **RN-MT-008:** Modules not included in the plan must return `403 Feature not available in current plan` — never display partial data.
 
-### 8.13 White-Label
+### 9.13 White-Label
 
 - **RN-WL-001:** White-label customization is per tenant (L1); all condominiums in the tenant inherit the same branding.
 - **RN-WL-002:** Independent condominiums without the white-label module use the default ZenAndVillage identity.
 - **RN-WL-003:** The app footer must retain a discreet "Powered by ZenAndVillage" reference in white-label mode, except in enterprise contracts that explicitly waive it.
 
-### 8.14 Cross-Tenant (Management Company)
+### 9.14 Cross-Tenant (Management Company)
 
 - **RN-CT-001:** `tenant_admin` never accesses another tenant's data, even if the management companies share a corporate group.
 - **RN-CT-002:** Consolidated reports only aggregate data within the same tenant.
 - **RN-CT-003:** A condominium may not be transferred between tenants without a formal migration process with the responsible syndic's written consent.
 - **RN-CT-004:** The platform (L0) may access any tenant's data solely for support purposes, with an immutable audit log entry recorded.
 
+### 9.15 User Registration and Onboarding
+
+- **RN-ONB-001:** A user without an active subscription (`onboarding_status = pending_subscription`) cannot create, access, or interact with any condominium data.
+- **RN-ONB-002:** Federated identity (Google, Facebook, Apple) is treated as pre-verified; the email confirmation step is skipped entirely for these accounts.
+- **RN-ONB-003:** If a federated provider returns an email already registered as a local (email+password) account, the user must explicitly link the accounts; silent account merging is prohibited.
+- **RN-ONB-004:** A user registered under a local account and a federated account with the same email are treated as separate identities until explicitly linked by the user.
+- **RN-ONB-005:** The First Condominium Setup Wizard must be completed before the user can access any operational module; accounts in `onboarding_status = onboarding` are limited to the wizard screens only.
+- **RN-ONB-006:** Trial activation does not require payment details at sign-up; conversion to a paid subscription requires a valid payment method before the trial period ends.
+- **RN-ONB-007:** A `tenant_owner` may hold roles in other tenants' condominiums as a non-owner role (e.g., `condo_manager`); each subscription and each role assignment is independent.
+- **RN-ONB-008:** The plan's `max_condos` is enforced at condominium creation time; attempting to create a condominium beyond the limit is blocked with a clear upgrade prompt.
+
 ---
 
-## 9. Audit and Traceability
+## 10. Audit and Traceability
 
 Every operation on the platform must generate an audit log associated with the tenant and the responsible user.
 
@@ -830,4 +966,4 @@ success (bool), failure_reason?
 
 ---
 
-*Document for internal development use. Last review: May 2026 — v1.0 (initial version; content extracted and expanded from knowledge-base.md v1.4).*
+*Document for internal development use. Last review: May 2026 — v1.1 (added Section 3 User Registration and Onboarding; clarified Subscription as the L1 hierarchy layer; updated User entity with auth_provider and onboarding_status fields; added RN-ONB business rules).*
