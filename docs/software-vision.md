@@ -27,6 +27,7 @@
 15. [Asset Management Domain](#15-asset-management-domain)
 16. [Consumable Inventory Domain](#16-consumable-inventory-domain)
 17. [Audit & Traceability](#17-audit--traceability)
+18. [Application Shell & UI Design](#18-application-shell--ui-design)
 
 ---
 
@@ -1140,4 +1141,144 @@ success (bool), failure_reason?
 
 ---
 
-*Document for internal development use. Last review: May 2026 — v1.5 (removed White-Label & Customization feature: dropped Section 2.7 white-label content, RN-WL rules, white_label field from Plan and Dimension table, white_label_config block from Tenant entity, and white-label references from Value Proposition and Profile tables).*
+---
+
+## 18. Application Shell & UI Design
+
+This section documents the established design decisions for the authenticated web application experience. These decisions are implementation-confirmed and must be preserved across all future development. For technical stack choices (React, Tailwind CSS, Zustand, shadcn/ui), refer to `docs/architecture-guide.md`.
+
+### 18.1 Layout Structure
+
+The authenticated application uses a **two-layer shell**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                HEADER  (56 px, full-width)               │
+├─────────────┬────────────────────────────────────────────┤
+│             │  [Suspended tenant banner — conditional]   │
+│  SIDEBAR    ├────────────────────────────────────────────┤
+│             │                                            │
+│  224 px     │          MAIN CONTENT AREA                 │
+│  expanded   │          max-w-7xl · 24 px padding         │
+│   56 px     │                                            │
+│  collapsed  │                                            │
+└─────────────┴────────────────────────────────────────────┘
+```
+
+| Zone | Description |
+|---|---|
+| **Header** | Fixed 56 px strip spanning the full viewport width; always visible |
+| **Sidebar** | Collapsible vertical strip; 224 px expanded (`w-56`) or 56 px icon-rail (`w-14`); auto-collapses on viewports narrower than 1024 px |
+| **Content area** | Scrollable region to the right of the sidebar; page content constrained to `max-w-7xl` with 24 px padding |
+| **Suspended tenant banner** | Destructive-styled warning bar rendered below the header (above content) when `Tenant.subscription_status = suspended`; does not replace the header |
+
+### 18.2 Header
+
+The header contains, from left to right:
+
+| Element | Position | Behavior |
+|---|---|---|
+| **Hamburger button** | Left | Toggles sidebar between expanded and collapsed |
+| **Flexible spacer** | Center | Pushes right-side controls to the right edge |
+| **Search field** | Right | Inline input on `md+` screens (208 px → 256 px on `lg`); collapses to an icon button on smaller screens that opens an animated popover (288 px wide). Keyboard shortcut hint shown inside the inline variant. |
+| **Vertical separator** | Right | Visual divider |
+| **Notification bell** | Right | Bell icon with numeric unread-count badge (capped at "9+"); opens/closes the Notification Panel |
+| **Vertical separator** | Right | Visual divider |
+| **User menu trigger** | Right | Avatar (initials on primary-color background) + display name + active tenant name (hidden on mobile) + chevron icon; opens/closes the User Menu |
+
+Notification Panel and User Menu are **mutually exclusive** — opening one closes the other.
+
+### 18.3 Sidebar
+
+The sidebar has three zones:
+
+**Logo zone (top, 56 px — matches header height):**
+
+| State | Asset |
+|---|---|
+| Expanded | Full horizontal logo; light variant (`/logo-light.svg`) in light mode, dark variant (`/logo-dark.svg`) in dark mode |
+| Collapsed | Square icon-only logo (`/logo-icon.svg`) |
+
+**Main navigation (middle, flex-grow):** primary feature links.
+
+| Label | Route |
+|---|---|
+| Dashboard | `/` |
+| Tenants | `/tenants` |
+| Property Managers | `/property-managers` |
+| Condominiums | `/condominiums` |
+| Residents | `/residents` |
+| Employees | `/employees` |
+
+**Utility navigation (bottom, above a separator):**
+
+| Label | Route |
+|---|---|
+| Settings | `/settings` |
+| Help | `/help` |
+
+In collapsed state, item labels are hidden and icons are centered; each icon carries an `aria-label` with the label text for accessibility. The active route is highlighted with a primary-tinted background and bold font weight.
+
+### 18.4 Notification Panel
+
+A popover anchored below-right of the bell icon (width: 320 px).
+
+**Structure:**
+
+| Zone | Content |
+|---|---|
+| **Header row** | "Notifications" title + "Mark all read" action button |
+| **Scrollable list** | Max-height 320 px; each item shows an unread indicator dot (primary color when unread, transparent when read), title, description, and relative timestamp (`Xm ago` / `Xh ago` / `Xd ago`). Clicking an item marks it as read. |
+| **Footer** | "View all" link for the full notification history page |
+
+The panel closes on outside click or Escape key. An empty state message is shown when there are no notifications.
+
+### 18.5 User Menu
+
+A popover anchored below-right of the user trigger (width: 288 px). Content is divided by separators into four sections:
+
+| # | Section | Content |
+|---|---|---|
+| 1 | **Identity header** | User display name + email — non-interactive, read-only |
+| 2 | **Preferences** | Single link navigating to `/preferences`; closes the menu |
+| 3 | **Tenant selector** | Rendered only when the user has access to more than one tenant. Header label "Switch account". Lists all accessible tenants; active tenant is bold with a checkmark. Selecting a different tenant updates `activeTenantId` in the session and triggers a full page reload to flush tenant-scoped data. |
+| 4 | **Sign out** | Destructive styling; clears the local session store and navigates to `/login` |
+
+### 18.6 Preferences Page
+
+Route: `/preferences`. Accessible via the User Menu → Preferences. Content is constrained to 672 px (`max-w-2xl`).
+
+Seven settings sections, each separated by a horizontal divider:
+
+| Section | Options | Default |
+|---|---|---|
+| **Color preset** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
+| **Border radius** | None (0 px), Small (7 px), Default (10 px), Large (14 px) | Default |
+| **Menu color** | Default, Inverted | Default |
+| **Menu accent** | Subtle, Bold | Subtle |
+| **Heading font** | Inter, Oxanium, Lora | Inter |
+| **Body font** | Inter, Oxanium, Lora | Inter |
+| **Appearance** | Light, Dark, Auto | Auto |
+| **Language** | pt_BR, en_US, Auto | Auto |
+
+**Color preset** overrides only the primary color and the five chart palette tokens (`--chart-1` through `--chart-5`); all other theme tokens are unchanged. **Inverted** menu color applies a dark sidebar background in light mode. **Bold** menu accent uses the active primary color for the selected navigation item highlight. **Auto** appearance follows the OS `prefers-color-scheme` setting; **Auto** language follows the browser's language preference.
+
+All preferences are stored client-side in the application store. Server-side preference persistence is not implemented in the current version.
+
+### 18.7 Dashboard
+
+Route: `/`. Default landing page after login. This is a **platform-level overview** for `platform_admin` and `tenant_admin`; it is not a per-condominium operational view.
+
+**Layout — three vertical rows:**
+
+| Row | Components |
+|---|---|
+| **KPI cards** | Four equal-width cards in a responsive grid (1 col → 2 col → 4 col at `sm` / `lg`). Metrics: Tenants, Condominiums, Residents, Employees. Each card shows current count + month-over-month delta. |
+| **Growth + mix (2/3 + 1/3)** | Area chart: tenant account growth over 6 months. Donut chart: plan distribution (Starter / Pro / Enterprise). |
+| **Analytics (three equal columns)** | Donut: resident financial status (current vs. delinquent). Donut: condominium types (residential / commercial / mixed). Horizontal bar: employee roles breakdown. |
+
+All chart colors use CSS variables `--chart-1` through `--chart-5`, overridden by the active color preset so charts respond correctly to all theme choices.
+
+---
+
+*Document for internal development use. Last review: May 2026 — v1.6 (added Section 18 Application Shell & UI Design: layout structure, header composition, sidebar zones and navigation items, notification panel, user menu with tenant selector, preferences page settings, and dashboard layout — sourced from the zenvillage-web implementation).*

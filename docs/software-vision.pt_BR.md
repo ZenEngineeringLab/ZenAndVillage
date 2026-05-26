@@ -28,6 +28,7 @@
 15. [Domínio: Gestão de Patrimônio](#15-domínio-gestão-de-patrimônio)
 16. [Domínio: Estoque de Consumíveis](#16-domínio-estoque-de-consumíveis)
 17. [Auditoria & Rastreabilidade](#17-auditoria--rastreabilidade)
+18. [Shell da Aplicação & Design de Interface](#18-shell-da-aplicação--design-de-interface)
 
 ---
 
@@ -1143,4 +1144,144 @@ success (bool), failure_reason?
 
 ---
 
-*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.5 (funcionalidade White-Label & Personalização removida: excluída Seção 2.7, regras RN-WL, campo white_label do Plan e da tabela de dimensões, bloco white_label_config da entidade Tenant, e referências a white-label nas tabelas de Proposta de Valor e Perfis).*
+---
+
+## 18. Shell da Aplicação & Design de Interface
+
+Esta seção documenta as decisões de design estabelecidas para a experiência da aplicação web autenticada. Essas decisões foram confirmadas na implementação e devem ser preservadas em todo desenvolvimento futuro. Para escolhas de stack técnica (React, Tailwind CSS, Zustand, shadcn/ui), consulte `docs/architecture-guide.md`.
+
+### 18.1 Estrutura de Layout
+
+A aplicação autenticada utiliza um **shell em duas camadas**:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│              HEADER  (56 px, largura total)              │
+├─────────────┬────────────────────────────────────────────┤
+│             │  [Banner de tenant suspenso — condicional] │
+│  SIDEBAR    ├────────────────────────────────────────────┤
+│             │                                            │
+│  224 px     │          ÁREA DE CONTEÚDO PRINCIPAL        │
+│  expandida  │          max-w-7xl · padding 24 px         │
+│   56 px     │                                            │
+│  recolhida  │                                            │
+└─────────────┴────────────────────────────────────────────┘
+```
+
+| Zona | Descrição |
+|---|---|
+| **Header** | Faixa fixa de 56 px cobrindo toda a largura do viewport; sempre visível |
+| **Sidebar** | Faixa vertical recolhível; 224 px expandida (`w-56`) ou trilho de ícones de 56 px (`w-14`); recolhe automaticamente em viewports com menos de 1024 px |
+| **Área de conteúdo** | Região rolável à direita da sidebar; conteúdo limitado a `max-w-7xl` com padding de 24 px |
+| **Banner de tenant suspenso** | Barra com estilo destrutivo exibida abaixo do header (acima do conteúdo) quando `Tenant.subscription_status = suspended`; não substitui o header |
+
+### 18.2 Header
+
+O header contém, da esquerda para a direita:
+
+| Elemento | Posição | Comportamento |
+|---|---|---|
+| **Botão hambúrguer** | Esquerda | Alterna a sidebar entre expandida e recolhida |
+| **Espaçador flexível** | Centro | Empurra os controles do lado direito para a borda direita |
+| **Campo de busca** | Direita | Input inline em telas `md+` (208 px → 256 px em `lg`); colapsa para botão ícone em telas menores, que abre um popover animado (288 px de largura). Dica de atalho de teclado exibida dentro da variante inline. |
+| **Separador vertical** | Direita | Divisor visual |
+| **Sino de notificações** | Direita | Ícone de sino com badge numérico de não lidas (limitado a "9+"); abre/fecha o Painel de Notificações |
+| **Separador vertical** | Direita | Divisor visual |
+| **Gatilho do menu do usuário** | Direita | Avatar (iniciais em fundo com cor primária) + nome + nome do tenant ativo (oculto em mobile) + ícone chevron; abre/fecha o Menu do Usuário |
+
+O Painel de Notificações e o Menu do Usuário são **mutuamente exclusivos** — abrir um fecha o outro.
+
+### 18.3 Sidebar
+
+A sidebar possui três zonas:
+
+**Zona de logo (topo, 56 px — alinhada com a altura do header):**
+
+| Estado | Asset |
+|---|---|
+| Expandida | Logo horizontal completo; variante clara (`/logo-light.svg`) em modo claro, variante escura (`/logo-dark.svg`) em modo escuro |
+| Recolhida | Logo ícone quadrado (`/logo-icon.svg`) |
+
+**Navegação principal (meio, flex-grow):** links para as funcionalidades principais.
+
+| Rótulo | Rota |
+|---|---|
+| Dashboard | `/` |
+| Tenants | `/tenants` |
+| Property Managers | `/property-managers` |
+| Condominiums | `/condominiums` |
+| Residents | `/residents` |
+| Employees | `/employees` |
+
+**Navegação utilitária (rodapé, acima de um separador):**
+
+| Rótulo | Rota |
+|---|---|
+| Settings | `/settings` |
+| Help | `/help` |
+
+No estado recolhido, os rótulos dos itens ficam ocultos e os ícones ficam centralizados; cada ícone carrega um `aria-label` com o texto do rótulo para acessibilidade. A rota ativa é destacada com fundo em tom primário e peso de fonte negrito.
+
+### 18.4 Painel de Notificações
+
+Popover ancorado abaixo-direita do sino (largura: 320 px).
+
+**Estrutura:**
+
+| Zona | Conteúdo |
+|---|---|
+| **Linha de cabeçalho** | Título "Notificações" + botão de ação "Marcar todas como lidas" |
+| **Lista rolável** | Altura máxima 320 px; cada item exibe indicador de não lida (cor primária quando não lida, transparente quando lida), título, descrição e timestamp relativo (`Xmin atrás` / `Xh atrás` / `Xd atrás`). Clicar em um item o marca como lido. |
+| **Rodapé** | Link "Ver todas" para a página de histórico completo de notificações |
+
+O painel fecha ao clicar fora ou ao pressionar Escape. Um estado vazio é exibido quando não há notificações.
+
+### 18.5 Menu do Usuário
+
+Popover ancorado abaixo-direita do gatilho do usuário (largura: 288 px). O conteúdo é dividido por separadores em quatro seções:
+
+| # | Seção | Conteúdo |
+|---|---|---|
+| 1 | **Cabeçalho de identidade** | Nome e e-mail do usuário — não interativo, somente leitura |
+| 2 | **Preferências** | Link único que navega para `/preferences`; fecha o menu |
+| 3 | **Seletor de tenant** | Exibido apenas quando o usuário tem acesso a mais de um tenant. Rótulo de seção "Trocar conta". Lista todos os tenants acessíveis; o tenant ativo aparece em negrito com um checkmark. Selecionar outro tenant atualiza `activeTenantId` na sessão e dispara um recarregamento completo da página para descarregar dados com escopo de tenant. |
+| 4 | **Sair** | Estilo destrutivo; limpa o store de sessão local e navega para `/login` |
+
+### 18.6 Página de Preferências
+
+Rota: `/preferences`. Acessível via Menu do Usuário → Preferências. Conteúdo limitado a 672 px (`max-w-2xl`).
+
+Sete seções de configuração, separadas por divisores horizontais:
+
+| Seção | Opções | Padrão |
+|---|---|---|
+| **Preset de cores** | Neutral, Blue, Cyan, Emerald, Pink, Yellow, Sky, Indigo, Amber, Lime | Blue |
+| **Raio de borda** | Nenhum (0 px), Pequeno (7 px), Padrão (10 px), Grande (14 px) | Padrão |
+| **Cor do menu** | Padrão, Invertido | Padrão |
+| **Destaque do menu** | Sutil, Negrito | Sutil |
+| **Fonte de títulos** | Inter, Oxanium, Lora | Inter |
+| **Fonte de corpo** | Inter, Oxanium, Lora | Inter |
+| **Aparência** | Claro, Escuro, Automático | Automático |
+| **Idioma** | pt_BR, en_US, Automático | Automático |
+
+O **preset de cores** sobrescreve apenas a cor primária e os cinco tokens de paleta de gráficos (`--chart-1` a `--chart-5`); todos os outros tokens de tema permanecem inalterados. O menu **invertido** aplica fundo escuro à sidebar em modo claro. O destaque **negrito** utiliza a cor primária ativa para o item de navegação selecionado. **Automático** em aparência segue a configuração `prefers-color-scheme` do sistema operacional; **Automático** em idioma segue a preferência de idioma do navegador.
+
+Todas as preferências são armazenadas no lado do cliente no store da aplicação. Persistência de preferências no servidor não está implementada na versão atual.
+
+### 18.7 Dashboard
+
+Rota: `/`. Página de destino padrão após o login. Trata-se de uma **visão geral no nível da plataforma** para `platform_admin` e `tenant_admin`; não é uma visão operacional por condomínio.
+
+**Layout — três linhas verticais:**
+
+| Linha | Componentes |
+|---|---|
+| **Cards KPI** | Quatro cards de largura igual em grid responsivo (1 col → 2 col → 4 col em `sm` / `lg`). Métricas: Tenants, Condomínios, Moradores, Funcionários. Cada card exibe o total atual e o delta mensal. |
+| **Crescimento + mix (2/3 + 1/3)** | Gráfico de área: crescimento de contas tenant nos últimos 6 meses. Gráfico donut: distribuição de planos (Starter / Pro / Enterprise). |
+| **Análise (três colunas iguais)** | Donut: status financeiro dos moradores (adimplentes vs. inadimplentes). Donut: tipos de condomínio (residencial / comercial / misto). Barra horizontal: distribuição de funções de funcionários. |
+
+Todas as cores dos gráficos utilizam as variáveis CSS `--chart-1` a `--chart-5`, sobrescritas pelo preset de cores ativo, garantindo consistência visual com qualquer tema selecionado.
+
+---
+
+*Documento para uso interno de desenvolvimento. Última revisão: Maio 2026 — v1.6 (adicionada Seção 18 Shell da Aplicação & Design de Interface: estrutura de layout, composição do header, zonas e itens de navegação da sidebar, painel de notificações, menu do usuário com seletor de tenant, configurações da página de preferências e layout do dashboard — derivados da implementação zenvillage-web).*
