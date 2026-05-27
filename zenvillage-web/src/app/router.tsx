@@ -36,6 +36,8 @@ export const router = createBrowserRouter([
   // ─── Public routes ─────────────────────────────────────────────────────────
   { path: '/login',    element: <LoginPage /> },
   { path: '/register', element: <Suspense fallback={<Loading />}><RegisterPage /></Suspense> },
+  // verify-email is public: the user is not yet signed in during registration
+  { path: '/onboarding/verify-email', element: <Suspense fallback={<Loading />}><VerifyEmailPage /></Suspense> },
 
   // ─── Authenticated routes (guarded by AuthGuard) ──────────────────────────
   {
@@ -43,7 +45,6 @@ export const router = createBrowserRouter([
     element: <AuthGuard />,
     children: [
       // Onboarding funnel — AuthGuard enforces access by onboardingStatus
-      { path: 'onboarding/verify-email',     element: <Suspense fallback={<Loading />}><VerifyEmailPage /></Suspense> },
       { path: 'onboarding/plan-selection',   element: <Suspense fallback={<Loading />}><PlanSelectionPage /></Suspense> },
       { path: 'onboarding/pending-approval', element: <Suspense fallback={<Loading />}><PendingApprovalPage /></Suspense> },
       { path: 'onboarding/setup',            element: <Suspense fallback={<Loading />}><FirstCondoWizardPage /></Suspense> },

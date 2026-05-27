@@ -7,6 +7,9 @@ import { Amplify } from 'aws-amplify'
 import {
   signIn,
   signOut,
+  signUp,
+  confirmSignUp,
+  resendSignUpCode,
   getCurrentUser,
   fetchAuthSession,
   updateUserAttributes,
@@ -45,6 +48,29 @@ export const authAdapter = {
   async signIn(email: string, password: string) {
     const result = await signIn({ username: email, password })
     return result
+  },
+
+  async signUp(email: string, password: string, fullName: string) {
+    const result = await signUp({
+      username: email,
+      password,
+      options: {
+        userAttributes: {
+          email,
+          name: fullName,
+        },
+      },
+    })
+    return result
+  },
+
+  async confirmSignUp(email: string, code: string) {
+    const result = await confirmSignUp({ username: email, confirmationCode: code })
+    return result
+  },
+
+  async resendSignUpCode(email: string) {
+    await resendSignUpCode({ username: email })
   },
 
   async signOut() {

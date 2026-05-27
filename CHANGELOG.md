@@ -10,6 +10,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Registration page** — email/password/full-name form with Zod validation (min 8 chars, upper/lower/digit/symbol requirements); calls Cognito `signUp` and navigates to the verify-email step with registration state in route location
+- **Email verification page** — 6-digit code entry; on success calls Cognito `confirmSignUp`, creates the user record via `POST /v1/users` (public route), signs in, and routes to the onboarding funnel via AuthGuard
+- **`signUp`, `confirmSignUp`, `resendSignUpCode` methods** added to `authAdapter`; all Amplify Auth imports remain within the single adapter boundary
+- **Pre-Token Generation Lambda auto-advancement** — when `email_verified = true` and `onboardingStatus = pending_verification`, the Lambda atomically writes `pending_subscription` to DynamoDB before issuing the token, eliminating the need for a separate API call from the frontend; Lambda IAM permission updated from `grantReadData` to `grantReadWriteData`
+- **Cognito User Pool self-signup enabled** — `selfSignUpEnabled: true` and `autoVerify: { email: true }` added to the CognitoStack so account owners can register through the web app
+- **`custom:onboardingStatus` Cognito attribute** added to the User Pool custom attributes schema
+- **"Don't have an account?" link** added to the login page
+
+### Changed
+- **`/onboarding/verify-email` moved to public router** — the page is reached before the user is authenticated, so it is registered as a top-level public route rather than under the AuthGuard; the AuthGuard `pending_verification` case redirects to this public route unchanged
+
+
 - **AuthGuard onboarding routing** — reads `custom:onboardingStatus` JWT claim on sign-in; AuthGuard enforces the onboarding state machine (pending_verification → verify-email, pending_subscription → plan-selection, pending_approval → pending-approval, onboarding → setup wizard, complete → app); scaffold pages created for all onboarding and admin routes
 - **`custom:onboardingStatus` claim in JWT** — added to `AuthTokenClaims` interface in auth adapter; `LoginPage` now extracts and stores it in the auth store
 - **Router updated** — adds `/register`, `/onboarding/*`, and `/admin/*` routes; all onboarding and admin pages scaffolded as placeholders

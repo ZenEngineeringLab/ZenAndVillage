@@ -422,6 +422,26 @@
     "email": "Email",
     "password": "Password",
     "signIn": "Sign in",
-    "loginError": "Invalid email or password."
+    "loginError": "Invalid email or password.",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Create one",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Start your free trial today",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "confirmPassword": "Confirm Password",
+    "createAccount": "Create Account",
+    "registerError": "Could not create account. Please try again.",
+    "passwordMismatch": "Passwords do not match.",
+    "verifyEmailTitle": "Check your inbox",
+    "verifyEmailSubtitle": "We sent a 6-digit verification code to {{email}}",
+    "verificationCode": "Verification Code",
+    "verificationCodePlaceholder": "123456",
+    "verifyEmail": "Verify Email",
+    "resendCode": "Resend code",
+    "resendCodeSent": "A new code has been sent to your email.",
+    "verifyEmailError": "Invalid or expired code. Please try again."
   }
 }

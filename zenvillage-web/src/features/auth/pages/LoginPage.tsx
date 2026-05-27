@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -105,6 +105,12 @@ export function LoginPage() {
               {t('auth.signIn')}
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            {t('auth.noAccount')}{' '}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              {t('auth.signUpLink')}
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

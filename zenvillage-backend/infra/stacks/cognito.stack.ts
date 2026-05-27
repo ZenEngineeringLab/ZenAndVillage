@@ -52,14 +52,15 @@ export class CognitoStack extends Stack {
     // Grant DynamoDB read access if table ARN is provided
     if (usersTableArn) {
       const usersTable = Table.fromTableArn(this, 'UsersTable', usersTableArn)
-      usersTable.grantReadData(preTokenGenFn)
+      usersTable.grantReadWriteData(preTokenGenFn)
     }
 
     // User Pool
     this.userPool = new UserPool(this, 'UserPool', {
       userPoolName: `zenvillage-users-${env}`,
-      selfSignUpEnabled: false,
+      selfSignUpEnabled: true,
       signInAliases: { email: true },
+      autoVerify: { email: true },
       standardAttributes: {
         email: { required: true, mutable: true },
         fullname: { required: true, mutable: true },
@@ -69,6 +70,7 @@ export class CognitoStack extends Stack {
         roles: new StringAttribute({ mutable: true }),
         userId: new StringAttribute({ mutable: true }),
         locale: new StringAttribute({ mutable: true }),
+        onboardingStatus: new StringAttribute({ mutable: true }),
       },
       mfa: Mfa.OPTIONAL,
       mfaSecondFactor: {

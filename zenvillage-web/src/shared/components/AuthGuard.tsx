@@ -1,9 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuthStore } from '@/features/auth/store/auth.store'
 
-/** Routes that the onboarding flow is allowed to reach without being redirected. */
+/** Routes that the onboarding flow is allowed to reach without being redirected.
+ *  Note: /onboarding/verify-email is a public route (not guarded here). */
 const ONBOARDING_ROUTES = new Set([
-  '/onboarding/verify-email',
   '/onboarding/plan-selection',
   '/onboarding/pending-approval',
   '/onboarding/setup',
@@ -17,7 +17,7 @@ const SHARED_ROUTES = new Set(['/preferences'])
  *
  * Routing rules (checked in order):
  *   1. Not authenticated            → /login
- *   2. pending_verification         → /onboarding/verify-email
+ *   2. pending_verification         → /onboarding/verify-email (public route)
  *   3. pending_subscription         → /onboarding/plan-selection
  *   4. pending_approval             → /onboarding/pending-approval
  *   5. onboarding                   → /onboarding/setup (first-condo wizard)
@@ -39,7 +39,7 @@ export function AuthGuard() {
 
   switch (status) {
     case 'pending_verification':
-      if (pathname === '/onboarding/verify-email') return <Outlet />
+      // verify-email is a public route; redirect there from any guarded path
       return <Navigate to="/onboarding/verify-email" replace />
 
     case 'pending_subscription':

@@ -422,6 +422,26 @@
     "email": "E-mail",
     "password": "Senha",
     "signIn": "Entrar",
-    "loginError": "E-mail ou senha inválidos."
+    "loginError": "E-mail ou senha inválidos.",
+    "noAccount": "Não tem uma conta?",
+    "signUpLink": "Crie uma",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "signInLink": "Entrar",
+    "registerTitle": "Crie sua conta",
+    "registerSubtitle": "Comece seu período de avaliação gratuito",
+    "fullName": "Nome Completo",
+    "fullNamePlaceholder": "Seu nome completo",
+    "confirmPassword": "Confirmar Senha",
+    "createAccount": "Criar Conta",
+    "registerError": "Não foi possível criar a conta. Tente novamente.",
+    "passwordMismatch": "As senhas não coincidem.",
+    "verifyEmailTitle": "Verifique sua caixa de entrada",
+    "verifyEmailSubtitle": "Enviamos um código de verificação de 6 dígitos para {{email}}",
+    "verificationCode": "Código de Verificação",
+    "verificationCodePlaceholder": "123456",
+    "verifyEmail": "Verificar E-mail",
+    "resendCode": "Reenviar código",
+    "resendCodeSent": "Um novo código foi enviado para o seu e-mail.",
+    "verifyEmailError": "Código inválido ou expirado. Tente novamente."
   }
 }
