@@ -73,7 +73,6 @@ export const seedPropertyManagers: PropertyManager[] = [
     phone: '(11) 3000-0001',
     website: 'https://agatha.com.br',
     status: 'active',
-    whiteLabel: false,
     address: {
       zip: '01310-100',
       street: 'Av. Paulista',
@@ -96,14 +95,6 @@ export const seedPropertyManagers: PropertyManager[] = [
     phone: '(11) 3000-0003',
     website: 'https://habitex.com.br',
     status: 'active',
-    whiteLabel: true,
-    whiteLabelConfig: {
-      platformName: 'HabitexPro',
-      primaryColor: '#0d9488',
-      secondaryColor: '#065f46',
-      customDomain: 'app.habitex.com.br',
-      customSenderEmail: 'noreply@habitex.com.br',
-    },
     address: {
       zip: '04547-000',
       street: 'Rua Funchal',

@@ -180,13 +180,11 @@
       "cnpj": "CNPJ",
       "location": "City/State",
       "condominiums": "Condominiums",
-      "status": "Status",
-      "whiteLabel": "White-Label"
+      "status": "Status"
     },
     "tabs": {
       "general": "General",
-      "address": "Address",
-      "whiteLabel": "White-Label"
+      "address": "Address"
     },
     "fields": {
       "legalName": "Legal Name",
@@ -202,13 +200,7 @@
       "complement": "Complement",
       "neighborhood": "Neighborhood",
       "city": "City",
-      "state": "State",
-      "whiteLabelEnabled": "Enable White-Label",
-      "platformName": "Platform Name",
-      "primaryColor": "Primary Color",
-      "secondaryColor": "Secondary Color",
-      "customDomain": "Custom Domain",
-      "customSenderEmail": "Custom Sender Email"
+      "state": "State"
     },
     "detail": {
       "title": "Property Manager Details",

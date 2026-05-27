@@ -4,24 +4,32 @@ export type RadiusOption = 'none' | 'small' | 'default' | 'large'
 export type MenuColorOption = 'default' | 'inverted'
 export type MenuAccentOption = 'subtle' | 'bold'
 
+export type SubscriptionStatus =
+  | 'pending_approval'
+  | 'trial'
+  | 'active'
+  | 'delinquent'
+  | 'suspended'
+  | 'canceled'
+
+export type TenantStatus = 'active' | 'suspended' | 'canceled'
+
 export interface Tenant {
   id: string
   name: string
-  type: 'property_manager' | 'independent_condominium'
-  cnpj: string
+  type: 'management_company' | 'independent_condo'
+  taxId: string
   contactEmail: string
   phone: string
   responsibleName: string
   responsibleEmail: string
-  plan: 'starter' | 'pro' | 'enterprise'
+  planId: string
   billingCycle: 'monthly' | 'annual'
-  status: 'active' | 'trial' | 'suspended' | 'inactive'
-  trialEnd?: string
-  condominiumsCount: number
-  condominiumsLimit: number
-  unitsCount: number
-  unitsLimit: number
-  joinDate: string
+  subscriptionStatus: SubscriptionStatus
+  status: TenantStatus
+  trialEndDate?: string
+  usageLimits: { activeCondos: number; totalUnits: number; adminUsers: number }
+  createdAt: string
 }
 
 export interface PropertyManager {
@@ -34,14 +42,6 @@ export interface PropertyManager {
   phone: string
   website: string
   status: 'active' | 'inactive'
-  whiteLabel: boolean
-  whiteLabelConfig?: {
-    platformName: string
-    primaryColor: string
-    secondaryColor: string
-    customDomain: string
-    customSenderEmail: string
-  }
   address: {
     zip: string
     street: string

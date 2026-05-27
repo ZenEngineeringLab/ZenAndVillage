@@ -84,14 +84,6 @@ export function PropertyManagersPage() {
       ),
     },
     {
-      key: 'whiteLabel', header: t('propertyManagers.columns.whiteLabel'),
-      render: (row) => (
-        <Badge variant={row.whiteLabel ? 'info' : 'outline'}>
-          {row.whiteLabel ? t('common.yes') : t('common.no')}
-        </Badge>
-      ),
-    },
-    {
       key: 'actions', header: t('common.actions'),
       render: (row) => (
         <div className="flex gap-1">

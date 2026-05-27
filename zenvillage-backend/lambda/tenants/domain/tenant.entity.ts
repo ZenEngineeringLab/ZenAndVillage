@@ -1,20 +1,26 @@
 export type TenantType = 'management_company' | 'independent_condo'
-export type TenantPlan = 'starter' | 'pro' | 'enterprise'
-export type SubscriptionStatus = 'trial' | 'active' | 'delinquent' | 'canceled' | 'suspended'
+export type SubscriptionStatus =
+  | 'pending_approval'
+  | 'trial'
+  | 'active'
+  | 'delinquent'
+  | 'suspended'
+  | 'canceled'
 export type BillingCycle = 'monthly' | 'annual'
-
-export interface WhiteLabelConfig {
-  platformName: string
-  primaryColor: string
-  secondaryColor: string
-  customDomain?: string
-  customSenderEmail?: string
-}
+export type TenantStatus = 'active' | 'suspended' | 'canceled'
 
 export interface UsageLimits {
   activeCondos: number
   totalUnits: number
   adminUsers: number
+}
+
+export interface StatusChangeEntry {
+  actorId: string
+  previousStatus: TenantStatus
+  newStatus: TenantStatus
+  timestamp: string
+  reason?: string
 }
 
 export interface Tenant {
@@ -27,18 +33,14 @@ export interface Tenant {
   phone: string
   responsibleName: string
   responsibleEmail: string
-  planId: TenantPlan
+  planId: string
   subscriptionStatus: SubscriptionStatus
-  subscriptionStartDate: string
+  subscriptionStartDate?: string
   trialEndDate?: string
   billingCycle: BillingCycle
-  whiteLabelEnabled: boolean
-  whiteLabelConfig?: WhiteLabelConfig
   usageLimits: UsageLimits
-  maxCondos: number
-  maxUnits: number
-  maxAdminUsers: number
-  status: 'active' | 'suspended' | 'canceled'
+  status: TenantStatus
+  statusChangeLog: StatusChangeEntry[]
   createdAt: string
   updatedAt: string
 }

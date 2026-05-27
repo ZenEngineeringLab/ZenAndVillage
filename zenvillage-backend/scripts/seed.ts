@@ -185,7 +185,6 @@ async function seedPropertyManagers(): Promise<void> {
       phone: '(11) 3456-7890',
       website: 'https://agatha.com.br',
       status: 'active',
-      whiteLabel: false,
       address: {
         zip: '01310-100',
         street: 'Av. Paulista',
@@ -211,14 +210,6 @@ async function seedPropertyManagers(): Promise<void> {
       phone: '(11) 2222-3333',
       website: 'https://habitex.com.br',
       status: 'active',
-      whiteLabel: true,
-      whiteLabelConfig: {
-        platformName: 'Habitex Portal',
-        primaryColor: '#1a56db',
-        secondaryColor: '#f0f4ff',
-        customDomain: 'portal.habitex.com.br',
-        customSenderEmail: 'noreply@habitex.com.br',
-      },
       address: {
         zip: '04538-133',
         street: 'Av. Brigadeiro Faria Lima',

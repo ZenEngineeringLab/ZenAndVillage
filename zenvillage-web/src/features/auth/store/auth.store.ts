@@ -1,19 +1,27 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type OnboardingStatus =
+  | 'pending_verification'
+  | 'pending_subscription'
+  | 'pending_approval'
+  | 'onboarding'
+  | 'complete'
+
 export interface AuthUser {
   id: string
   email: string
   name: string
   roles: string[]
   locale: string
+  onboardingStatus: OnboardingStatus
 }
 
 export interface TenantSummary {
   id: string
   name: string
   type: 'management_company' | 'independent_condo'
-  status: string
+  status: 'active' | 'suspended' | 'canceled'
 }
 
 interface AuthState {

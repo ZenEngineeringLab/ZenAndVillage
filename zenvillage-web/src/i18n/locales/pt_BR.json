@@ -180,13 +180,11 @@
       "cnpj": "CNPJ",
       "location": "Cidade/Estado",
       "condominiums": "Condomínios",
-      "status": "Status",
-      "whiteLabel": "White-Label"
+      "status": "Status"
     },
     "tabs": {
       "general": "Geral",
-      "address": "Endereço",
-      "whiteLabel": "White-Label"
+      "address": "Endereço"
     },
     "fields": {
       "legalName": "Razão Social",
@@ -202,13 +200,7 @@
       "complement": "Complemento",
       "neighborhood": "Bairro",
       "city": "Cidade",
-      "state": "Estado",
-      "whiteLabelEnabled": "Ativar White-Label",
-      "platformName": "Nome da Plataforma",
-      "primaryColor": "Cor Primária",
-      "secondaryColor": "Cor Secundária",
-      "customDomain": "Domínio Personalizado",
-      "customSenderEmail": "E-mail de Envio Personalizado"
+      "state": "Estado"
     },
     "detail": {
       "title": "Detalhes da Administradora",

@@ -37,8 +37,6 @@ const mainHandler = async (event: APIGatewayProxyEventV2WithLambdaAuthorizer<any
     phone: body.phone ?? '',
     site: body.site,
     address: body.address ?? { zipCode: '', street: '', number: '', neighborhood: '', city: '', state: '' },
-    whiteLabelEnabled: body.whiteLabelEnabled ?? false,
-    whiteLabelConfig: body.whiteLabelConfig,
     status: body.status ?? 'active',
     createdAt: now,
     updatedAt: now,

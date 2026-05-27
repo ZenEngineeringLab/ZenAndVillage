@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
-import { Switch } from '@/shared/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import type { PropertyManager } from '@/shared/types/entities'
 
@@ -25,12 +23,6 @@ const schema = z.object({
   neighborhood: z.string().min(1),
   city: z.string().min(1),
   state: z.string().min(1),
-  whiteLabel: z.boolean(),
-  platformName: z.string(),
-  primaryColor: z.string(),
-  secondaryColor: z.string(),
-  customDomain: z.string(),
-  customSenderEmail: z.string(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -43,7 +35,6 @@ interface Props {
 
 export function PropertyManagerForm({ initialData, onSave, onCancel }: Props) {
   const { t } = useTranslation()
-  const [whiteLabelEnabled, setWhiteLabelEnabled] = useState(initialData?.whiteLabel ?? false)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -62,12 +53,6 @@ export function PropertyManagerForm({ initialData, onSave, onCancel }: Props) {
       neighborhood: initialData?.address?.neighborhood ?? '',
       city: initialData?.address?.city ?? '',
       state: initialData?.address?.state ?? '',
-      whiteLabel: whiteLabelEnabled,
-      platformName: initialData?.whiteLabelConfig?.platformName ?? '',
-      primaryColor: initialData?.whiteLabelConfig?.primaryColor ?? '',
-      secondaryColor: initialData?.whiteLabelConfig?.secondaryColor ?? '',
-      customDomain: initialData?.whiteLabelConfig?.customDomain ?? '',
-      customSenderEmail: initialData?.whiteLabelConfig?.customSenderEmail ?? '',
     },
   })
 
@@ -81,21 +66,11 @@ export function PropertyManagerForm({ initialData, onSave, onCancel }: Props) {
       phone: data.phone,
       website: data.website,
       status: 'active',
-      whiteLabel: whiteLabelEnabled,
       address: {
         zip: data.zip, street: data.street, number: data.number,
         complement: data.complement, neighborhood: data.neighborhood,
         city: data.city, state: data.state,
       },
-      ...(whiteLabelEnabled && {
-        whiteLabelConfig: {
-          platformName: data.platformName,
-          primaryColor: data.primaryColor,
-          secondaryColor: data.secondaryColor,
-          customDomain: data.customDomain,
-          customSenderEmail: data.customSenderEmail,
-        },
-      }),
     })
   }
 
@@ -113,7 +88,6 @@ export function PropertyManagerForm({ initialData, onSave, onCancel }: Props) {
         <TabsList className="mb-4">
           <TabsTrigger value="general">{t('propertyManagers.tabs.general')}</TabsTrigger>
           <TabsTrigger value="address">{t('propertyManagers.tabs.address')}</TabsTrigger>
-          <TabsTrigger value="whiteLabel">{t('propertyManagers.tabs.whiteLabel')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -168,34 +142,6 @@ export function PropertyManagerForm({ initialData, onSave, onCancel }: Props) {
               <Input id="state" {...register('state')} maxLength={2} />
             </F>
           </div>
-        </TabsContent>
-
-        <TabsContent value="whiteLabel" className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Switch id="wl" checked={whiteLabelEnabled} onCheckedChange={setWhiteLabelEnabled} />
-            <Label htmlFor="wl">{t('propertyManagers.fields.whiteLabelEnabled')}</Label>
-          </div>
-          {whiteLabelEnabled && (
-            <>
-              <F label={t('propertyManagers.fields.platformName')} id="platformName">
-                <Input id="platformName" {...register('platformName')} />
-              </F>
-              <div className="grid grid-cols-2 gap-2">
-                <F label={t('propertyManagers.fields.primaryColor')} id="primaryColor">
-                  <Input id="primaryColor" {...register('primaryColor')} placeholder="#0d9488" />
-                </F>
-                <F label={t('propertyManagers.fields.secondaryColor')} id="secondaryColor">
-                  <Input id="secondaryColor" {...register('secondaryColor')} placeholder="#065f46" />
-                </F>
-              </div>
-              <F label={t('propertyManagers.fields.customDomain')} id="customDomain">
-                <Input id="customDomain" {...register('customDomain')} placeholder="app.yourplatform.com" />
-              </F>
-              <F label={t('propertyManagers.fields.customSenderEmail')} id="customSenderEmail">
-                <Input id="customSenderEmail" {...register('customSenderEmail')} placeholder="noreply@yourplatform.com" />
-              </F>
-            </>
-          )}
         </TabsContent>
       </Tabs>
 

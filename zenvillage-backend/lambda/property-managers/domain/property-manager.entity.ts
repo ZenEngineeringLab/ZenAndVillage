@@ -8,14 +8,6 @@ export interface Address {
   state: string
 }
 
-export interface WhiteLabelConfig {
-  platformName: string
-  primaryColor: string
-  secondaryColor: string
-  customDomain?: string
-  customSenderEmail?: string
-}
-
 export interface PropertyManager {
   id: string
   tenantId: string
@@ -27,8 +19,6 @@ export interface PropertyManager {
   phone: string
   site?: string
   address: Address
-  whiteLabelEnabled: boolean
-  whiteLabelConfig?: WhiteLabelConfig
   status: 'active' | 'inactive'
   createdAt: string
   updatedAt: string
