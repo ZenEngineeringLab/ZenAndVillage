@@ -11,7 +11,12 @@
     "residents": "Residents",
     "employees": "Employees",
     "settings": "Settings",
-    "help": "Help"
+    "help": "Help",
+    "admin": "Platform Admin",
+    "adminOverview": "Overview",
+    "adminSubscriptions": "Subscriptions",
+    "adminTenants": "Tenants",
+    "adminPlans": "Plans"
   },
   "header": {
     "search": "Search...",
@@ -494,6 +499,132 @@
       "refreshing": "Checking…",
       "noChange": "No updates yet. Check back later.",
       "signOut": "Sign out"
+    },
+    "admin": {
+      "access_denied": "You do not have permission to access this area.",
+      "overview": {
+        "title": "Platform Overview",
+        "pendingRequests": "Pending Requests",
+        "totalTenants": "Total Tenants",
+        "activeTenants": "Active Tenants",
+        "totalPlans": "Total Plans",
+        "recentRequests": "Recent Subscription Requests",
+        "noRequests": "No subscription requests yet.",
+        "viewAll": "View all",
+        "status": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected"
+        }
+      },
+      "subscriptions": {
+        "title": "Subscription Requests",
+        "subtitle": "Review and approve or reject subscription requests.",
+        "filterAll": "All",
+        "filterPending": "Pending",
+        "filterApproved": "Approved",
+        "filterRejected": "Rejected",
+        "columns": {
+          "tenant": "Organization",
+          "plan": "Plan",
+          "billing": "Billing",
+          "requestedAt": "Requested",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "status": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected"
+        },
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveTitle": "Approve subscription",
+        "approveSubtitle": "Select the subscription status to activate for this tenant.",
+        "approveStatus": "Subscription status",
+        "approveStatusTrial": "Trial",
+        "approveStatusActive": "Active",
+        "confirmApprove": "Approve",
+        "rejectTitle": "Reject subscription",
+        "rejectSubtitle": "Provide a reason for rejection (minimum 20 characters). The user will be notified and may resubmit.",
+        "rejectionReason": "Rejection reason",
+        "rejectionReasonPlaceholder": "Describe why this subscription request is being rejected…",
+        "confirmReject": "Reject",
+        "empty": "No subscription requests found.",
+        "approveSuccess": "Subscription approved.",
+        "rejectSuccess": "Subscription rejected."
+      },
+      "tenants": {
+        "title": "Tenant Management",
+        "subtitle": "View and manage all platform tenants.",
+        "columns": {
+          "name": "Organization",
+          "type": "Type",
+          "plan": "Plan",
+          "subscriptionStatus": "Subscription",
+          "status": "Status",
+          "createdAt": "Created"
+        },
+        "type": {
+          "management_company": "Management Co.",
+          "independent_condo": "Independent"
+        },
+        "subscriptionStatus": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected",
+          "suspended": "Suspended",
+          "canceled": "Canceled"
+        },
+        "empty": "No tenants found.",
+        "notImplemented": "The cross-tenant admin endpoint is not yet deployed. Tenants will appear here once GET /v1/admin/tenants is available."
+      },
+      "plans": {
+        "title": "Plan Management",
+        "subtitle": "Create, edit, and manage subscription plans.",
+        "new": "New Plan",
+        "edit": "Edit Plan",
+        "discontinue": "Discontinue",
+        "discontinueConfirm": "Are you sure you want to discontinue this plan? It will no longer appear on the plan selection screen and cannot be reactivated.",
+        "columns": {
+          "name": "Name",
+          "monthlyPrice": "Monthly",
+          "annualPrice": "Annual",
+          "maxCondos": "Max Condos",
+          "status": "Status",
+          "public": "Visible",
+          "actions": "Actions"
+        },
+        "status": {
+          "active": "Active",
+          "discontinued": "Discontinued"
+        },
+        "empty": "No plans found.",
+        "fields": {
+          "name": "Plan name",
+          "description": "Description",
+          "monthlyPrice": "Monthly price (R$)",
+          "annualPrice": "Annual price (R$)",
+          "maxCondos": "Max condominiums",
+          "maxUnitsTotal": "Max total units",
+          "maxAdminUsers": "Max admin users",
+          "dataRetentionMonths": "Data retention (months)",
+          "supportLevel": "Support level",
+          "apiAccess": "API access",
+          "public": "Show on plan selection screen"
+        },
+        "supportLevel": {
+          "basic": "Basic",
+          "priority": "Priority",
+          "dedicated": "Dedicated"
+        },
+        "createSuccess": "Plan created successfully.",
+        "updateSuccess": "Plan updated successfully.",
+        "discontinueSuccess": "Plan discontinued."
+      }
     },
     "firstCondoWizard": {
       "title": "Set up your first condominium",

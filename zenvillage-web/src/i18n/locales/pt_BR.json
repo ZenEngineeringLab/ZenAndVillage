@@ -11,7 +11,12 @@
     "residents": "Moradores",
     "employees": "Funcionários",
     "settings": "Configurações",
-    "help": "Ajuda"
+    "help": "Ajuda",
+    "admin": "Admin Plataforma",
+    "adminOverview": "Visão Geral",
+    "adminSubscriptions": "Assinaturas",
+    "adminTenants": "Tenants",
+    "adminPlans": "Planos"
   },
   "header": {
     "search": "Pesquisar...",
@@ -494,6 +499,132 @@
       "refreshing": "Verificando…",
       "noChange": "Sem atualizações ainda. Verifique novamente mais tarde.",
       "signOut": "Sair"
+    },
+    "admin": {
+      "access_denied": "Você não tem permissão para acessar esta área.",
+      "overview": {
+        "title": "Visão Geral da Plataforma",
+        "pendingRequests": "Solicitações Pendentes",
+        "totalTenants": "Total de Tenants",
+        "activeTenants": "Tenants Ativos",
+        "totalPlans": "Total de Planos",
+        "recentRequests": "Solicitações Recentes de Assinatura",
+        "noRequests": "Nenhuma solicitação de assinatura ainda.",
+        "viewAll": "Ver todas",
+        "status": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado"
+        }
+      },
+      "subscriptions": {
+        "title": "Solicitações de Assinatura",
+        "subtitle": "Revise e aprove ou rejeite solicitações de assinatura.",
+        "filterAll": "Todas",
+        "filterPending": "Pendentes",
+        "filterApproved": "Aprovadas",
+        "filterRejected": "Rejeitadas",
+        "columns": {
+          "tenant": "Organização",
+          "plan": "Plano",
+          "billing": "Ciclo",
+          "requestedAt": "Solicitado em",
+          "status": "Status",
+          "actions": "Ações"
+        },
+        "status": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado"
+        },
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "approveTitle": "Aprovar assinatura",
+        "approveSubtitle": "Selecione o status de assinatura para ativar para este tenant.",
+        "approveStatus": "Status da assinatura",
+        "approveStatusTrial": "Avaliação",
+        "approveStatusActive": "Ativo",
+        "confirmApprove": "Aprovar",
+        "rejectTitle": "Rejeitar assinatura",
+        "rejectSubtitle": "Forneça um motivo para a rejeição (mínimo 20 caracteres). O usuário será notificado e poderá reenviar.",
+        "rejectionReason": "Motivo da rejeição",
+        "rejectionReasonPlaceholder": "Descreva por que esta solicitação de assinatura está sendo rejeitada…",
+        "confirmReject": "Rejeitar",
+        "empty": "Nenhuma solicitação de assinatura encontrada.",
+        "approveSuccess": "Assinatura aprovada.",
+        "rejectSuccess": "Assinatura rejeitada."
+      },
+      "tenants": {
+        "title": "Gerenciamento de Tenants",
+        "subtitle": "Visualize e gerencie todos os tenants da plataforma.",
+        "columns": {
+          "name": "Organização",
+          "type": "Tipo",
+          "plan": "Plano",
+          "subscriptionStatus": "Assinatura",
+          "status": "Status",
+          "createdAt": "Criado em"
+        },
+        "type": {
+          "management_company": "Administradora",
+          "independent_condo": "Independente"
+        },
+        "subscriptionStatus": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado",
+          "suspended": "Suspenso",
+          "canceled": "Cancelado"
+        },
+        "empty": "Nenhum tenant encontrado.",
+        "notImplemented": "O endpoint admin cross-tenant ainda não foi implantado. Os tenants aparecerão aqui quando GET /v1/admin/tenants estiver disponível."
+      },
+      "plans": {
+        "title": "Gerenciamento de Planos",
+        "subtitle": "Crie, edite e gerencie planos de assinatura.",
+        "new": "Novo Plano",
+        "edit": "Editar Plano",
+        "discontinue": "Descontinuar",
+        "discontinueConfirm": "Tem certeza que deseja descontinuar este plano? Ele não aparecerá mais na tela de seleção de planos e não poderá ser reativado.",
+        "columns": {
+          "name": "Nome",
+          "monthlyPrice": "Mensal",
+          "annualPrice": "Anual",
+          "maxCondos": "Máx. Condos",
+          "status": "Status",
+          "public": "Visível",
+          "actions": "Ações"
+        },
+        "status": {
+          "active": "Ativo",
+          "discontinued": "Descontinuado"
+        },
+        "empty": "Nenhum plano encontrado.",
+        "fields": {
+          "name": "Nome do plano",
+          "description": "Descrição",
+          "monthlyPrice": "Preço mensal (R$)",
+          "annualPrice": "Preço anual (R$)",
+          "maxCondos": "Máximo de condomínios",
+          "maxUnitsTotal": "Total máximo de unidades",
+          "maxAdminUsers": "Usuários admin máximos",
+          "dataRetentionMonths": "Retenção de dados (meses)",
+          "supportLevel": "Nível de suporte",
+          "apiAccess": "Acesso à API",
+          "public": "Exibir na tela de seleção de planos"
+        },
+        "supportLevel": {
+          "basic": "Básico",
+          "priority": "Prioritário",
+          "dedicated": "Dedicado"
+        },
+        "createSuccess": "Plano criado com sucesso.",
+        "updateSuccess": "Plano atualizado com sucesso.",
+        "discontinueSuccess": "Plano descontinuado."
+      }
     },
     "firstCondoWizard": {
       "title": "Configure seu primeiro condomínio",

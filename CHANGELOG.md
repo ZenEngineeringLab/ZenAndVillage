@@ -27,6 +27,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Pending approval page** — waiting-state screen with a "Refresh status" button that calls `refreshSession`, reads the new JWT, and routes forward if the admin has approved; includes a sign-out option
 - **First condominium wizard** — two-step form: (1) basic info (name, type, CNPJ); (2) address; on completion calls `POST /v1/condominiums` then `PATCH /v1/users/{sub}/onboarding-status` to advance to `complete`; "Skip for now" option advances without creating a condominium
 - **`cross-domain.ts` `updateUserTenantId`** — new function that sets `User.tenantId` in DynamoDB; the approve handler now calls it alongside `updateUserOnboardingStatus` so the Pre-Token Generation Lambda emits the correct `custom:tenantId` claim after approval
+- **Platform Admin area** — four admin pages behind an `AdminGuard` component that checks for the `platform_admin` role:
+  - **AdminOverviewPage** — KPI cards (pending requests, total/active tenants, total plans) and recent subscription requests list
+  - **AdminSubscriptionsPage** — filterable table of all subscriptions with approve (trial/active) and reject (rejectionReason ≥ 20 chars) actions via side sheet; enforces RN-ADM-002 and RN-ADM-003
+  - **AdminTenantsPage** — placeholder noting that `GET /v1/admin/tenants` (cross-tenant scan) is pending backend implementation
+  - **AdminPlansPage** — full plan management: create, edit, discontinue (RN-ADM-004) with side sheet forms
+- **Conditional admin sidebar section** — `AppSidebar` now shows a Platform Admin navigation group (Overview, Subscriptions, Plans) for users with the `platform_admin` role
 
 
 - **AuthGuard onboarding routing** — reads `custom:onboardingStatus` JWT claim on sign-in; AuthGuard enforces the onboarding state machine (pending_verification → verify-email, pending_subscription → plan-selection, pending_approval → pending-approval, onboarding → setup wizard, complete → app); scaffold pages created for all onboarding and admin routes
