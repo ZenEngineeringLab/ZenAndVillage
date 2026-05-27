@@ -122,6 +122,16 @@ export class ApiGatewayStack extends Stack {
     })
   }
 
+  /** Route with no authorizer — for public endpoints (e.g. user registration). */
+  addPublicRoute(method: HttpMethod, routePath: string, fn: IFunction): void {
+    this.httpApi.addRoutes({
+      path: routePath,
+      methods: [method],
+      integration: new HttpLambdaIntegration(`PublicIntegration-${method}-${routePath.replace(/\//g, '-').replace(/[{}]/g, '')}`, fn),
+      authorizer: new HttpNoneAuthorizer(),
+    })
+  }
+
   addWsRoute(routeKey: string, fn: IFunction): void {
     this.wsApi.addRoute(routeKey, {
       integration: new WebSocketLambdaIntegration(`WsIntegration-${routeKey.replace(/\$/g, '')}`, fn),

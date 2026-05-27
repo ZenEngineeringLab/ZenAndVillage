@@ -26,12 +26,18 @@ const alarmTopic = new Topic(alarmStack, 'AlarmTopic', {
   topicName: `zenvillage-alarms-${env}`,
 })
 
-// ─── Users table ──────────────────────────────────────────────────────────────
-// Must come before CognitoStack so that the table ARN can be passed as a CDK
-// cross-stack reference, granting the Pre-Token Generation Lambda read access.
-const usersStack = new UsersStack(app, `zenvillage-users-${env}`, {
+// ─── API Gateway (HTTP + WebSocket) ───────────────────────────────────────────
+const apiStack = new ApiGatewayStack(app, `zenvillage-api-${env}`, {
   env: awsEnv,
   stackProps: { env },
+})
+
+// ─── Users (table + Lambda handlers + API routes) ─────────────────────────────
+// UsersStack must still come before CognitoStack so that the table ARN can be
+// passed as a CDK cross-stack reference for the Pre-Token Generation Lambda.
+const usersStack = new UsersStack(app, `zenvillage-users-${env}`, {
+  env: awsEnv,
+  stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
 })
 
 // ─── Cognito ──────────────────────────────────────────────────────────────────
@@ -42,12 +48,6 @@ new CognitoStack(app, `zenvillage-cognito-${env}`, {
     usersTableArn: usersStack.table.tableArn,   // CDK cross-stack ref — no manual ARN needed
     usersTableName: usersStack.table.tableName,
   },
-})
-
-// ─── API Gateway (HTTP + WebSocket) ───────────────────────────────────────────
-const apiStack = new ApiGatewayStack(app, `zenvillage-api-${env}`, {
-  env: awsEnv,
-  stackProps: { env },
 })
 
 // ─── Frontend hosting (S3 + CloudFront) ───────────────────────────────────────

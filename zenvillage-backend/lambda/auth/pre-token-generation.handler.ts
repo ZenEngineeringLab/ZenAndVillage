@@ -29,17 +29,19 @@ export const handler = async (event: PreTokenGenerationV2TriggerEvent) => {
     claimsAndScopeOverrideDetails: {
       idTokenGeneration: {
         claimsToAddOrOverride: {
-          'custom:tenantId': user.tenantId,
-          'custom:roles': JSON.stringify(user.roles ?? []),
-          'custom:userId': user.id,
-          'custom:locale': user.locale ?? 'auto',
+          'custom:tenantId':         user.tenantId ?? '',
+          'custom:roles':            JSON.stringify(user.roles ?? []),
+          'custom:userId':           user.id,
+          'custom:locale':           user.locale ?? 'auto',
+          'custom:onboardingStatus': user.onboardingStatus ?? 'pending_verification',
         },
       },
       accessTokenGeneration: {
         claimsToAddOrOverride: {
-          'custom:tenantId': user.tenantId,
-          'custom:roles': JSON.stringify(user.roles ?? []),
-          'custom:userId': user.id,
+          'custom:tenantId':         user.tenantId ?? '',
+          'custom:roles':            JSON.stringify(user.roles ?? []),
+          'custom:userId':           user.id,
+          'custom:onboardingStatus': user.onboardingStatus ?? 'pending_verification',
         },
       },
     },

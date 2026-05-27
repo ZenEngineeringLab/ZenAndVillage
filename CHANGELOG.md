@@ -9,6 +9,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **User Lambda domain** — `POST /v1/users` (public, no authorizer), `GET /v1/users/{id}` and `PATCH /v1/users/{sub}/onboarding-status` (authenticated); DynamoDB table with PK `USER#{cognitoSub}` / SK `PROFILE`; CloudWatch error and throttle alarms; Pre-Token Generation Lambda now injects `custom:onboardingStatus` alongside existing custom claims
+- **`addPublicRoute()` on ApiGatewayStack** — registers HTTP routes with `HttpNoneAuthorizer` for endpoints that must be reachable before the user has a valid JWT (e.g. user creation right after Cognito sign-up)
+
 ### Removed
 - **Federated login (Google, Facebook, Apple)** removed from scope — all onboarding flows now use email+password exclusively; `auth_provider` and `auth_provider_id` fields removed from the `User` entity; RN-ONB-002/003 (federated-specific rules) removed and remaining rules reindexed RN-ONB-002–008
 
