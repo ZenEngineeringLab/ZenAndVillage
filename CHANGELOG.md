@@ -33,6 +33,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - **AdminTenantsPage** — placeholder noting that `GET /v1/admin/tenants` (cross-tenant scan) is pending backend implementation
   - **AdminPlansPage** — full plan management: create, edit, discontinue (RN-ADM-004) with side sheet forms
 - **Conditional admin sidebar section** — `AppSidebar` now shows a Platform Admin navigation group (Overview, Subscriptions, Plans) for users with the `platform_admin` role
+- **Condominium sub-entities UI** — `CondominiumDetail` now fetches blocks and units from the real API (`GET /v1/condominiums/{id}/blocks` and `GET /v1/condominiums/{id}/units`); replaced seed-data placeholders with full CRUD (create, edit, delete via Sheet panels); KPI row updated to show live block and unit counts
 
 
 - **AuthGuard onboarding routing** — reads `custom:onboardingStatus` JWT claim on sign-in; AuthGuard enforces the onboarding state machine (pending_verification → verify-email, pending_subscription → plan-selection, pending_approval → pending-approval, onboarding → setup wizard, complete → app); scaffold pages created for all onboarding and admin routes
