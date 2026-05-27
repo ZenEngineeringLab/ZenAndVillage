@@ -10,6 +10,7 @@ import { PropertyManagersStack } from '../stacks/property-managers.stack.js'
 import { CondominiumsStack } from '../stacks/condominiums.stack.js'
 import { ResidentsStack } from '../stacks/residents.stack.js'
 import { EmployeesStack } from '../stacks/employees.stack.js'
+import { PlansStack } from '../stacks/plans.stack.js'
 import { NotificationsStack } from '../stacks/notifications.stack.js'
 
 const app = new cdk.App()
@@ -57,6 +58,11 @@ new FrontendHostingStack(app, `zenvillage-frontend-${env}`, {
 })
 
 // ─── Domain stacks ────────────────────────────────────────────────────────────
+new PlansStack(app, `zenvillage-plans-${env}`, {
+  env: awsEnv,
+  stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
+})
+
 new TenantsStack(app, `zenvillage-tenants-${env}`, {
   env: awsEnv,
   stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
