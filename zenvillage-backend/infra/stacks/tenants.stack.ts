@@ -56,6 +56,8 @@ function addLambdaAlarms(
 }
 
 export class TenantsStack extends Stack {
+  public readonly table: Table
+
   constructor(scope: Construct, id: string, props: TenantsStackProps) {
     super(scope, id, props)
 
@@ -65,7 +67,7 @@ export class TenantsStack extends Stack {
     const alarmTopic = Topic.fromTopicArn(this, 'AlarmTopic', snsAlarmTopicArn)
 
     // DynamoDB Table
-    const table = new Table(this, 'TenantsTable', {
+    this.table = new Table(this, 'TenantsTable', {
       tableName: `zenvillage-tenants-${env}`,
       partitionKey: { name: 'PK', type: AttributeType.STRING },
       sortKey: { name: 'SK', type: AttributeType.STRING },
@@ -74,7 +76,7 @@ export class TenantsStack extends Stack {
       removalPolicy: isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
     })
 
-    const commonEnv = { TENANTS_TABLE: table.tableName }
+    const commonEnv = { TENANTS_TABLE: this.table.tableName }
     const entryBase = path.join(__dirname, '../../lambda/tenants')
 
     // Lambda functions
@@ -119,11 +121,11 @@ export class TenantsStack extends Stack {
     })
 
     // Permissions
-    table.grantReadData(listFn)
-    table.grantReadData(getByIdFn)
-    table.grantWriteData(createFn)
-    table.grantReadWriteData(updateFn)
-    table.grantWriteData(deleteFn)
+    this.table.grantReadData(listFn)
+    this.table.grantReadData(getByIdFn)
+    this.table.grantWriteData(createFn)
+    this.table.grantReadWriteData(updateFn)
+    this.table.grantWriteData(deleteFn)
 
     // CloudWatch Alarms
     addLambdaAlarms(this, listFn, `zenvillage-tenants-list-${env}`, alarmTopic)

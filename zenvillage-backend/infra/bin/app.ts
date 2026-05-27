@@ -11,6 +11,7 @@ import { CondominiumsStack } from '../stacks/condominiums.stack.js'
 import { ResidentsStack } from '../stacks/residents.stack.js'
 import { EmployeesStack } from '../stacks/employees.stack.js'
 import { PlansStack } from '../stacks/plans.stack.js'
+import { SubscriptionsStack } from '../stacks/subscriptions.stack.js'
 import { NotificationsStack } from '../stacks/notifications.stack.js'
 
 const app = new cdk.App()
@@ -58,12 +59,27 @@ new FrontendHostingStack(app, `zenvillage-frontend-${env}`, {
 })
 
 // ─── Domain stacks ────────────────────────────────────────────────────────────
-new PlansStack(app, `zenvillage-plans-${env}`, {
+
+// tenantsStack must be declared before SubscriptionsStack for cross-stack refs
+const tenantsStack = new TenantsStack(app, `zenvillage-tenants-${env}`, {
   env: awsEnv,
   stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
 })
 
-new TenantsStack(app, `zenvillage-tenants-${env}`, {
+new SubscriptionsStack(app, `zenvillage-subscriptions-${env}`, {
+  env: awsEnv,
+  stackProps: {
+    env,
+    snsAlarmTopicArn: alarmTopic.topicArn,
+    apiStack,
+    tenantsTableName: tenantsStack.table.tableName,
+    tenantsTableArn: tenantsStack.table.tableArn,
+    usersTableName: usersStack.table.tableName,
+    usersTableArn: usersStack.table.tableArn,
+  },
+})
+
+new PlansStack(app, `zenvillage-plans-${env}`, {
   env: awsEnv,
   stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
 })
