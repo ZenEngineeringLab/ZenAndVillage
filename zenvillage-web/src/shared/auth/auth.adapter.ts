@@ -33,6 +33,7 @@ export interface AuthTokenClaims {
   'custom:roles': string
   'custom:userId': string
   'custom:locale': string
+  'custom:onboardingStatus': string
 }
 
 const decodeJwtPayload = (token: string): AuthTokenClaims => {

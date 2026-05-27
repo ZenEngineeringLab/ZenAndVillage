@@ -11,7 +11,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { authAdapter } from '@/shared/auth/auth.adapter'
-import { useAuthStore } from '../store/auth.store'
+import { useAuthStore, type OnboardingStatus } from '../store/auth.store'
 
 const schema = z.object({
   email: z.string().min(1).email(),
@@ -36,6 +36,8 @@ export function LoginPage() {
       if (result.isSignedIn) {
         const claims = await authAdapter.getDecodedClaims()
         if (claims) {
+          const onboardingStatus = (claims['custom:onboardingStatus'] as OnboardingStatus | undefined)
+            ?? 'pending_verification'
           setUser(
             {
               id: claims['custom:userId'] ?? claims.sub,
@@ -43,11 +45,13 @@ export function LoginPage() {
               name: claims.name ?? email.split('@')[0],
               roles: JSON.parse(claims['custom:roles'] ?? '[]'),
               locale: claims['custom:locale'] ?? 'auto',
+              onboardingStatus,
             },
             claims['custom:tenantId']
           )
+          // AuthGuard handles the redirect; navigate to root and let it decide
+          navigate('/', { replace: true })
         }
-        navigate('/', { replace: true })
       }
     } catch (err: any) {
       const msg = err?.message ?? t('auth.loginError')
