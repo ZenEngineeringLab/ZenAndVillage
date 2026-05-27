@@ -539,9 +539,9 @@ Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma 
 ```
 [Landing Page]
       ↓
-[Cadastro / Login]  (e-mail+senha OU login federado)
+[Cadastro / Login]  (e-mail+senha)
       ↓
-[Verificação de Identidade]  ← apenas para e-mail+senha; ignorada para federado
+[Verificação de Identidade]
       ↓
 [Seleção de Plano & Envio]
       ↓
@@ -556,21 +556,12 @@ Aplica-se a síndicos, gestores e administradoras que criam e são donos de uma 
 [Acesso Operacional]
 ```
 
-**Formas de cadastro:**
-
-*E-mail e senha:*
+**Forma de cadastro — e-mail e senha:**
 1. O usuário informa nome completo, e-mail e senha.
 2. O sistema envia um e-mail de verificação com link de validade limitada.
 3. A conta fica em `pending_verification` até que o link seja clicado.
 4. Contas não verificadas não podem avançar para a seleção de plano.
 5. Requisitos de senha: mín. 8 caracteres, ao menos uma maiúscula, um número, um caractere especial.
-
-*Login federado — provedores suportados: Google, Facebook, Apple:*
-1. O usuário se autentica na tela de consentimento do provedor.
-2. O provedor retorna uma identidade verificada (nome, e-mail, subject ID).
-3. Se não existir conta ZenAndVillage para o e-mail retornado, uma é criada com `onboarding_status = pending_subscription`.
-4. A identidade é pré-verificada; a confirmação de e-mail é ignorada.
-5. Se o e-mail retornado pertencer a uma conta local existente, o usuário deve vincular as contas explicitamente — nenhuma fusão silenciosa ocorre.
 
 **Gate de assinatura:** Após autenticação, usuários sem assinatura ativa são direcionados para a seleção de plano. Nenhum condomínio pode ser criado ou acessado até que a solicitação de assinatura seja aprovada pelo platform admin.
 
@@ -608,9 +599,9 @@ Acionado de dentro de um condomínio ativo. Não requer assinatura nem pagamento
       ↓
 [Convidado clica no link do convite]
       ↓
-[Cadastro / Login]  (e-mail+senha OU login federado)
+[Cadastro / Login]  (e-mail+senha)
       ↓
-[Verificação de Identidade]  ← apenas para e-mail+senha; ignorada para federado
+[Verificação de Identidade]
       ↓
 [Token de convite consumido → vínculo com a unidade criado]
       ↓
@@ -640,7 +631,7 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 | Status | Significado |
 |---|---|
 | `pending_verification` | Cadastrado via e-mail+senha; e-mail não confirmado |
-| `pending_subscription` | Identidade verificada (ou federada); plano ainda não selecionado — apenas proprietários de conta |
+| `pending_subscription` | Identidade verificada; plano ainda não selecionado — apenas proprietários de conta |
 | `pending_approval` | Plano selecionado e enviado; aguardando aprovação do platform admin — apenas proprietários de conta |
 | `onboarding` | Assinatura aprovada; assistente do primeiro condomínio não concluído — apenas proprietários de conta |
 | `complete` | Acesso operacional completo concedido |
@@ -681,9 +672,7 @@ A equipe do condomínio também pode convidar pessoas autorizadas diretamente. U
 
 ```
 id, email, name, cpf?,
-auth_provider (local | google | facebook | apple),
-auth_provider_id?,          -- subject ID retornado pelo provedor federado
-password_hash?,             -- null para contas federadas
+password_hash,
 mfa_enabled (bool),
 onboarding_status (pending_verification | pending_subscription | onboarding | complete),
 status (active | inactive | blocked | pending_verification),
@@ -719,15 +708,13 @@ revoked_by_id?, revoked_at?
 ### 5.6 Regras de Negócio
 
 - **RN-ONB-001:** Um usuário com `onboarding_status` igual a `pending_subscription`, `pending_approval` ou `onboarding` (assistente não concluído) não pode criar, acessar nem interagir com nenhum dado de condomínio.
-- **RN-ONB-002:** Identidade federada é tratada como pré-verificada; a etapa de confirmação de e-mail é ignorada.
-- **RN-ONB-003:** Se um provedor federado retornar um e-mail já cadastrado como conta local, o usuário deve vincular as contas explicitamente; fusão silenciosa é proibida.
-- **RN-ONB-004:** Não há processamento automatizado de pagamentos na versão atual. A ativação da assinatura é realizada manualmente pelo `platform_admin`; o campo `payment_method` é coletado para fins de registro e integração futura com broker de pagamentos.
-- **RN-ONB-005:** O Assistente de Configuração do Primeiro Condomínio deve ser concluído antes de acessar qualquer módulo operacional.
-- **RN-ONB-006:** O `max_condos` do plano é verificado no momento da criação do condomínio; tentativas de criar condomínios além do limite são bloqueadas com prompt claro de upgrade.
-- **RN-ONB-007:** Após a seleção do plano, a solicitação de assinatura entra em estado `pending_approval`; nenhum acesso operacional é concedido até que um `platform_admin` aprove explicitamente a solicitação.
-- **RN-ONB-008:** Apenas `platform_admin` pode aprovar ou rejeitar solicitações de assinatura; `platform_support` não possui essa capacidade.
-- **RN-ONB-009:** Na rejeição, o `rejection_reason` é obrigatório e é comunicado ao usuário por e-mail; o `onboarding_status` do usuário retorna para `pending_subscription` para que ele possa reenviar.
-- **RN-ONB-010:** A aprovação pelo `platform_admin` define `Subscription.status` como `trial` (avaliação) ou `active` (completo); a distinção fica a critério do admin com base no acordo comercial estabelecido.
+- **RN-ONB-002:** Não há processamento automatizado de pagamentos na versão atual. A ativação da assinatura é realizada manualmente pelo `platform_admin`; o campo `payment_method` é coletado para fins de registro e integração futura com broker de pagamentos.
+- **RN-ONB-003:** O Assistente de Configuração do Primeiro Condomínio deve ser concluído antes de acessar qualquer módulo operacional.
+- **RN-ONB-004:** O `max_condos` do plano é verificado no momento da criação do condomínio; tentativas de criar condomínios além do limite são bloqueadas com prompt claro de upgrade.
+- **RN-ONB-005:** Após a seleção do plano, a solicitação de assinatura entra em estado `pending_approval`; nenhum acesso operacional é concedido até que um `platform_admin` aprove explicitamente a solicitação.
+- **RN-ONB-006:** Apenas `platform_admin` pode aprovar ou rejeitar solicitações de assinatura; `platform_support` não possui essa capacidade.
+- **RN-ONB-007:** Na rejeição, o `rejection_reason` é obrigatório e é comunicado ao usuário por e-mail; o `onboarding_status` do usuário retorna para `pending_subscription` para que ele possa reenviar.
+- **RN-ONB-008:** A aprovação pelo `platform_admin` define `Subscription.status` como `trial` (avaliação) ou `active` (completo); a distinção fica a critério do admin com base no acordo comercial estabelecido.
 - **RN-MOD-001:** O primeiro convite de morador principal de uma unidade deve ser emitido por um usuário com papel `condo_syndic`, `condo_manager` ou `condo_staff`.
 - **RN-MOD-002:** Cada unidade pode ter no máximo um morador principal ativo por tipo de papel por vez (`is_primary = true`).
 - **RN-MOD-003:** O morador principal pode convidar comoradores e pessoas autorizadas para a mesma unidade.

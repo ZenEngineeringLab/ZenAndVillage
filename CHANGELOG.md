@@ -9,6 +9,9 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+- **Federated login (Google, Facebook, Apple)** removed from scope — all onboarding flows now use email+password exclusively; `auth_provider` and `auth_provider_id` fields removed from the `User` entity; RN-ONB-002/003 (federated-specific rules) removed and remaining rules reindexed RN-ONB-002–008
+
 ### Added
 - **`custom:onboardingStatus` JWT claim** — documented in software-vision §5.3 and architecture-guide §7; the Pre-Token Generation Lambda injects `onboarding_status` as a JWT claim so the frontend `AuthGuard` can enforce the subscription gate without an extra API call, following the same pattern as `custom:roles`
 - **Platform Admin Area** (software-vision §2.8 and §3.8) — specifies the `/admin` route prefix, conditional sidebar navigation for `platform_admin` role, and four admin screens: Overview (KPI cards + recent requests), Subscription Requests (approval/rejection queue with detail panel), Tenant Management (cross-tenant list with lifecycle status transitions), and Plan Management (create/edit/discontinue). Added business rules RN-ADM-001 through RN-ADM-007 governing admin access control, approval/rejection requirements, plan lifecycle, terminal states, and the mandatory `status_change_log` for all tenant status changes.

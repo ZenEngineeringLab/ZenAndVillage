@@ -536,9 +536,9 @@ Applies to syndics, managers, and administradoras who create and own a subscript
 ```
 [Landing Page]
       ↓
-[Registration / Sign-in]  (email+password OR federated)
+[Registration / Sign-in]  (email+password)
       ↓
-[Identity Verification]   ← email path only; skipped for federated
+[Identity Verification]
       ↓
 [Plan Selection & Submission]
       ↓
@@ -553,21 +553,12 @@ Applies to syndics, managers, and administradoras who create and own a subscript
 [Operational Access]
 ```
 
-**Registration methods:**
-
-*Email and password:*
+**Registration method — email and password:**
 1. User provides full name, email, and password.
 2. System sends a verification email with a time-limited link.
 3. Account stays in `pending_verification` until the link is clicked.
 4. Unverified accounts cannot proceed to plan selection.
 5. Password requirements: min. 8 characters, at least one uppercase letter, one number, one special character.
-
-*Federated login — supported providers: Google, Facebook, Apple:*
-1. User authenticates on the provider's consent screen.
-2. Provider returns a verified identity (name, email, subject ID).
-3. If no ZenAndVillage account exists for the returned email, one is created with `onboarding_status = pending_subscription`.
-4. Identity is pre-verified; email confirmation step is skipped.
-5. If the returned email belongs to an existing local account, the user must explicitly link the provider — no silent account merge.
 
 **Subscription gate:** After authentication, users without an active subscription land on the plan selection screen. This is a hard gate; no condominium can be created or accessed until the subscription request is approved by the platform admin.
 
@@ -605,9 +596,9 @@ Triggered from within an active condominium. Requires no subscription or payment
       ↓
 [Invitee clicks invite link]
       ↓
-[Registration / Login]  (email+password OR federated)
+[Registration / Login]  (email+password)
       ↓
-[Identity Verification]  ← email path only; skipped for federated
+[Identity Verification]
       ↓
 [Invite token consumed → unit linkage created]
       ↓
@@ -637,7 +628,7 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 | Status | Meaning |
 |---|---|
 | `pending_verification` | Registered via email+password; email not yet confirmed |
-| `pending_subscription` | Identity verified (or federated); plan not yet selected — account owners only |
+| `pending_subscription` | Identity verified; plan not yet selected — account owners only |
 | `pending_approval` | Plan selected and submitted; awaiting platform admin approval — account owners only |
 | `onboarding` | Subscription approved; first condominium wizard not yet completed — account owners only |
 | `complete` | Full operational access granted |
@@ -678,9 +669,7 @@ Condo staff may also invite authorized persons directly. A user may be linked to
 
 ```
 id, email, name, cpf?,
-auth_provider (local | google | facebook | apple),
-auth_provider_id?,          -- subject ID returned by the federated provider
-password_hash?,             -- null for federated accounts
+password_hash,
 mfa_enabled (bool),
 onboarding_status (pending_verification | pending_subscription | onboarding | complete),
 status (active | inactive | blocked | pending_verification),
@@ -716,15 +705,13 @@ revoked_by_id?, revoked_at?
 ### 5.6 Business Rules
 
 - **RN-ONB-001:** A user with `onboarding_status` of `pending_subscription`, `pending_approval`, or `onboarding` (wizard not yet complete) cannot create, access, or interact with any condominium data.
-- **RN-ONB-002:** Federated identity is treated as pre-verified; the email confirmation step is skipped.
-- **RN-ONB-003:** If a federated provider returns an email already registered as a local account, the user must explicitly link the accounts; silent merging is prohibited.
-- **RN-ONB-004:** There is no automated payment processing in the current version. Subscription activation is performed manually by a `platform_admin`; the `payment_method` field is collected for record-keeping and future broker integration only.
-- **RN-ONB-005:** The First Condominium Setup Wizard must be completed before accessing any operational module.
-- **RN-ONB-006:** The plan's `max_condos` is enforced at condominium creation time; exceeding the limit is blocked with a clear upgrade prompt.
-- **RN-ONB-007:** After plan selection, the subscription request enters `pending_approval` state; no operational access is granted until a `platform_admin` explicitly approves the request.
-- **RN-ONB-008:** Only `platform_admin` may approve or reject subscription requests; `platform_support` does not have this capability.
-- **RN-ONB-009:** On rejection, the `rejection_reason` is mandatory and is communicated to the user by email; the user's `onboarding_status` returns to `pending_subscription` so they may resubmit.
-- **RN-ONB-010:** A `platform_admin` approval sets `Subscription.status` to `trial` (evaluation) or `active` (full); the distinction is at the admin's discretion based on the agreed commercial arrangement.
+- **RN-ONB-002:** There is no automated payment processing in the current version. Subscription activation is performed manually by a `platform_admin`; the `payment_method` field is collected for record-keeping and future broker integration only.
+- **RN-ONB-003:** The First Condominium Setup Wizard must be completed before accessing any operational module.
+- **RN-ONB-004:** The plan's `max_condos` is enforced at condominium creation time; exceeding the limit is blocked with a clear upgrade prompt.
+- **RN-ONB-005:** After plan selection, the subscription request enters `pending_approval` state; no operational access is granted until a `platform_admin` explicitly approves the request.
+- **RN-ONB-006:** Only `platform_admin` may approve or reject subscription requests; `platform_support` does not have this capability.
+- **RN-ONB-007:** On rejection, the `rejection_reason` is mandatory and is communicated to the user by email; the user's `onboarding_status` returns to `pending_subscription` so they may resubmit.
+- **RN-ONB-008:** A `platform_admin` approval sets `Subscription.status` to `trial` (evaluation) or `active` (full); the distinction is at the admin's discretion based on the agreed commercial arrangement.
 - **RN-MOD-001:** The first primary resident invite for a unit must be issued by a user with `condo_syndic`, `condo_manager`, or `condo_staff` role.
 - **RN-MOD-002:** Each unit may have at most one active primary resident per role type (`resident_owner` or `resident_tenant`) at any time.
 - **RN-MOD-003:** The primary resident may invite co-residents and authorized persons to the same unit.
