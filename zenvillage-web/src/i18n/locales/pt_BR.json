@@ -162,6 +162,14 @@
       "billingCycleMonthly": "Mensal",
       "billingCycleAnnual": "Anual"
     },
+    "subscriptionStatus": {
+      "pending_approval": "Pendente",
+      "trial": "Avaliação",
+      "active": "Ativo",
+      "delinquent": "Inadimplente",
+      "suspended": "Suspenso",
+      "canceled": "Cancelado"
+    },
     "trial": {
       "daysRemaining": "{{count}} dias restantes",
       "expired": "Trial expirado"
@@ -412,8 +420,8 @@
     "thisMonth": "neste mês",
     "tenantGrowth": "Crescimento de Tenants",
     "tenantGrowthDesc": "Total acumulado de tenants cadastrados nos últimos 6 meses",
-    "planMix": "Distribuição por Plano",
-    "planMixDesc": "Tenants ativos por plano de assinatura",
+    "subscriptionStatus": "Status de Assinatura",
+    "subscriptionStatusDesc": "Tenants por status atual de assinatura",
     "financialStatus": "Situação Financeira",
     "financialStatusDesc": "Moradores por situação de pagamento",
     "condoTypes": "Tipos de Condomínio",

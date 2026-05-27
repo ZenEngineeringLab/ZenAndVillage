@@ -6,16 +6,14 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { Building2, Users, UserCheck, Home, TrendingUp } from 'lucide-react'
+import { Building2, Users, UserCheck, Home, TrendingUp, Loader2 } from 'lucide-react'
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/shared/components/ui/card'
-import {
-  seedTenants,
-  seedCondominiums,
-  seedResidents,
-  seedEmployees,
-} from '@/shared/data/seed'
+import { useTenantsQuery }        from '@/features/tenants/hooks/useTenantsQuery'
+import { useCondominiumsQuery }   from '@/features/condominiums/hooks/useCondominiumsQuery'
+import { useResidentsQuery }      from '@/features/residents/hooks/useResidentsQuery'
+import { useEmployeesQuery }      from '@/features/employees/hooks/useEmployeesQuery'
 
 // ── Chart palette ─────────────────────────────────────────────────────
 const PALETTE = [
@@ -26,17 +24,7 @@ const PALETTE = [
   'var(--chart-5)',
 ]
 
-// ── Derived chart data ────────────────────────────────────────────────
-
-/** 6-month simulated tenant growth */
-const tenantGrowthData = [
-  { month: 'Jan', count: 1 },
-  { month: 'Feb', count: 1 },
-  { month: 'Mar', count: 2 },
-  { month: 'Apr', count: 2 },
-  { month: 'May', count: 3 },
-  { month: 'Jun', count: 3 },
-]
+// ── Helpers ───────────────────────────────────────────────────────────
 
 function countBy<T>(arr: T[], key: keyof T) {
   const map: Record<string, number> = {}
@@ -47,13 +35,18 @@ function countBy<T>(arr: T[], key: keyof T) {
   return Object.entries(map).map(([name, value]) => ({ name, value }))
 }
 
-const planData      = countBy(seedTenants, 'plan')
-const financialData = countBy(seedResidents, 'financialStatus')
-const condoTypeData = countBy(seedCondominiums, 'type')
-const rolesData     = countBy(seedEmployees, 'role').map(({ name, value }) => ({
-  role: name,
-  count: value,
-}))
+/** Cumulative item count per month for the last `monthCount` calendar months */
+function buildGrowthData(items: { createdAt: string }[], monthCount = 6) {
+  const now = new Date()
+  return Array.from({ length: monthCount }, (_, i) => {
+    const offset = monthCount - 1 - i
+    const start  = new Date(now.getFullYear(), now.getMonth() - offset, 1)
+    const end    = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999)
+    const label  = start.toLocaleString('en-US', { month: 'short' })
+    const count  = items.filter(item => new Date(item.createdAt) <= end).length
+    return { month: label, count }
+  })
+}
 
 // ── Shared tooltip ────────────────────────────────────────────────────
 interface TooltipProps {
@@ -103,37 +96,68 @@ function PieLegend({
   )
 }
 
+// ── Loading cell ──────────────────────────────────────────────────────
+function KpiValue({ loading, value }: { loading: boolean; value: number }) {
+  if (loading) return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+  return <span className="text-2xl font-bold">{value}</span>
+}
+
 // ── Page ──────────────────────────────────────────────────────────────
 export function DashboardPage() {
   const { t } = useTranslation()
+
+  const tenantResult  = useTenantsQuery({ pageSize: 200 })
+  const condoResult   = useCondominiumsQuery({ pageSize: 200 })
+  const residentResult = useResidentsQuery({ pageSize: 500 })
+  const employeeResult = useEmployeesQuery({ pageSize: 500 })
+
+  const tenants    = tenantResult.data?.items    ?? []
+  const condos     = condoResult.data?.items     ?? []
+  const residents  = residentResult.data?.items  ?? []
+  const employees  = employeeResult.data?.items  ?? []
+
+  const tenantTotal   = tenantResult.data?.pagination.total    ?? 0
+  const condoTotal    = condoResult.data?.pagination.total     ?? 0
+  const residentTotal = residentResult.data?.pagination.total  ?? 0
+  const employeeTotal = employeeResult.data?.pagination.total  ?? 0
+
+  // ── Chart data ───────────────────────────────────────────────────────
+  const tenantGrowthData  = buildGrowthData(tenants)
+  const subscriptionData  = countBy(tenants,   'subscriptionStatus')
+  const financialData     = countBy(residents, 'financialStatus')
+  const condoTypeData     = countBy(condos,    'type')
+  const rolesData         = countBy(employees, 'role').map(({ name, value }) => ({
+    role: name,
+    count: value,
+  }))
 
   const stats = [
     {
       icon: Building2,
       label: t('tenants.title'),
-      value: seedTenants.length,
-      delta: '+1',
+      value: tenantTotal,
+      loading: tenantResult.isLoading,
       color: 'text-primary',
     },
     {
       icon: Home,
       label: t('condominiums.title'),
-      value: seedCondominiums.length,
-      delta: '+0',
+      value: condoTotal,
+      loading: condoResult.isLoading,
       color: 'text-blue-600',
     },
     {
       icon: Users,
       label: t('residents.title'),
-      value: seedResidents.length,
-      delta: '+2',
+      value: residentTotal,
+      loading: residentResult.isLoading,
       color: 'text-emerald-600',
     },
     {
       icon: UserCheck,
       label: t('employees.title'),
-      value: seedEmployees.length,
-      delta: '+1',
+      value: employeeTotal,
+      loading: employeeResult.isLoading,
       color: 'text-violet-600',
     },
   ]
@@ -144,7 +168,7 @@ export function DashboardPage() {
 
       {/* ── KPI cards ───────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ icon: Icon, label, value, delta, color }) => (
+        {stats.map(({ icon: Icon, label, value, loading, color }) => (
           <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -153,10 +177,11 @@ export function DashboardPage() {
               <Icon className={`h-4 w-4 ${color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{value}</div>
+              <div className="h-8 flex items-center">
+                <KpiValue loading={loading} value={value} />
+              </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 <TrendingUp className="h-3 w-3 text-emerald-500" />
-                <span className="text-emerald-500 font-medium">{delta}</span>
                 {t('dashboard.thisMonth')}
               </p>
             </CardContent>
@@ -164,7 +189,7 @@ export function DashboardPage() {
         ))}
       </div>
 
-      {/* ── Tenant growth + Plan mix ─────────────────────────────────── */}
+      {/* ── Tenant growth + Subscription status ─────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Area chart — tenant growth */}
         <Card className="lg:col-span-2">
@@ -213,17 +238,17 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Donut — plan distribution */}
+        {/* Donut — subscription status */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.planMix')}</CardTitle>
-            <CardDescription>{t('dashboard.planMixDesc')}</CardDescription>
+            <CardTitle>{t('dashboard.subscriptionStatus')}</CardTitle>
+            <CardDescription>{t('dashboard.subscriptionStatusDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <ResponsiveContainer width="100%" height={160}>
               <PieChart>
                 <Pie
-                  data={planData}
+                  data={subscriptionData}
                   cx="50%"
                   cy="50%"
                   innerRadius={48}
@@ -231,7 +256,7 @@ export function DashboardPage() {
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {planData.map((_, i) => (
+                  {subscriptionData.map((_, i) => (
                     <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
                   ))}
                 </Pie>
@@ -239,10 +264,10 @@ export function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
             <PieLegend
-              items={planData.map((entry, i) => ({
+              items={subscriptionData.map((entry, i) => ({
                 ...entry,
                 color: PALETTE[i % PALETTE.length],
-                label: t(`tenants.plan.${entry.name}`),
+                label: t(`tenants.subscriptionStatus.${entry.name}`, { defaultValue: entry.name }),
               }))}
             />
           </CardContent>
