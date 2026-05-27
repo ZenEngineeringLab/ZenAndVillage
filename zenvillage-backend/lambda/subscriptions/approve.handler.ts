@@ -23,6 +23,7 @@ import { subscriptionRepository } from './infrastructure/subscription.repository
 import {
   updateTenantSubscriptionStatus,
   updateUserOnboardingStatus,
+  updateUserTenantId,
 } from './infrastructure/cross-domain.js'
 import type { SubscriptionStatus } from './domain/subscription.entity.js'
 
@@ -72,8 +73,11 @@ const mainHandler = async (event: APIGatewayProxyEventV2WithLambdaAuthorizer<any
     // Update Tenant.subscriptionStatus
     await updateTenantSubscriptionStatus(subscription.tenantId, body.status, now)
 
-    // Update User.onboardingStatus → onboarding
+    // Update User.onboardingStatus → onboarding and set tenantId so the
+    // Pre-Token Generation Lambda emits the correct custom:tenantId on the
+    // user's next sign-in / token refresh.
     await updateUserOnboardingStatus(subscription.requestedByCognitoSub, 'onboarding')
+    await updateUserTenantId(subscription.requestedByCognitoSub, subscription.tenantId)
 
     metrics.addMetric('SubscriptionApproved', MetricUnit.Count, 1)
     logger.info('Subscription approved', {

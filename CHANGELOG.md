@@ -20,6 +20,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 - **`/onboarding/verify-email` moved to public router** — the page is reached before the user is authenticated, so it is registered as a top-level public route rather than under the AuthGuard; the AuthGuard `pending_verification` case redirects to this public route unchanged
+- **`AuthUser` now includes `cognitoSub`** — the Cognito `sub` claim is stored separately from the internal UUID (`id`) so pages that call user-scoped API endpoints (which use the Cognito sub as a path parameter) can do so without decoding the JWT again
+
+### Added
+- **Plan selection page** — two-step flow: (1) plan cards with monthly/annual billing toggle and pricing; (2) organization info form (name, type, CNPJ, contact email); submits `POST /v1/subscriptions` and advances the auth store to `pending_approval`
+- **Pending approval page** — waiting-state screen with a "Refresh status" button that calls `refreshSession`, reads the new JWT, and routes forward if the admin has approved; includes a sign-out option
+- **First condominium wizard** — two-step form: (1) basic info (name, type, CNPJ); (2) address; on completion calls `POST /v1/condominiums` then `PATCH /v1/users/{sub}/onboarding-status` to advance to `complete`; "Skip for now" option advances without creating a condominium
+- **`cross-domain.ts` `updateUserTenantId`** — new function that sets `User.tenantId` in DynamoDB; the approve handler now calls it alongside `updateUserOnboardingStatus` so the Pre-Token Generation Lambda emits the correct `custom:tenantId` claim after approval
 
 
 - **AuthGuard onboarding routing** — reads `custom:onboardingStatus` JWT claim on sign-in; AuthGuard enforces the onboarding state machine (pending_verification → verify-email, pending_subscription → plan-selection, pending_approval → pending-approval, onboarding → setup wizard, complete → app); scaffold pages created for all onboarding and admin routes

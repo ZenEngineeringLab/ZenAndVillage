@@ -58,3 +58,21 @@ export async function updateUserOnboardingStatus(
     ExpressionAttributeValues: { ':s': onboardingStatus },
   }))
 }
+
+/**
+ * Sets User.tenantId so the Pre-Token Generation Lambda can emit
+ * the correct custom:tenantId claim after subscription approval.
+ *
+ * Users table key: PK = USER#{cognitoSub}, SK = PROFILE
+ */
+export async function updateUserTenantId(
+  cognitoSub: string,
+  tenantId: string,
+): Promise<void> {
+  await ddb.send(new UpdateCommand({
+    TableName: USERS_TABLE,
+    Key: { PK: `USER#${cognitoSub}`, SK: 'PROFILE' },
+    UpdateExpression: 'SET tenantId = :t',
+    ExpressionAttributeValues: { ':t': tenantId },
+  }))
+}

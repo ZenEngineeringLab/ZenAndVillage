@@ -9,7 +9,8 @@ export type OnboardingStatus =
   | 'complete'
 
 export interface AuthUser {
-  id: string
+  id: string        // internal UUID from the Users table (custom:userId)
+  cognitoSub: string // Cognito user sub (JWT sub claim)
   email: string
   name: string
   roles: string[]

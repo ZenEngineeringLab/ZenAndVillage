@@ -85,7 +85,8 @@ export function VerifyEmailPage() {
           ?? 'pending_subscription'
         setUser(
           {
-            id: claims['custom:userId'] ?? claims.sub,
+            id: claims['custom:userId'] || claims.sub,
+            cognitoSub: claims.sub,
             email: claims.email,
             name: claims.name ?? email.split('@')[0],
             roles: JSON.parse(claims['custom:roles'] ?? '[]'),
