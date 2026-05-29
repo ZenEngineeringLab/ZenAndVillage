@@ -32,6 +32,15 @@ Connected Communities. Intelligent Operations. Peaceful Living.
 ### Git remote
 github.com/ZenEngineeringLab/ZenAndVillage
 
+### Assets
+
+| File | Usage | Preview |
+|---|---|---|
+| `img/logo-light.svg` | Full logo — light backgrounds | ![logo-light](img/logo-light.svg) |
+| `img/logo-dark.svg` | Full logo — dark backgrounds | ![logo-dark](img/logo-dark.svg) |
+| `img/logo-icon.svg` | Icon-only mark | ![logo-icon](img/logo-icon.svg) |
+| `img/favicon.svg` | Browser favicon | ![favicon](img/favicon.svg) |
+
 ---
 
 ## Architecture Reference
