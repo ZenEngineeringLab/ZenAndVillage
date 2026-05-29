@@ -7,7 +7,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { seedCondominiums } from '@/shared/data/seed'
+import { useCondominiumsQuery } from '@/features/condominiums/hooks/useCondominiumsQuery'
 import type { Employee } from '@/shared/types/entities'
 
 const schema = z.object({
@@ -40,6 +40,8 @@ interface Props {
 
 export function EmployeeForm({ initialData, onSave, onCancel }: Props) {
   const { t } = useTranslation()
+  const { data: condosPage } = useCondominiumsQuery()
+  const condominiums = condosPage?.items ?? []
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as unknown as Resolver<FormData>,
     defaultValues: {
@@ -67,7 +69,7 @@ export function EmployeeForm({ initialData, onSave, onCancel }: Props) {
   const status = watch('status')
 
   const onSubmit = (data: FormData) => {
-    const condo = seedCondominiums.find((c) => c.id === data.condominiumId)
+    const condo = condominiums.find((c) => c.id === data.condominiumId)
     onSave({ ...data, condominiumName: condo?.name ?? '', tenantId: 't1' })
   }
 
@@ -113,7 +115,7 @@ export function EmployeeForm({ initialData, onSave, onCancel }: Props) {
             <Select defaultValue={watch('condominiumId')} onValueChange={(v) => setValue('condominiumId', v)}>
               <SelectTrigger id="condominiumId"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {seedCondominiums.map((c) => (
+                {condominiums.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>

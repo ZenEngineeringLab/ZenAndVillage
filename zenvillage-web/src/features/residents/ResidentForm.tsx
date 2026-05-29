@@ -8,7 +8,7 @@ import { Label } from '@/shared/components/ui/label'
 import { Switch } from '@/shared/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { seedCondominiums } from '@/shared/data/seed'
+import { useCondominiumsQuery } from '@/features/condominiums/hooks/useCondominiumsQuery'
 import type { Resident } from '@/shared/types/entities'
 
 const schema = z.object({
@@ -44,6 +44,8 @@ interface Props {
 
 export function ResidentForm({ initialData, onSave, onCancel }: Props) {
   const { t } = useTranslation()
+  const { data: condosPage } = useCondominiumsQuery()
+  const condominiums = condosPage?.items ?? []
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -75,7 +77,7 @@ export function ResidentForm({ initialData, onSave, onCancel }: Props) {
   const isCouncilMember = watch('isCouncilMember')
 
   const onSubmit = (data: FormData) => {
-    const condo = seedCondominiums.find((c) => c.id === data.condominiumId)
+    const condo = condominiums.find((c) => c.id === data.condominiumId)
     onSave({
       ...data,
       condominiumName: condo?.name ?? '',
@@ -134,7 +136,7 @@ export function ResidentForm({ initialData, onSave, onCancel }: Props) {
             <Select defaultValue={watch('condominiumId')} onValueChange={(v) => setValue('condominiumId', v)}>
               <SelectTrigger id="condominiumId"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {seedCondominiums.map((c) => (
+                {condominiums.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>

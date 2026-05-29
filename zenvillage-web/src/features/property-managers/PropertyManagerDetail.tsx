@@ -1,13 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { seedCondominiums } from '@/shared/data/seed'
+import { useCondominiumsQuery } from '@/features/condominiums/hooks/useCondominiumsQuery'
 import type { PropertyManager } from '@/shared/types/entities'
 
 interface Props { manager: PropertyManager }
 
 export function PropertyManagerDetail({ manager }: Props) {
   const { t } = useTranslation()
-  const linkedCondos = seedCondominiums.filter((c) => c.propertyManagerId === manager.id)
+  const { data: condosPage } = useCondominiumsQuery({ propertyManagerId: manager.id })
+  const linkedCondos = condosPage?.items ?? []
 
   return (
     <div className="space-y-4">
