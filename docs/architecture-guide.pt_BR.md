@@ -2,7 +2,7 @@
 ## PWA Frontend + Serverless AWS
 
 > **Como usar este documento**
-> `{project}` é um placeholder intencional — **não** o substitua diretamente neste arquivo. Agentes e ferramentas o resolvem no momento da tarefa a partir de `docs/project-definition.md`. Isso mantém o guia reutilizável entre projetos sem hardcode de identificadores aqui.
+> `{project}` é um placeholder intencional — **não** o substitua diretamente neste arquivo. Agentes e ferramentas o resolvem no momento da tarefa a partir de `CLAUDE.md` (seção **Project Identity**). Isso mantém o guia reutilizável entre projetos sem hardcode de identificadores aqui.
 > Este documento é a **fonte única de verdade para a arquitetura de engenharia**.
 > Decisões de UI (componentes, tokens, estilização, ícones) são regidas pela Seção 15 deste documento.
 
@@ -1611,7 +1611,7 @@ Uma única versão SemVer representa um release coordenado de todos os component
 
 | Onde | Função |
 | --- | --- |
-| `docs/project-definition.md` — campo `Base version` | **Fonte única de verdade** — altere isso primeiro |
+| `CLAUDE.md` — campo `Base version` (em Project Identity) | **Fonte única de verdade** — altere isso primeiro |
 | `{project}-web/package.json` — campo `version` | Cópia propagada — deve permanecer em sincronia |
 | `{domain}-lambda/package.json` — campo `version` (quando criado) | Cópia propagada — deve permanecer em sincronia |
 | `CHANGELOG.md` | Histórico de releases legível por humanos |

@@ -7,9 +7,30 @@ Claude Code reads this file automatically on every session and every sub-agent i
 
 ## Project Identity
 
-All project-specific values (`{project}`, `{org}`, base version, git remote, etc.) are resolved from [`docs/project-definition.md`](docs/project-definition.md). Read that file to determine the current project's identifier, organization, and starting version before executing any spec, branch, or version-bump task.
+### Organization
+ZenEngineeringLab
 
-Never hardcode project identifiers in this file or in `docs/architecture-guide.md`. To reuse this document in a new project, only `docs/project-definition.md` needs to change.
+### Project name 
+ZenAndVillage 
+
+### Project identifier 
+zenvillage 
+
+### What it does 
+ZenAndVillage is an AI-powered SaaS platform for smart condominium and community management, simplifying operations, communication, security, and decision-making through intelligent automation for a more connected, efficient, and peaceful living experience.
+
+### Slogan
+Connected Communities. Intelligent Operations. Peaceful Living.
+
+### Brand Identity
+- **Primary color:** teal
+- **Visual tone:** calm, trustworthy, professional ("zen" aesthetic)
+
+### Base version
+0.3.0
+
+### Git remote
+github.com/ZenEngineeringLab/ZenAndVillage
 
 ---
 
@@ -130,7 +151,7 @@ This project uses a **three-layer versioning model** defined in full in Section 
 
 ### Source of truth
 
-The canonical product version lives in `docs/project-definition.md` under `Base version`.
+The canonical product version lives in `CLAUDE.md` under `## Project Identity → Base version`.
 It must be propagated to every `package.json` in the monorepo and to `CHANGELOG.md` before a release commit is made.
 
 ### When to bump
@@ -146,7 +167,7 @@ It must be propagated to every `package.json` in the monorepo and to `CHANGELOG.
 Execute in this exact order:
 
 ```
-1. Update  docs/project-definition.md       ← bump "Base version"
+1. Update  CLAUDE.md                        ← bump "Base version" under Project Identity
 2. Update  zenvillage-web/package.json      ← set "version" to match
 3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
 4. Update  CHANGELOG.md                     ← add release section with date and summary

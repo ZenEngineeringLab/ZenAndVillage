@@ -15,7 +15,6 @@ ZenAndVillage/
 ├── docs/
 │   ├── architecture-guide.md        # Engineering architecture (en-US — canonical)
 │   ├── architecture-guide.pt_BR.md # Engineering architecture (pt-BR — translation)
-│   ├── project-definition.md        # Project identity, version, git remote
 │   ├── knowledge-base.md            # Domain knowledge (en-US — canonical)
 │   ├── knowledge-base.pt_BR.md      # Domain knowledge (pt-BR — translation)
 │   ├── software-vision.md           # Platform requirements & business rules (en-US — canonical)
