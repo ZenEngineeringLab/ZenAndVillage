@@ -72,7 +72,8 @@ export function AdminPlansPage() {
     queryKey: ['admin', 'plans'],
     queryFn: async () => {
       const res = await httpClient.get('/v1/admin/plans')
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })

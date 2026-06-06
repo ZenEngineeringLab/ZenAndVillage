@@ -63,7 +63,8 @@ export function PlanSelectionPage() {
     queryKey: ['plans', 'public'],
     queryFn: async () => {
       const res = await httpClient.get('/v1/plans')
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 5 * 60 * 1000,
   })

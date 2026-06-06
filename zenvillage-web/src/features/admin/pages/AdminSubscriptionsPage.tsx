@@ -56,7 +56,8 @@ export function AdminSubscriptionsPage() {
     queryKey: ['admin', 'subscriptions'],
     queryFn: async () => {
       const res = await httpClient.get('/v1/admin/subscriptions')
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })

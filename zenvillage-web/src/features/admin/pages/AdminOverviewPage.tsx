@@ -26,7 +26,8 @@ export function AdminOverviewPage() {
     queryKey: ['admin', 'subscriptions'],
     queryFn: async () => {
       const res = await httpClient.get('/v1/admin/subscriptions')
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })
@@ -35,7 +36,8 @@ export function AdminOverviewPage() {
     queryKey: ['admin', 'plans'],
     queryFn: async () => {
       const res = await httpClient.get('/v1/admin/plans')
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })

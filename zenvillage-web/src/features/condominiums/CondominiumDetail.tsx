@@ -86,7 +86,8 @@ export function CondominiumDetail({ condo }: Props) {
     queryKey: ['blocks', condo.id],
     queryFn: async () => {
       const res = await httpClient.get(`/v1/condominiums/${condo.id}/blocks`)
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })
@@ -156,7 +157,8 @@ export function CondominiumDetail({ condo }: Props) {
     queryKey: ['units', condo.id],
     queryFn: async () => {
       const res = await httpClient.get(`/v1/condominiums/${condo.id}/units`)
-      return res.data.items ?? res.data
+      const body = res.data?.data ?? res.data
+      return Array.isArray(body) ? body : body?.items ?? []
     },
     staleTime: 30_000,
   })
