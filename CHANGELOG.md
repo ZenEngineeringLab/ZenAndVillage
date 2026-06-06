@@ -16,6 +16,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - **Plan catalog seeding** — the staging seed script (`scripts/seed.ts`) now creates the three public plans (`starter`, `pro`, `enterprise`, all `active` + `public`) in the `zenvillage-plans-{env}` table. Without this the self-service plan-selection screen had no plans to choose and onboarding could not proceed
+- **Platform admin seed user** — the seed now provisions a dedicated `platform-admin@zenvillage.dev` account with the `platform_admin` role (and no tenant), the only role allowed to approve/reject subscription requests. Seeded admin users now also get `onboardingStatus: 'complete'` and per-user `roles`, so they are no longer trapped in the onboarding funnel on first sign-in
 - **Registration page** — email/password/full-name form with Zod validation (min 8 chars, upper/lower/digit/symbol requirements); calls Cognito `signUp` and navigates to the verify-email step with registration state in route location
 - **Email verification page** — 6-digit code entry; on success calls Cognito `confirmSignUp`, creates the user record via `POST /v1/users` (public route), signs in, and routes to the onboarding funnel via AuthGuard
 - **`signUp`, `confirmSignUp`, `resendSignUpCode` methods** added to `authAdapter`; all Amplify Auth imports remain within the single adapter boundary

@@ -644,12 +644,16 @@ interface UserSeedConfig {
   email: string
   tenantId: string
   label: string
+  roles: string[]
+  onboardingStatus: string
 }
 
 const userConfigs: UserSeedConfig[] = [
-  { email: 'admin-agatha@zenvillage.dev', tenantId: t1Id, label: 'Ágatha admin' },
-  { email: 'admin-vistaverde@zenvillage.dev', tenantId: t2Id, label: 'Vista Verde admin' },
-  { email: 'admin-habitex@zenvillage.dev', tenantId: t3Id, label: 'Habitex admin' },
+  // Platform operator that approves subscription requests (no tenant).
+  { email: 'platform-admin@zenvillage.dev', tenantId: '', label: 'Platform Admin', roles: ['platform_admin'], onboardingStatus: 'complete' },
+  { email: 'admin-agatha@zenvillage.dev', tenantId: t1Id, label: 'Ágatha admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
+  { email: 'admin-vistaverde@zenvillage.dev', tenantId: t2Id, label: 'Vista Verde admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
+  { email: 'admin-habitex@zenvillage.dev', tenantId: t3Id, label: 'Habitex admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
 ]
 
 async function seedCognitoUsers(userPoolId: string): Promise<void> {
@@ -660,19 +664,25 @@ async function seedCognitoUsers(userPoolId: string): Promise<void> {
     let cognitoSub: string
 
     try {
+      const userAttributes = [
+        { Name: 'email', Value: config.email },
+        { Name: 'email_verified', Value: 'true' },
+        { Name: 'name', Value: config.label },
+        { Name: 'custom:roles', Value: JSON.stringify(config.roles) },
+      ]
+      // Only stamp custom:tenantId when the user belongs to a tenant
+      // (platform admins have none, and empty custom attributes can be rejected).
+      if (config.tenantId) {
+        userAttributes.push({ Name: 'custom:tenantId', Value: config.tenantId })
+      }
+
       const createResponse = await cognitoClient.send(
         new AdminCreateUserCommand({
           UserPoolId: userPoolId,
           Username: config.email,
           TemporaryPassword: temporaryPassword,
           MessageAction: 'SUPPRESS',
-          UserAttributes: [
-            { Name: 'email', Value: config.email },
-            { Name: 'email_verified', Value: 'true' },
-            { Name: 'name', Value: config.label },
-            { Name: 'custom:tenantId', Value: config.tenantId },
-            { Name: 'custom:roles', Value: JSON.stringify(['tenant_admin']) },
-          ],
+          UserAttributes: userAttributes,
         }),
       )
 
@@ -700,14 +710,16 @@ async function seedCognitoUsers(userPoolId: string): Promise<void> {
       }),
     )
 
-    // Write user record to DynamoDB
+    // Write user record to DynamoDB (roles here are the source of truth the
+    // Pre-Token Generation Lambda reads to build the custom:roles JWT claim).
     const userItem = {
       PK: `USER#${cognitoSub}`,
       SK: 'PROFILE',
       id: cognitoSub,
       email: config.email,
       tenantId: config.tenantId,
-      roles: ['tenant_admin'],
+      roles: config.roles,
+      onboardingStatus: config.onboardingStatus,
       locale: 'auto',
       createdAt: now(),
       updatedAt: now(),
@@ -748,7 +760,7 @@ async function main(): Promise<void> {
   console.log(`  Condominiums:      3 (IDs: ${c1Id}, ${c2Id}, ${c3Id})`)
   console.log(`  Residents:         5 (IDs: ${r1Id}, ${r2Id}, ${r3Id}, ${r4Id}, ${r5Id})`)
   console.log(`  Employees:         4 (IDs: ${e1Id}, ${e2Id}, ${e3Id}, ${e4Id})`)
-  console.log(`  Cognito users:     3 (admin-agatha, admin-vistaverde, admin-habitex)`)
+  console.log(`  Cognito users:     4 (platform-admin, admin-agatha, admin-vistaverde, admin-habitex)`)
 }
 
 main().catch((err) => {
