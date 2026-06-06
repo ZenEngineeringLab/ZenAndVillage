@@ -79,14 +79,8 @@ export class SubscriptionsStack extends Stack {
     const alarmTopic = Topic.fromTopicArn(this, 'AlarmTopic', snsAlarmTopicArn)
 
     // Import cross-stack tables (read-only CDK references — no double-creation)
-    const tenantsTable = Table.fromTableAttributes(this, 'TenantsTable', {
-      tableArn: tenantsTableArn,
-      tableName: tenantsTableName,
-    })
-    const usersTable = Table.fromTableAttributes(this, 'UsersTable', {
-      tableArn: usersTableArn,
-      tableName: usersTableName,
-    })
+    const tenantsTable = Table.fromTableArn(this, 'TenantsTable', tenantsTableArn)
+    const usersTable = Table.fromTableArn(this, 'UsersTable', usersTableArn)
 
     // Subscriptions DynamoDB table — PK = SUBSCRIPTION#{id}, SK = METADATA
     const table = new Table(this, 'SubscriptionsTable', {
