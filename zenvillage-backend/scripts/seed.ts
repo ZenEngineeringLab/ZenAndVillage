@@ -60,6 +60,7 @@ function daysFromNow(days: number): string {
 // ---------------------------------------------------------------------------
 // Table names
 // ---------------------------------------------------------------------------
+const PLANS_TABLE = `zenvillage-plans-${env}`
 const TENANTS_TABLE = `zenvillage-tenants-${env}`
 const PROPERTY_MANAGERS_TABLE = `zenvillage-property-managers-${env}`
 const CONDOMINIUMS_TABLE = `zenvillage-condominiums-${env}`
@@ -91,6 +92,77 @@ const e1Id = randomUUID()
 const e2Id = randomUUID()
 const e3Id = randomUUID()
 const e4Id = randomUUID()
+
+// ---------------------------------------------------------------------------
+// Seed: Plans (public catalog — required for self-service onboarding)
+// ---------------------------------------------------------------------------
+async function seedPlans(): Promise<void> {
+  const plans = [
+    {
+      PK: 'PLAN#starter',
+      SK: 'METADATA',
+      id: 'starter',
+      name: 'Starter',
+      description: 'For a single condominium getting started with digital management.',
+      monthlyPrice: 99,
+      annualPrice: 990,
+      maxCondos: 1,
+      maxUnitsTotal: 100,
+      maxAdminUsers: 2,
+      enabledModules: ['condominiums', 'residents', 'employees'],
+      dataRetentionMonths: 12,
+      supportLevel: 'basic',
+      apiAccess: false,
+      status: 'active',
+      public: true,
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      PK: 'PLAN#pro',
+      SK: 'METADATA',
+      id: 'pro',
+      name: 'Pro',
+      description: 'For property managers handling multiple condominiums.',
+      monthlyPrice: 299,
+      annualPrice: 2990,
+      maxCondos: 10,
+      maxUnitsTotal: 1000,
+      maxAdminUsers: 10,
+      enabledModules: ['condominiums', 'residents', 'employees', 'financials', 'communications'],
+      dataRetentionMonths: 24,
+      supportLevel: 'priority',
+      apiAccess: false,
+      status: 'active',
+      public: true,
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      PK: 'PLAN#enterprise',
+      SK: 'METADATA',
+      id: 'enterprise',
+      name: 'Enterprise',
+      description: 'For large administrators with advanced integration and support needs.',
+      monthlyPrice: 999,
+      annualPrice: 9990,
+      maxCondos: 50,
+      maxUnitsTotal: 5000,
+      maxAdminUsers: 50,
+      enabledModules: ['condominiums', 'residents', 'employees', 'financials', 'communications', 'security', 'analytics'],
+      dataRetentionMonths: 60,
+      supportLevel: 'dedicated',
+      apiAccess: true,
+      status: 'active',
+      public: true,
+      createdAt: now(),
+      updatedAt: now(),
+    },
+  ]
+
+  await Promise.all(plans.map((item) => putItem(PLANS_TABLE, item)))
+  console.log(`[seed] Plans created: ${plans.length}`)
+}
 
 // ---------------------------------------------------------------------------
 // Seed: Tenants
@@ -658,6 +730,7 @@ async function main(): Promise<void> {
 
   // Seed DynamoDB tables in parallel where possible
   await Promise.all([
+    seedPlans(),
     seedTenants(),
     seedPropertyManagers(),
     seedCondominiums(),
@@ -669,6 +742,7 @@ async function main(): Promise<void> {
   await seedCognitoUsers(userPoolId)
 
   console.log('\n[seed] Done! Summary:')
+  console.log(`  Plans:             3 (starter, pro, enterprise)`)
   console.log(`  Tenants:           3 (IDs: ${t1Id}, ${t2Id}, ${t3Id})`)
   console.log(`  Property Managers: 2 (IDs: ${pm1Id}, ${pm2Id})`)
   console.log(`  Condominiums:      3 (IDs: ${c1Id}, ${c2Id}, ${c3Id})`)

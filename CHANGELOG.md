@@ -15,6 +15,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **CDK synth failure on `subscriptions` stack** — the cross-stack imports of the Tenants and Users tables passed both `tableArn` and `tableName` to `Table.fromTableAttributes`, which CDK rejects with `TableArnOrNameConflict`, aborting `cdk bootstrap`/`deploy`; switched to `Table.fromTableArn` (only the ARN is needed for the IAM grants)
 
 ### Added
+- **Plan catalog seeding** — the staging seed script (`scripts/seed.ts`) now creates the three public plans (`starter`, `pro`, `enterprise`, all `active` + `public`) in the `zenvillage-plans-{env}` table. Without this the self-service plan-selection screen had no plans to choose and onboarding could not proceed
 - **Registration page** — email/password/full-name form with Zod validation (min 8 chars, upper/lower/digit/symbol requirements); calls Cognito `signUp` and navigates to the verify-email step with registration state in route location
 - **Email verification page** — 6-digit code entry; on success calls Cognito `confirmSignUp`, creates the user record via `POST /v1/users` (public route), signs in, and routes to the onboarding funnel via AuthGuard
 - **`signUp`, `confirmSignUp`, `resendSignUpCode` methods** added to `authAdapter`; all Amplify Auth imports remain within the single adapter boundary
