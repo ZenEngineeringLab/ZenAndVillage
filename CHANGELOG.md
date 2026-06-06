@@ -10,6 +10,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- **Frontend production build failures (33 TypeScript errors)** — the Tenants screens (list, detail panel, form) still referenced legacy seed-era fields (`plan`, `cnpj`, `condominiumsCount`/`Limit`, `unitsCount`/`Limit`, `trialEnd`, `joinDate`) and outdated `type`/`status` enums; realigned them to the canonical `Tenant` entity (`planId`, `taxId`, `usageLimits`, `subscriptionStatus`, `trialEndDate`, `createdAt`, `type: management_company|independent_condo`, `status: active|suspended|canceled`) and updated the matching `tenants.type`/`tenants.status`/`tenants.usage` i18n keys in both locales. Also fixed the `zodResolver` input/output type mismatch (zod v4 + `@hookform/resolvers` v5) on the plan and unit forms, and removed two unused imports
 - **CDK synth failure on `subscriptions` stack** — the cross-stack imports of the Tenants and Users tables passed both `tableArn` and `tableName` to `Table.fromTableAttributes`, which CDK rejects with `TableArnOrNameConflict`, aborting `cdk bootstrap`/`deploy`; switched to `Table.fromTableArn` (only the ARN is needed for the IAM grants)
 
 ### Added

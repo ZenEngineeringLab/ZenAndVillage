@@ -5,7 +5,6 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Label } from '@/shared/components/ui/label'
-import { Input } from '@/shared/components/ui/input'
 import {
   Select,
   SelectContent,

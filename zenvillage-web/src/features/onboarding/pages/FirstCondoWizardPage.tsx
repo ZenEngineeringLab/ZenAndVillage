@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { httpClient } from '@/shared/api/http-client'
-import { authAdapter } from '@/shared/auth/auth.adapter'
 import { useAuthStore } from '@/features/auth/store/auth.store'
 import type { OnboardingStatus } from '@/features/auth/store/auth.store'
 

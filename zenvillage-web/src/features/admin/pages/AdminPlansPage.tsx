@@ -78,7 +78,7 @@ export function AdminPlansPage() {
   })
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } =
-    useForm<PlanFormValues>({
+    useForm<z.input<typeof planSchema>, unknown, PlanFormValues>({
       resolver: zodResolver(planSchema),
       defaultValues: {
         apiAccess: false,

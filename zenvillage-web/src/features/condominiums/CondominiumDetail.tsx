@@ -147,7 +147,7 @@ export function CondominiumDetail({ condo }: Props) {
     editing: null,
   })
 
-  const unitForm = useForm<UnitFormValues>({
+  const unitForm = useForm<z.input<typeof unitSchema>, unknown, UnitFormValues>({
     resolver: zodResolver(unitSchema),
     defaultValues: { floor: 0, type: 'apartment', occupancyStatus: 'vacant' },
   })

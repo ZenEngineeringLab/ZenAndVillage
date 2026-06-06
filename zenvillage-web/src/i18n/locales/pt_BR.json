@@ -134,8 +134,8 @@
       "joinDate": "Data de Entrada"
     },
     "type": {
-      "property_manager": "Administradora",
-      "independent_condominium": "Condomínio Independente"
+      "management_company": "Administradora",
+      "independent_condo": "Condomínio Independente"
     },
     "plan": {
       "starter": "Starter",
@@ -144,9 +144,8 @@
     },
     "status": {
       "active": "Ativo",
-      "trial": "Trial",
       "suspended": "Suspenso",
-      "inactive": "Inativo"
+      "canceled": "Cancelado"
     },
     "fields": {
       "name": "Nome",
@@ -178,8 +177,11 @@
       "banner": "Este tenant está suspenso. O acesso às funcionalidades está restrito."
     },
     "usage": {
+      "limits": "Limites do plano",
       "condominiums": "Condomínios",
-      "units": "Unidades"
+      "units": "Unidades",
+      "adminUsers": "Usuários Admin",
+      "limit": "Limite: {{count}}"
     }
   },
   "propertyManagers": {

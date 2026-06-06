@@ -10,15 +10,15 @@ import type { Tenant } from '@/shared/types/entities'
 
 const schema = z.object({
   name: z.string().min(1),
-  type: z.enum(['property_manager', 'independent_condominium']),
-  cnpj: z.string().min(1),
+  type: z.enum(['management_company', 'independent_condo']),
+  taxId: z.string().min(1),
   contactEmail: z.string().email(),
   phone: z.string(),
   responsibleName: z.string().min(1),
   responsibleEmail: z.string().email(),
-  plan: z.enum(['starter', 'pro', 'enterprise']),
+  planId: z.string().min(1),
   billingCycle: z.enum(['monthly', 'annual']),
-  status: z.enum(['active', 'trial', 'suspended', 'inactive']),
+  status: z.enum(['active', 'suspended', 'canceled']),
 })
 
 type FormData = z.infer<typeof schema>
@@ -35,13 +35,13 @@ export function TenantForm({ initialData, onSave, onCancel }: TenantFormProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name ?? '',
-      type: initialData?.type ?? 'property_manager',
-      cnpj: initialData?.cnpj ?? '',
+      type: initialData?.type ?? 'management_company',
+      taxId: initialData?.taxId ?? '',
       contactEmail: initialData?.contactEmail ?? '',
       phone: initialData?.phone ?? '',
       responsibleName: initialData?.responsibleName ?? '',
       responsibleEmail: initialData?.responsibleEmail ?? '',
-      plan: initialData?.plan ?? 'starter',
+      planId: initialData?.planId ?? '',
       billingCycle: initialData?.billingCycle ?? 'monthly',
       status: initialData?.status ?? 'active',
     },
@@ -65,14 +65,14 @@ export function TenantForm({ initialData, onSave, onCancel }: TenantFormProps) {
         <Select defaultValue={watch('type')} onValueChange={(v) => setValue('type', v as FormData['type'])}>
           <SelectTrigger id="type"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="property_manager">{t('tenants.type.property_manager')}</SelectItem>
-            <SelectItem value="independent_condominium">{t('tenants.type.independent_condominium')}</SelectItem>
+            <SelectItem value="management_company">{t('tenants.type.management_company')}</SelectItem>
+            <SelectItem value="independent_condo">{t('tenants.type.independent_condo')}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
 
-      <Field label={t('tenants.fields.cnpj')} id="cnpj" error={errors.cnpj && t('common.required')}>
-        <Input id="cnpj" {...register('cnpj')} placeholder="00.000.000/0001-00" />
+      <Field label={t('tenants.fields.cnpj')} id="taxId" error={errors.taxId && t('common.required')}>
+        <Input id="taxId" {...register('taxId')} placeholder="00.000.000/0001-00" />
       </Field>
 
       <Field label={t('tenants.fields.contactEmail')} id="contactEmail" error={errors.contactEmail && t('common.required')}>
@@ -92,15 +92,8 @@ export function TenantForm({ initialData, onSave, onCancel }: TenantFormProps) {
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label={t('tenants.fields.plan')} id="plan">
-          <Select defaultValue={watch('plan')} onValueChange={(v) => setValue('plan', v as FormData['plan'])}>
-            <SelectTrigger id="plan"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="starter">{t('tenants.plan.starter')}</SelectItem>
-              <SelectItem value="pro">{t('tenants.plan.pro')}</SelectItem>
-              <SelectItem value="enterprise">{t('tenants.plan.enterprise')}</SelectItem>
-            </SelectContent>
-          </Select>
+        <Field label={t('tenants.fields.plan')} id="planId" error={errors.planId && t('common.required')}>
+          <Input id="planId" {...register('planId')} />
         </Field>
 
         <Field label={t('tenants.fields.billingCycle')} id="billingCycle">
@@ -118,7 +111,7 @@ export function TenantForm({ initialData, onSave, onCancel }: TenantFormProps) {
         <Select defaultValue={watch('status')} onValueChange={(v) => setValue('status', v as FormData['status'])}>
           <SelectTrigger id="status"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(['active', 'trial', 'suspended', 'inactive'] as const).map((s) => (
+            {(['active', 'suspended', 'canceled'] as const).map((s) => (
               <SelectItem key={s} value={s}>{t(`tenants.status.${s}`)}</SelectItem>
             ))}
           </SelectContent>

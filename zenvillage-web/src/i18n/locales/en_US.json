@@ -134,8 +134,8 @@
       "joinDate": "Join Date"
     },
     "type": {
-      "property_manager": "Property Manager",
-      "independent_condominium": "Independent Condo"
+      "management_company": "Management Company",
+      "independent_condo": "Independent Condo"
     },
     "plan": {
       "starter": "Starter",
@@ -144,9 +144,8 @@
     },
     "status": {
       "active": "Active",
-      "trial": "Trial",
       "suspended": "Suspended",
-      "inactive": "Inactive"
+      "canceled": "Canceled"
     },
     "fields": {
       "name": "Name",
@@ -178,8 +177,11 @@
       "banner": "This tenant is currently suspended. Access to features is restricted."
     },
     "usage": {
+      "limits": "Plan limits",
       "condominiums": "Condominiums",
-      "units": "Units"
+      "units": "Units",
+      "adminUsers": "Admin Users",
+      "limit": "Limit: {{count}}"
     }
   },
   "propertyManagers": {
