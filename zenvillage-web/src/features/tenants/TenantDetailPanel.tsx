@@ -43,15 +43,15 @@ export function TenantDetailPanel({ tenant }: TenantDetailPanelProps) {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">{t('tenants.usage.condominiums')}</p>
-            <p className="text-lg font-semibold">{tenant.usageLimits.activeCondos}</p>
+            <p className="text-lg font-semibold">{tenant.usageLimits?.activeCondos ?? '—'}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{t('tenants.usage.units')}</p>
-            <p className="text-lg font-semibold">{tenant.usageLimits.totalUnits}</p>
+            <p className="text-lg font-semibold">{tenant.usageLimits?.totalUnits ?? '—'}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{t('tenants.usage.adminUsers')}</p>
-            <p className="text-lg font-semibold">{tenant.usageLimits.adminUsers}</p>
+            <p className="text-lg font-semibold">{tenant.usageLimits?.adminUsers ?? '—'}</p>
           </div>
         </div>
       </div>

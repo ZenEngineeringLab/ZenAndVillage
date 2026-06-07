@@ -112,7 +112,7 @@ export function TenantsPage() {
       key: 'condominiums', header: t('tenants.columns.condominiums'),
       render: (row) => (
         <span className="text-xs text-muted-foreground">
-          {t('tenants.usage.limit', { count: row.usageLimits.activeCondos })}
+          {t('tenants.usage.limit', { count: row.usageLimits?.activeCondos ?? 0 })}
         </span>
       ),
     },
