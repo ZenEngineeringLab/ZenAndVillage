@@ -12,7 +12,7 @@ import {
   AdminGetUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb'
+import { DynamoDBDocumentClient, PutCommand, ScanCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm'
 
 // ---------------------------------------------------------------------------
@@ -21,8 +21,11 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm'
 const envArg = process.argv.find((a) => a.startsWith('--env='))
 const env = envArg ? envArg.split('=')[1] : 'staging'
 const region = process.env.AWS_REGION ?? 'us-east-1'
+// --clean wipes all data tables before seeding, for a fresh demo with no
+// accumulated duplicates from previous runs.
+const clean = process.argv.includes('--clean')
 
-console.log(`[seed] Environment: ${env}  Region: ${region}`)
+console.log(`[seed] Environment: ${env}  Region: ${region}  Clean: ${clean}`)
 
 // ---------------------------------------------------------------------------
 // AWS clients
@@ -47,6 +50,31 @@ async function putItem(tableName: string, item: Record<string, unknown>): Promis
   await dynamoClient.send(new PutCommand({ TableName: tableName, Item: item }))
 }
 
+/** Deletes every item in a table (all entities use a PK/SK key schema). */
+async function purgeTable(tableName: string): Promise<void> {
+  let lastKey: Record<string, any> | undefined
+  let total = 0
+  do {
+    const res = await dynamoClient.send(new ScanCommand({
+      TableName: tableName,
+      ProjectionExpression: 'PK, SK',
+      ExclusiveStartKey: lastKey,
+    }))
+    const items = res.Items ?? []
+    for (let i = 0; i < items.length; i += 25) {
+      const chunk = items.slice(i, i + 25)
+      await dynamoClient.send(new BatchWriteCommand({
+        RequestItems: {
+          [tableName]: chunk.map((it) => ({ DeleteRequest: { Key: { PK: it.PK, SK: it.SK } } })),
+        },
+      }))
+    }
+    total += items.length
+    lastKey = res.LastEvaluatedKey
+  } while (lastKey)
+  console.log(`[seed] Purged ${tableName}: ${total} items`)
+}
+
 function now(): string {
   return new Date().toISOString()
 }
@@ -66,7 +94,20 @@ const PROPERTY_MANAGERS_TABLE = `zenvillage-property-managers-${env}`
 const CONDOMINIUMS_TABLE = `zenvillage-condominiums-${env}`
 const RESIDENTS_TABLE = `zenvillage-residents-${env}`
 const EMPLOYEES_TABLE = `zenvillage-employees-${env}`
+const SUBSCRIPTIONS_TABLE = `zenvillage-subscriptions-${env}`
 const USERS_TABLE = `zenvillage-users-${env}`
+
+// Data tables wiped by --clean. USERS is intentionally excluded: deleting a
+// user record would break Cognito sign-in (the Pre-Token Lambda needs it).
+const DATA_TABLES = [
+  PLANS_TABLE,
+  TENANTS_TABLE,
+  PROPERTY_MANAGERS_TABLE,
+  CONDOMINIUMS_TABLE,
+  RESIDENTS_TABLE,
+  EMPLOYEES_TABLE,
+  SUBSCRIPTIONS_TABLE,
+]
 
 // ---------------------------------------------------------------------------
 // IDs (generated once so they can be referenced across entities)
@@ -74,6 +115,7 @@ const USERS_TABLE = `zenvillage-users-${env}`
 const t1Id = randomUUID()
 const t2Id = randomUUID()
 const t3Id = randomUUID()
+const t4Id = randomUUID() // pending tenant — its subscription awaits platform-admin approval
 
 const pm1Id = randomUUID()
 const pm2Id = randomUUID()
@@ -224,6 +266,25 @@ async function seedTenants(): Promise<void> {
       subscriptionStatus: 'active',
       status: 'active',
       usageLimits: { activeCondos: 50, totalUnits: 5000, adminUsers: 50 },
+      createdAt: now(),
+      updatedAt: now(),
+    },
+    {
+      PK: `TENANT#${t4Id}#TENANT#${t4Id}`,
+      SK: 'PROFILE',
+      id: t4Id,
+      name: 'Condomínio Aurora (aguardando aprovação)',
+      type: 'independent_condo',
+      taxId: '11.444.777/0001-55',
+      contactEmail: 'sindico@aurora.com.br',
+      phone: '(11) 4444-7777',
+      responsibleName: 'Marina Aurora',
+      responsibleEmail: 'marina@aurora.com.br',
+      planId: 'starter',
+      billingCycle: 'monthly',
+      subscriptionStatus: 'pending_approval',
+      status: 'active',
+      usageLimits: { activeCondos: 1, totalUnits: 100, adminUsers: 2 },
       createdAt: now(),
       updatedAt: now(),
     },
@@ -648,10 +709,13 @@ const userConfigs: UserSeedConfig[] = [
   { email: 'admin-agatha@zenvillage.dev', tenantId: t1Id, label: 'Ágatha admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
   { email: 'admin-vistaverde@zenvillage.dev', tenantId: t2Id, label: 'Vista Verde admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
   { email: 'admin-habitex@zenvillage.dev', tenantId: t3Id, label: 'Habitex admin', roles: ['tenant_admin'], onboardingStatus: 'complete' },
+  // Owner whose subscription is still pending — used to demo the approval flow.
+  { email: 'pending-owner@zenvillage.dev', tenantId: t4Id, label: 'Pending Owner', roles: ['tenant_admin'], onboardingStatus: 'pending_approval' },
 ]
 
-async function seedCognitoUsers(userPoolId: string): Promise<void> {
+async function seedCognitoUsers(userPoolId: string): Promise<Record<string, string>> {
   const temporaryPassword = 'ZenV1llage!2026'
+  const subsByEmail: Record<string, string> = {}
 
   for (const config of userConfigs) {
     // Create user in Cognito
@@ -720,8 +784,30 @@ async function seedCognitoUsers(userPoolId: string): Promise<void> {
     }
 
     await putItem(USERS_TABLE, userItem)
+    subsByEmail[config.email] = cognitoSub
     console.log(`[seed] Cognito user created: ${config.email}  sub=${cognitoSub}`)
   }
+
+  return subsByEmail
+}
+
+// ---------------------------------------------------------------------------
+// Seed: a pending subscription request for the platform admin to approve
+// ---------------------------------------------------------------------------
+async function seedPendingSubscription(requestedByCognitoSub: string): Promise<void> {
+  const id = randomUUID()
+  await putItem(SUBSCRIPTIONS_TABLE, {
+    PK: `SUBSCRIPTION#${id}`,
+    SK: 'METADATA',
+    id,
+    tenantId: t4Id,
+    planId: 'starter',
+    requestedByCognitoSub,
+    requestedAt: now(),
+    billingCycle: 'monthly',
+    status: 'pending_approval',
+  })
+  console.log(`[seed] Pending subscription created: ${id} (tenant ${t4Id})`)
 }
 
 // ---------------------------------------------------------------------------
@@ -734,6 +820,15 @@ async function main(): Promise<void> {
   const userPoolId = await getSsmParam(`/zenvillage/${env}/cognito-pool-id`)
   console.log(`[seed] User Pool ID: ${userPoolId}`)
 
+  // Optional clean slate: wipe all data tables so the demo has no duplicates
+  // accumulated from previous runs (USERS is preserved — see DATA_TABLES).
+  if (clean) {
+    console.log('[seed] --clean: purging data tables...')
+    for (const table of DATA_TABLES) {
+      await purgeTable(table)
+    }
+  }
+
   // Seed DynamoDB tables in parallel where possible
   await Promise.all([
     seedPlans(),
@@ -745,16 +840,21 @@ async function main(): Promise<void> {
   ])
 
   // Seed Cognito users (sequential because each writes to DynamoDB after creating the user)
-  await seedCognitoUsers(userPoolId)
+  const subsByEmail = await seedCognitoUsers(userPoolId)
+
+  // Seed a pending subscription tied to the pending owner, so the platform
+  // admin has a real request to approve out of the box.
+  await seedPendingSubscription(subsByEmail['pending-owner@zenvillage.dev'])
 
   console.log('\n[seed] Done! Summary:')
   console.log(`  Plans:             3 (starter, pro, enterprise)`)
-  console.log(`  Tenants:           3 (IDs: ${t1Id}, ${t2Id}, ${t3Id})`)
+  console.log(`  Tenants:           4 (3 active + 1 pending: ${t4Id})`)
   console.log(`  Property Managers: 2 (IDs: ${pm1Id}, ${pm2Id})`)
   console.log(`  Condominiums:      3 (IDs: ${c1Id}, ${c2Id}, ${c3Id})`)
-  console.log(`  Residents:         5 (IDs: ${r1Id}, ${r2Id}, ${r3Id}, ${r4Id}, ${r5Id})`)
-  console.log(`  Employees:         4 (IDs: ${e1Id}, ${e2Id}, ${e3Id}, ${e4Id})`)
-  console.log(`  Cognito users:     4 (platform-admin, admin-agatha, admin-vistaverde, admin-habitex)`)
+  console.log(`  Residents:         5`)
+  console.log(`  Employees:         4`)
+  console.log(`  Cognito users:     5 (platform-admin, admin-agatha, admin-vistaverde, admin-habitex, pending-owner)`)
+  console.log(`  Pending subs:      1 (awaiting platform-admin approval)`)
 }
 
 main().catch((err) => {
