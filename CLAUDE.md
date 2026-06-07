@@ -179,13 +179,15 @@ Execute in this exact order:
 1. Update  CLAUDE.md                        ← bump "Base version" under Project Identity
 2. Update  zenvillage-web/package.json      ← set "version" to match
 3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
-4. Update  CHANGELOG.md                     ← add release section with date and summary
-5. Commit  "chore(release): bump version to vX.Y.Z"
-6. Tag     git tag vX.Y.Z
-7. Push    git push origin main --tags
+4. Update  CHANGELOG.md                     ← cut the release section with date and summary
+5. Commit on a release branch  "chore(release): bump version to vX.Y.Z"
+6. Push the branch, open a PR, and merge it into main (never push the bump directly to main)
+7. Tag the merged commit on main  git tag vX.Y.Z && git push origin vX.Y.Z
+8. Publish a GitHub Release for the tag, with notes copied from that version's CHANGELOG section
+   gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <changelog-section>
 ```
 
-Steps 1–4 must land in the same commit. Never tag before committing, never push the tag without pushing the commit first.
+Steps 1–4 must land in the same commit on the release branch. The version bump reaches `main` only through the PR in step 6 — never push it directly. Never tag before the PR is merged, and never push a tag whose commit is not yet on `main`. The tag must point at the merged commit; the GitHub Release (step 8) is created from that tag.
 
 ---
 
@@ -222,6 +224,20 @@ Group multiple small entries under the same category rather than writing one ent
 ### At release time
 
 When cutting a release (following the Version bump flow), rename `[Unreleased]` to `[{version}] - {date}`, add the new empty `[Unreleased]` section above it, and update the comparison links at the bottom of the file.
+
+---
+
+## Branch Protection Policy
+
+`main` is a protected branch. **All changes reach `main` only through a reviewed pull request that is merged on GitHub** — features, fixes, docs, chores, and release/version bumps alike.
+
+**Hard rules:**
+- Never commit or push directly to `main`. Always create a working branch (`feat/…`, `fix/…`, `chore/…`, `docs/…`), push it, open a PR, and merge via GitHub.
+- Never bypass branch protection. Do not use "Bypass rules and merge", `gh ... --admin`, `git push --no-verify`, or any equivalent override — even when you have admin rights to do so.
+- If a merge is blocked (e.g. a required review is missing), stop and report it. Ask the user how to proceed instead of overriding the rule.
+- The only writes that ever touch `main` directly are **annotated tags** on already-merged commits (see the Versioning Policy → Version bump flow).
+
+**Why:** the protection rule is the real enforcement layer; bypassing it silently defeats the purpose. Routing every change through a PR keeps `main` reviewable, auditable, and always green.
 
 ---
 
