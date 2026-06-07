@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Badge } from '@/shared/components/ui/badge'
-import { Progress } from '@/shared/components/ui/progress'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { DataTable, type Column } from '@/shared/components/DataTable'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
@@ -94,16 +93,16 @@ export function TenantsPage() {
     },
     {
       key: 'plan', header: t('tenants.columns.plan'),
-      render: (row) => <Badge variant={planColor(row.plan)}>{t(`tenants.plan.${row.plan}`)}</Badge>,
+      render: (row) => <Badge variant={planColor(row.planId)}>{row.planId}</Badge>,
     },
     {
       key: 'status', header: t('tenants.columns.status'),
       render: (row) => (
         <div className="flex flex-col gap-1">
           <Badge variant={statusColor(row.status)}>{t(`tenants.status.${row.status}`)}</Badge>
-          {row.status === 'trial' && row.trialEnd && (
+          {row.subscriptionStatus === 'trial' && row.trialEndDate && (
             <span className="text-xs text-amber-600">
-              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEnd) })}
+              {t('tenants.trial.daysRemaining', { count: daysRemaining(row.trialEndDate) })}
             </span>
           )}
         </div>
@@ -112,15 +111,14 @@ export function TenantsPage() {
     {
       key: 'condominiums', header: t('tenants.columns.condominiums'),
       render: (row) => (
-        <div className="space-y-1 min-w-24">
-          <div className="text-xs">{row.condominiumsCount} / {row.condominiumsLimit}</div>
-          <Progress value={(row.condominiumsCount / row.condominiumsLimit) * 100} className="h-1" />
-        </div>
+        <span className="text-xs text-muted-foreground">
+          {t('tenants.usage.limit', { count: row.usageLimits?.activeCondos ?? 0 })}
+        </span>
       ),
     },
     {
       key: 'createdAt', header: t('tenants.columns.joinDate'),
-      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.joinDate)}</span>,
+      render: (row) => <span className="text-muted-foreground text-sm">{fmt(row.createdAt)}</span>,
     },
     {
       key: 'actions', header: t('common.actions'),

@@ -11,7 +11,12 @@
     "residents": "Moradores",
     "employees": "Funcionários",
     "settings": "Configurações",
-    "help": "Ajuda"
+    "help": "Ajuda",
+    "admin": "Admin Plataforma",
+    "adminOverview": "Visão Geral",
+    "adminSubscriptions": "Assinaturas",
+    "adminTenants": "Tenants",
+    "adminPlans": "Planos"
   },
   "header": {
     "search": "Pesquisar...",
@@ -129,8 +134,8 @@
       "joinDate": "Data de Entrada"
     },
     "type": {
-      "property_manager": "Administradora",
-      "independent_condominium": "Condomínio Independente"
+      "management_company": "Administradora",
+      "independent_condo": "Condomínio Independente"
     },
     "plan": {
       "starter": "Starter",
@@ -139,9 +144,8 @@
     },
     "status": {
       "active": "Ativo",
-      "trial": "Trial",
       "suspended": "Suspenso",
-      "inactive": "Inativo"
+      "canceled": "Cancelado"
     },
     "fields": {
       "name": "Nome",
@@ -157,6 +161,14 @@
       "billingCycleMonthly": "Mensal",
       "billingCycleAnnual": "Anual"
     },
+    "subscriptionStatus": {
+      "pending_approval": "Pendente",
+      "trial": "Avaliação",
+      "active": "Ativo",
+      "delinquent": "Inadimplente",
+      "suspended": "Suspenso",
+      "canceled": "Cancelado"
+    },
     "trial": {
       "daysRemaining": "{{count}} dias restantes",
       "expired": "Trial expirado"
@@ -165,8 +177,11 @@
       "banner": "Este tenant está suspenso. O acesso às funcionalidades está restrito."
     },
     "usage": {
+      "limits": "Limites do plano",
       "condominiums": "Condomínios",
-      "units": "Unidades"
+      "units": "Unidades",
+      "adminUsers": "Usuários Admin",
+      "limit": "Limite: {{count}}"
     }
   },
   "propertyManagers": {
@@ -180,13 +195,11 @@
       "cnpj": "CNPJ",
       "location": "Cidade/Estado",
       "condominiums": "Condomínios",
-      "status": "Status",
-      "whiteLabel": "White-Label"
+      "status": "Status"
     },
     "tabs": {
       "general": "Geral",
-      "address": "Endereço",
-      "whiteLabel": "White-Label"
+      "address": "Endereço"
     },
     "fields": {
       "legalName": "Razão Social",
@@ -202,13 +215,7 @@
       "complement": "Complemento",
       "neighborhood": "Bairro",
       "city": "Cidade",
-      "state": "Estado",
-      "whiteLabelEnabled": "Ativar White-Label",
-      "platformName": "Nome da Plataforma",
-      "primaryColor": "Cor Primária",
-      "secondaryColor": "Cor Secundária",
-      "customDomain": "Domínio Personalizado",
-      "customSenderEmail": "E-mail de Envio Personalizado"
+      "state": "Estado"
     },
     "detail": {
       "title": "Detalhes da Administradora",
@@ -415,8 +422,8 @@
     "thisMonth": "neste mês",
     "tenantGrowth": "Crescimento de Tenants",
     "tenantGrowthDesc": "Total acumulado de tenants cadastrados nos últimos 6 meses",
-    "planMix": "Distribuição por Plano",
-    "planMixDesc": "Tenants ativos por plano de assinatura",
+    "subscriptionStatus": "Status de Assinatura",
+    "subscriptionStatusDesc": "Tenants por status atual de assinatura",
     "financialStatus": "Situação Financeira",
     "financialStatusDesc": "Moradores por situação de pagamento",
     "condoTypes": "Tipos de Condomínio",
@@ -430,6 +437,232 @@
     "email": "E-mail",
     "password": "Senha",
     "signIn": "Entrar",
-    "loginError": "E-mail ou senha inválidos."
+    "loginError": "E-mail ou senha inválidos.",
+    "noAccount": "Não tem uma conta?",
+    "signUpLink": "Crie uma",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "signInLink": "Entrar",
+    "registerTitle": "Crie sua conta",
+    "registerSubtitle": "Comece seu período de avaliação gratuito",
+    "fullName": "Nome Completo",
+    "fullNamePlaceholder": "Seu nome completo",
+    "confirmPassword": "Confirmar Senha",
+    "createAccount": "Criar Conta",
+    "registerError": "Não foi possível criar a conta. Tente novamente.",
+    "passwordMismatch": "As senhas não coincidem.",
+    "verifyEmailTitle": "Verifique sua caixa de entrada",
+    "verifyEmailSubtitle": "Enviamos um código de verificação de 6 dígitos para {{email}}",
+    "verificationCode": "Código de Verificação",
+    "verificationCodePlaceholder": "123456",
+    "verifyEmail": "Verificar E-mail",
+    "resendCode": "Reenviar código",
+    "resendCodeSent": "Um novo código foi enviado para o seu e-mail.",
+    "verifyEmailError": "Código inválido ou expirado. Tente novamente."
+  },
+  "onboarding": {
+    "planSelection": {
+      "title": "Escolha seu plano",
+      "subtitle": "Selecione o plano que melhor se adequa à sua organização. Você pode fazer upgrade a qualquer momento.",
+      "monthly": "Mensal",
+      "annual": "Anual",
+      "annualDiscount": "Economize {{percent}}%",
+      "perMonth": "/mês",
+      "perYear": "/ano",
+      "maxCondos": "Até {{count}} condomínio",
+      "maxCondos_other": "Até {{count}} condomínios",
+      "maxUnits": "Até {{count}} unidade",
+      "maxUnits_other": "Até {{count}} unidades",
+      "maxAdmins": "Até {{count}} usuário admin",
+      "maxAdmins_other": "Até {{count}} usuários admin",
+      "dataRetention": "{{months}} meses de retenção de dados",
+      "apiAccess": "Acesso à API incluído",
+      "supportLabel": {
+        "basic": "Suporte básico",
+        "priority": "Suporte prioritário",
+        "dedicated": "Suporte dedicado"
+      },
+      "selectPlan": "Selecionar este plano",
+      "selected": "Selecionado",
+      "companyInfoTitle": "Fale sobre sua organização",
+      "companyInfoSubtitle": "Essas informações aparecerão na sua conta.",
+      "tenantName": "Nome da organização",
+      "tenantNamePlaceholder": "Acme Condomínios",
+      "tenantType": "Tipo de organização",
+      "tenantTypeManagement": "Administradora de Condomínios",
+      "tenantTypeIndependent": "Condomínio Independente",
+      "taxId": "CNPJ",
+      "taxIdPlaceholder": "00.000.000/0001-00",
+      "contactEmail": "E-mail de contato",
+      "phone": "Telefone (opcional)",
+      "responsibleName": "Responsável (opcional)",
+      "responsibleEmail": "E-mail do responsável (opcional)",
+      "submitRequest": "Enviar solicitação",
+      "submitting": "Enviando…",
+      "submitError": "Falha ao enviar solicitação. Tente novamente.",
+      "back": "Voltar"
+    },
+    "pendingApproval": {
+      "title": "Sua solicitação está em análise",
+      "subtitle": "Recebemos sua solicitação de assinatura e nossa equipe irá analisá-la em breve.",
+      "description": "Você receberá uma notificação por e-mail assim que sua conta for aprovada. Esse processo geralmente leva de 1 a 2 dias úteis.",
+      "refreshStatus": "Verificar status",
+      "refreshing": "Verificando…",
+      "noChange": "Sem atualizações ainda. Verifique novamente mais tarde.",
+      "signOut": "Sair"
+    },
+    "admin": {
+      "access_denied": "Você não tem permissão para acessar esta área.",
+      "overview": {
+        "title": "Visão Geral da Plataforma",
+        "pendingRequests": "Solicitações Pendentes",
+        "totalTenants": "Total de Tenants",
+        "activeTenants": "Tenants Ativos",
+        "totalPlans": "Total de Planos",
+        "recentRequests": "Solicitações Recentes de Assinatura",
+        "noRequests": "Nenhuma solicitação de assinatura ainda.",
+        "viewAll": "Ver todas",
+        "status": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado"
+        }
+      },
+      "subscriptions": {
+        "title": "Solicitações de Assinatura",
+        "subtitle": "Revise e aprove ou rejeite solicitações de assinatura.",
+        "filterAll": "Todas",
+        "filterPending": "Pendentes",
+        "filterApproved": "Aprovadas",
+        "filterRejected": "Rejeitadas",
+        "columns": {
+          "tenant": "Organização",
+          "plan": "Plano",
+          "billing": "Ciclo",
+          "requestedAt": "Solicitado em",
+          "status": "Status",
+          "actions": "Ações"
+        },
+        "status": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado"
+        },
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "approveTitle": "Aprovar assinatura",
+        "approveSubtitle": "Selecione o status de assinatura para ativar para este tenant.",
+        "approveStatus": "Status da assinatura",
+        "approveStatusTrial": "Avaliação",
+        "approveStatusActive": "Ativo",
+        "confirmApprove": "Aprovar",
+        "rejectTitle": "Rejeitar assinatura",
+        "rejectSubtitle": "Forneça um motivo para a rejeição (mínimo 20 caracteres). O usuário será notificado e poderá reenviar.",
+        "rejectionReason": "Motivo da rejeição",
+        "rejectionReasonPlaceholder": "Descreva por que esta solicitação de assinatura está sendo rejeitada…",
+        "confirmReject": "Rejeitar",
+        "empty": "Nenhuma solicitação de assinatura encontrada.",
+        "approveSuccess": "Assinatura aprovada.",
+        "rejectSuccess": "Assinatura rejeitada."
+      },
+      "tenants": {
+        "title": "Gerenciamento de Tenants",
+        "subtitle": "Visualize e gerencie todos os tenants da plataforma.",
+        "columns": {
+          "name": "Organização",
+          "type": "Tipo",
+          "plan": "Plano",
+          "subscriptionStatus": "Assinatura",
+          "status": "Status",
+          "createdAt": "Criado em"
+        },
+        "type": {
+          "management_company": "Administradora",
+          "independent_condo": "Independente"
+        },
+        "subscriptionStatus": {
+          "pending_approval": "Pendente",
+          "trial": "Avaliação",
+          "active": "Ativo",
+          "rejected": "Rejeitado",
+          "suspended": "Suspenso",
+          "canceled": "Cancelado"
+        },
+        "empty": "Nenhum tenant encontrado.",
+        "notImplemented": "O endpoint admin cross-tenant ainda não foi implantado. Os tenants aparecerão aqui quando GET /v1/admin/tenants estiver disponível."
+      },
+      "plans": {
+        "title": "Gerenciamento de Planos",
+        "subtitle": "Crie, edite e gerencie planos de assinatura.",
+        "new": "Novo Plano",
+        "edit": "Editar Plano",
+        "discontinue": "Descontinuar",
+        "discontinueConfirm": "Tem certeza que deseja descontinuar este plano? Ele não aparecerá mais na tela de seleção de planos e não poderá ser reativado.",
+        "columns": {
+          "name": "Nome",
+          "monthlyPrice": "Mensal",
+          "annualPrice": "Anual",
+          "maxCondos": "Máx. Condos",
+          "status": "Status",
+          "public": "Visível",
+          "actions": "Ações"
+        },
+        "status": {
+          "active": "Ativo",
+          "discontinued": "Descontinuado"
+        },
+        "empty": "Nenhum plano encontrado.",
+        "fields": {
+          "name": "Nome do plano",
+          "description": "Descrição",
+          "monthlyPrice": "Preço mensal (R$)",
+          "annualPrice": "Preço anual (R$)",
+          "maxCondos": "Máximo de condomínios",
+          "maxUnitsTotal": "Total máximo de unidades",
+          "maxAdminUsers": "Usuários admin máximos",
+          "dataRetentionMonths": "Retenção de dados (meses)",
+          "supportLevel": "Nível de suporte",
+          "apiAccess": "Acesso à API",
+          "public": "Exibir na tela de seleção de planos"
+        },
+        "supportLevel": {
+          "basic": "Básico",
+          "priority": "Prioritário",
+          "dedicated": "Dedicado"
+        },
+        "createSuccess": "Plano criado com sucesso.",
+        "updateSuccess": "Plano atualizado com sucesso.",
+        "discontinueSuccess": "Plano descontinuado."
+      }
+    },
+    "firstCondoWizard": {
+      "title": "Configure seu primeiro condomínio",
+      "subtitle": "Você está quase lá. Adicione seu primeiro condomínio para concluir a configuração da conta.",
+      "stepBasic": "Informações básicas",
+      "stepAddress": "Endereço",
+      "stepDone": "Concluído",
+      "condoName": "Nome do condomínio",
+      "condoNamePlaceholder": "Residencial das Flores",
+      "condoType": "Tipo",
+      "typeResidential": "Residencial",
+      "typeCommercial": "Comercial",
+      "typeMixed": "Misto",
+      "taxId": "CNPJ",
+      "taxIdPlaceholder": "00.000.000/0001-00",
+      "zipCode": "CEP",
+      "street": "Logradouro",
+      "number": "Número",
+      "complement": "Complemento",
+      "neighborhood": "Bairro",
+      "city": "Cidade",
+      "state": "Estado",
+      "next": "Próximo",
+      "back": "Voltar",
+      "finish": "Concluir configuração",
+      "finishing": "Salvando…",
+      "finishError": "Falha ao criar condomínio. Tente novamente.",
+      "skipForNow": "Pular por agora"
+    }
   }
 }

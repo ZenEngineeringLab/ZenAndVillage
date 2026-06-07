@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,7 +11,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { authAdapter } from '@/shared/auth/auth.adapter'
-import { useAuthStore } from '../store/auth.store'
+import { useAuthStore, type OnboardingStatus } from '../store/auth.store'
 
 const schema = z.object({
   email: z.string().min(1).email(),
@@ -36,18 +36,23 @@ export function LoginPage() {
       if (result.isSignedIn) {
         const claims = await authAdapter.getDecodedClaims()
         if (claims) {
+          const onboardingStatus = (claims['custom:onboardingStatus'] as OnboardingStatus | undefined)
+            ?? 'pending_verification'
           setUser(
             {
-              id: claims['custom:userId'] ?? claims.sub,
+              id: claims['custom:userId'] || claims.sub,
+              cognitoSub: claims.sub,
               email: claims.email,
               name: claims.name ?? email.split('@')[0],
               roles: JSON.parse(claims['custom:roles'] ?? '[]'),
               locale: claims['custom:locale'] ?? 'auto',
+              onboardingStatus,
             },
             claims['custom:tenantId']
           )
+          // AuthGuard handles the redirect; navigate to root and let it decide
+          navigate('/', { replace: true })
         }
-        navigate('/', { replace: true })
       }
     } catch (err: any) {
       const msg = err?.message ?? t('auth.loginError')
@@ -101,6 +106,12 @@ export function LoginPage() {
               {t('auth.signIn')}
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            {t('auth.noAccount')}{' '}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              {t('auth.signUpLink')}
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

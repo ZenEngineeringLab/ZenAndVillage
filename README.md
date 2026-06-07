@@ -13,10 +13,12 @@ ZenAndVillage/
 ├── zenvillage-backend/     # AWS CDK infrastructure + Lambda handlers (Node.js 22 / TypeScript)
 ├── zenvillage-web/         # React 19 PWA (Vite 8 + TypeScript + Tailwind CSS v4)
 ├── docs/
-│   ├── architecture-guide.md     # Single source of truth for all engineering decisions
-│   ├── project-definition.md     # Project identity, version, git remote
-│   ├── knowledge-base.md         # Domain knowledge (en-US — canonical)
-│   └── knowledge-base-pt_BR.md  # Domain knowledge (pt-BR — translation)
+│   ├── architecture-guide.md        # Engineering architecture (en-US — canonical)
+│   ├── architecture-guide.pt_BR.md # Engineering architecture (pt-BR — translation)
+│   ├── knowledge-base.md            # Domain knowledge (en-US — canonical)
+│   ├── knowledge-base.pt_BR.md      # Domain knowledge (pt-BR — translation)
+│   ├── software-vision.md           # Platform requirements & business rules (en-US — canonical)
+│   └── software-vision.pt_BR.md    # Platform requirements & business rules (pt-BR — translation)
 ├── CHANGELOG.md
 └── CLAUDE.md               # Agent behavior rules (read by Claude Code on every session)
 ```
@@ -115,6 +117,8 @@ The following stacks will be provisioned:
 | `zenvillage-condominiums-staging` | DynamoDB + 5 Lambda CRUD handlers + CloudWatch alarms |
 | `zenvillage-residents-staging` | DynamoDB + 5 Lambda CRUD handlers + CloudWatch alarms |
 | `zenvillage-employees-staging` | DynamoDB + 5 Lambda CRUD handlers + CloudWatch alarms |
+| `zenvillage-plans-staging` | DynamoDB + plan catalog Lambdas (public list + admin CRUD) |
+| `zenvillage-subscriptions-staging` | DynamoDB + subscription request Lambdas (create + admin approve/reject) |
 | `zenvillage-notifications-staging` | DynamoDB + WebSocket Lambdas + SQS notifier + S3 uploads |
 
 CDK resolves cross-stack dependencies automatically. In particular, `zenvillage-users-staging` is always deployed before `zenvillage-cognito-staging` so that the table ARN is available for the IAM grant — no manual two-pass deploy is required.
@@ -239,42 +243,73 @@ aws ssm get-parameter --name /zenvillage/staging/cloudfront-url --query Paramete
 
 ### Phase 8 — Seed initial data
 
-The seed script creates three tenants, matching property managers, condominiums, residents, employees, and one Cognito admin user per tenant. It reads the Cognito User Pool ID from SSM automatically.
+The seed script reads the Cognito User Pool ID from SSM automatically and populates:
+
+- the public **plan catalog** — `starter`, `pro`, `enterprise` (all `active` + `public`);
+- **4 demo tenants** — 3 active + 1 awaiting approval — with matching property managers, condominiums, residents, and employees;
+- a Cognito **admin user per tenant**, a **platform admin** (the approver), and a **pending owner**;
+- one **pending subscription request**, so the platform admin has something to approve out of the box.
 
 ```bash
 # From zenvillage-backend/
-npm run seed
+npm run seed -- --env=staging
 ```
 
-Default credentials created by the seed (change immediately after first login):
+> **For a clean demo, add `--clean`.** Because the seed generates fresh UUIDs on every run, repeated runs accumulate duplicate data. The `--clean` flag wipes all data tables first (the users table is preserved so Cognito sign-in keeps working):
+> ```bash
+> npm run seed -- --env=staging --clean
+> ```
 
-| Email | Tenant |
-|---|---|
-| `admin-agatha@zenvillage.dev` | Administradora Ágatha & Cia |
-| `admin-vistaverde@zenvillage.dev` | Residencial Vista Verde |
-| `admin-habitex@zenvillage.dev` | Habitex Administração |
+#### Seeded accounts
 
-> Temporary password: `ZenV1llage!2026`
+All accounts share the temporary password **`ZenV1llage!2026`** (change after first login).
+
+| Email | Role | Purpose |
+|---|---|---|
+| `platform-admin@zenvillage.dev` | `platform_admin` | Approve/reject subscription requests; manage the plan catalog |
+| `admin-agatha@zenvillage.dev` | `tenant_admin` | Management company — 3 condominiums, 5 residents, 4 employees |
+| `admin-vistaverde@zenvillage.dev` | `tenant_admin` | Independent condo — subscription in `trial` |
+| `admin-habitex@zenvillage.dev` | `tenant_admin` | Management company — `enterprise` plan |
+| `pending-owner@zenvillage.dev` | `tenant_admin` | Account in `pending_approval` (Condomínio Aurora) |
+
+> After running `--clean`, **log out and back in** before testing: the run generates new tenant IDs, and each JWT only picks up its tenant claim on the next sign-in.
 
 ---
 
 ### Phase 9 — Smoke tests
 
-Run these manual checks to confirm the staging environment is healthy before enabling the CI/CD pipeline or inviting users.
+Run these manual checks to confirm the staging environment is healthy before enabling the CI/CD pipeline or inviting users. Use the seeded accounts from Phase 8 (password `ZenV1llage!2026`). Test in an **incognito window** so a stale service worker does not serve an old bundle.
+
+```bash
+# Open the public app URL:
+aws ssm get-parameter --name /zenvillage/staging/cloudfront-url --query Parameter.Value --output text
+```
+
+#### Tenant admin flow (`admin-agatha@zenvillage.dev`)
 
 | # | Test | What it validates |
 |---|---|---|
 | 1 | Open `cloudfront-url` in a browser | Frontend served from CloudFront; SPA routing works |
 | 2 | Log in with `admin-agatha@zenvillage.dev` | Cognito auth → Pre-Token Lambda → JWT with `tenantId` + `roles` claims |
-| 3 | Navigate to any list page (e.g. Condominiums) | API Gateway → Lambda Authorizer → DynamoDB read |
+| 3 | Open **Condominiums** (3), **Property Managers** (1), **Residents** (5), **Employees** (4) | API Gateway → Lambda Authorizer → tenant-scoped DynamoDB reads |
 | 4 | Create a new record | POST with idempotency key; DynamoDB write |
 | 5 | Edit and save the record | PATCH; DynamoDB update |
 | 6 | Delete the record | DELETE → HTTP 204 |
-| 7 | Open browser DevTools → Network tab; look for WebSocket connection | WebSocket API → `$connect` Lambda → connections table |
+| 7 | DevTools → Network tab; look for the WebSocket connection | WebSocket API → `$connect` Lambda → connections table |
 | 8 | Trigger any action that sends a notification | EventBridge → SQS → notifier Lambda → WebSocket push |
 | 9 | Log out | Cognito sign-out; redirect to `/login` |
 
-If all nine checks pass, the staging environment is healthy. ✅
+#### Platform admin flow (`platform-admin@zenvillage.dev`)
+
+| # | Test | What it validates |
+|---|---|---|
+| 10 | Log in with `platform-admin@zenvillage.dev` | Tenantless authorization (no `X-Tenant-Id`); `platform_admin` role |
+| 11 | Open **Platform Admin → Plans** | `GET /v1/admin/plans` returns the 3 seeded plans |
+| 12 | Open **Platform Admin → Subscriptions** | The pending request for *Condomínio Aurora* is listed |
+| 13 | Approve the pending request (status `trial` or `active`) | `POST /v1/subscriptions/{id}/approve`; updates tenant + user onboarding status |
+| 14 | In a separate incognito window, log in as `pending-owner@zenvillage.dev` and click **Refresh status** | Approval propagates; the owner advances out of `pending_approval` |
+
+If all checks pass, the staging environment is healthy. ✅
 
 ---
 
@@ -369,6 +404,8 @@ aws cloudformation delete-stack --stack-name CDKToolkit
 | `CONDOMINIUMS_TABLE` | condominiums | DynamoDB table name |
 | `RESIDENTS_TABLE` | residents | DynamoDB table name |
 | `EMPLOYEES_TABLE` | employees | DynamoDB table name |
+| `PLANS_TABLE` | plans | DynamoDB table name |
+| `SUBSCRIPTIONS_TABLE` | subscriptions | DynamoDB table name |
 | `NOTIFICATIONS_TABLE` | notifications | DynamoDB table name |
 | `CONNECTIONS_TABLE` | notifications | DynamoDB table name (WebSocket connections) |
 | `UPLOADS_BUCKET` | notifications | S3 bucket for file uploads |
@@ -406,8 +443,9 @@ npm run build      # production build
 npm run preview    # preview production build locally
 
 # Seed
-npm run seed                        # default: staging
-npm run seed -- --env=prod          # prod (use with care)
+npm run seed -- --env=staging           # seed staging (adds to existing data)
+npm run seed -- --env=staging --clean   # wipe data tables first, then seed (clean demo)
+npm run seed -- --env=prod              # prod (use with care)
 ```
 
 ---

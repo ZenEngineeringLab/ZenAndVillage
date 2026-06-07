@@ -10,6 +10,8 @@ import { PropertyManagersStack } from '../stacks/property-managers.stack.js'
 import { CondominiumsStack } from '../stacks/condominiums.stack.js'
 import { ResidentsStack } from '../stacks/residents.stack.js'
 import { EmployeesStack } from '../stacks/employees.stack.js'
+import { PlansStack } from '../stacks/plans.stack.js'
+import { SubscriptionsStack } from '../stacks/subscriptions.stack.js'
 import { NotificationsStack } from '../stacks/notifications.stack.js'
 
 const app = new cdk.App()
@@ -26,12 +28,18 @@ const alarmTopic = new Topic(alarmStack, 'AlarmTopic', {
   topicName: `zenvillage-alarms-${env}`,
 })
 
-// ─── Users table ──────────────────────────────────────────────────────────────
-// Must come before CognitoStack so that the table ARN can be passed as a CDK
-// cross-stack reference, granting the Pre-Token Generation Lambda read access.
-const usersStack = new UsersStack(app, `zenvillage-users-${env}`, {
+// ─── API Gateway (HTTP + WebSocket) ───────────────────────────────────────────
+const apiStack = new ApiGatewayStack(app, `zenvillage-api-${env}`, {
   env: awsEnv,
   stackProps: { env },
+})
+
+// ─── Users (table + Lambda handlers + API routes) ─────────────────────────────
+// UsersStack must still come before CognitoStack so that the table ARN can be
+// passed as a CDK cross-stack reference for the Pre-Token Generation Lambda.
+const usersStack = new UsersStack(app, `zenvillage-users-${env}`, {
+  env: awsEnv,
+  stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
 })
 
 // ─── Cognito ──────────────────────────────────────────────────────────────────
@@ -44,12 +52,6 @@ new CognitoStack(app, `zenvillage-cognito-${env}`, {
   },
 })
 
-// ─── API Gateway (HTTP + WebSocket) ───────────────────────────────────────────
-const apiStack = new ApiGatewayStack(app, `zenvillage-api-${env}`, {
-  env: awsEnv,
-  stackProps: { env },
-})
-
 // ─── Frontend hosting (S3 + CloudFront) ───────────────────────────────────────
 new FrontendHostingStack(app, `zenvillage-frontend-${env}`, {
   env: awsEnv,
@@ -57,7 +59,27 @@ new FrontendHostingStack(app, `zenvillage-frontend-${env}`, {
 })
 
 // ─── Domain stacks ────────────────────────────────────────────────────────────
-new TenantsStack(app, `zenvillage-tenants-${env}`, {
+
+// tenantsStack must be declared before SubscriptionsStack for cross-stack refs
+const tenantsStack = new TenantsStack(app, `zenvillage-tenants-${env}`, {
+  env: awsEnv,
+  stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
+})
+
+new SubscriptionsStack(app, `zenvillage-subscriptions-${env}`, {
+  env: awsEnv,
+  stackProps: {
+    env,
+    snsAlarmTopicArn: alarmTopic.topicArn,
+    apiStack,
+    tenantsTableName: tenantsStack.table.tableName,
+    tenantsTableArn: tenantsStack.table.tableArn,
+    usersTableName: usersStack.table.tableName,
+    usersTableArn: usersStack.table.tableArn,
+  },
+})
+
+new PlansStack(app, `zenvillage-plans-${env}`, {
   env: awsEnv,
   stackProps: { env, snsAlarmTopicArn: alarmTopic.topicArn, apiStack },
 })

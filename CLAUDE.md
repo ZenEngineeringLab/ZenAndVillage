@@ -7,29 +7,97 @@ Claude Code reads this file automatically on every session and every sub-agent i
 
 ## Project Identity
 
-All project-specific values (`{project}`, `{org}`, base version, git remote, etc.) are resolved from [`docs/project-definition.md`](docs/project-definition.md). Read that file to determine the current project's identifier, organization, and starting version before executing any spec, branch, or version-bump task.
+### Organization
+ZenEngineeringLab
 
-Never hardcode project identifiers in this file or in `docs/architecture-guide.md`. To reuse this document in a new project, only `docs/project-definition.md` needs to change.
+### Project name 
+ZenAndVillage 
+
+### Project identifier 
+zenvillage 
+
+### What it does 
+ZenAndVillage is an AI-powered SaaS platform for smart condominium and community management, simplifying operations, communication, security, and decision-making through intelligent automation for a more connected, efficient, and peaceful living experience.
+
+### Slogan
+Connected Communities. Intelligent Operations. Peaceful Living.
+
+### Brand Identity
+- **Primary color:** teal
+- **Visual tone:** calm, trustworthy, professional ("zen" aesthetic)
+
+### Base version
+0.3.0
+
+### Git remote
+github.com/ZenEngineeringLab/ZenAndVillage
+
+### Assets
+
+| File | Usage | Preview |
+|---|---|---|
+| `img/logo-light.svg` | Full logo — light backgrounds | ![logo-light](img/logo-light.svg) |
+| `img/logo-dark.svg` | Full logo — dark backgrounds | ![logo-dark](img/logo-dark.svg) |
+| `img/logo-icon.svg` | Icon-only mark | ![logo-icon](img/logo-icon.svg) |
+| `img/favicon.svg` | Browser favicon | ![favicon](img/favicon.svg) |
 
 ---
 
 ## Architecture Reference
 
-The full engineering architecture is documented in [`docs/architecture-guide.md`](docs/architecture-guide.md).
-It is the **single source of truth for all engineering decisions** — stack, patterns, API contracts, auth, multi-tenancy, data strategy, CI/CD, and UI stack.
+The full engineering architecture is maintained as a bilingual pair that must always stay in sync:
+
+| File | Language | Role |
+|---|---|---|
+| [`docs/architecture-guide.md`](docs/architecture-guide.md) | English (en-US) | **Canonical version** — single source of truth for all engineering decisions |
+| [`docs/architecture-guide.pt_BR.md`](docs/architecture-guide.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+
+**Sync rule:** Any edit to `architecture-guide.md` must be reflected in `architecture-guide.pt_BR.md` before the task is considered complete. The en-US file takes precedence in case of conflict. Code identifiers, file paths, and code blocks are defined in en-US and referenced (not redefined) in pt-BR.
 
 ---
 
 ## Knowledge Base
 
-The domain knowledge base is maintained in two files that must always stay in sync:
+Project documentation is split into two concerns — domain knowledge and software vision — each maintained as a bilingual pair that must always stay in sync:
+
+### Domain Knowledge Base (Brazilian condominium domain only)
 
 | File | Language | Role |
 |---|---|---|
-| [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
-| [`docs/knowledge-base-pt_BR.md`](docs/knowledge-base-pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+| [`docs/knowledge-base.md`](docs/knowledge-base.md) | English (en-US) | **Canonical version** — domain definitions, legal framework, real-world roles and processes |
+| [`docs/knowledge-base.pt_BR.md`](docs/knowledge-base.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
 
-**Sync rule:** Any edit to either file must be reflected in the other before the task is considered complete. The en-US file (`knowledge-base.md`) is the source of truth. When content diverges, the en-US version takes precedence. Entity field names and code identifiers are defined in the en-US version; the pt-BR version may reference them rather than redefine them.
+Contains **only domain facts**: Brazilian condo law, actor/role definitions, governance processes, financial concepts, HR/labor rules, building operations, LGPD obligations. No entity schemas, no RN-XXX business rule codes, no software architecture.
+
+### Software Vision (platform requirements and business rules)
+
+| File | Language | Role |
+|---|---|---|
+| [`docs/software-vision.md`](docs/software-vision.md) | English (en-US) | **Canonical version** — authoritative for all implementation decisions |
+| [`docs/software-vision.pt_BR.md`](docs/software-vision.pt_BR.md) | Portuguese (pt-BR) | Translation — kept in sync with the canonical version |
+
+Contains: product vision, multi-tenancy **business model** (hierarchy, plans, tenant lifecycle), user roles and permissions, platform modules, data domain entities (with field definitions), and business rules (RN-XXX codes). For technical implementation details (DynamoDB patterns, Lambda Authorizer, Cognito flows), always defer to `docs/architecture-guide.md` — software-vision.md must not duplicate that content.
+
+**Sync rule (applies to both pairs):** Any edit to either file in a pair must be reflected in the other before the task is considered complete. The en-US file is the source of truth. When content diverges, the en-US version takes precedence. Entity field names and code identifiers are defined in the en-US versions; the pt-BR versions may reference them rather than redefine them.
+
+---
+
+## Documentation Hygiene
+
+**Never append version notes, review dates, or internal-use footers to any file in `docs/`.** Lines of the form:
+
+```
+*Document for internal development use. Last review: … — vX.Y (…)*
+```
+
+are forbidden. They duplicate information already captured in git history and CHANGELOG.md, drift out of sync immediately, and add noise that readers must filter out.
+
+**Where change history belongs:**
+
+- **`CHANGELOG.md`** — the single place where notable changes to the project (including significant documentation updates) are recorded. Add an entry here when opening a pull request, not as an inline footnote inside the edited document.
+- **Git commit messages** — every commit already records what changed, when, and why. That is the audit trail for document edits.
+
+**Rule:** when editing any `docs/*.md` file, do not add, update, or preserve any trailing footnote that mentions a version number, a review date, or the phrase "internal development use". If such a note already exists in a file being edited, remove it as part of the same change.
 
 ---
 
@@ -45,7 +113,7 @@ This covers without exception:
 - Log and error messages in code
 - Database schema names and column names
 - API endpoint names and descriptions
-- User-facing UI strings (labels, messages, placeholders, tooltips) — must use i18n translation keys (never hardcoded). `en_US` is the canonical locale; `pt_BR` is the second required locale. Both translation files must stay in sync. See Section 24 of `docs/architecture-guide.md`.
+- User-facing UI strings (labels, messages, placeholders, tooltips) — must use i18n translation keys (never hardcoded). `en_US` is the canonical locale; `pt_BR` is the second required locale. Both translation files must stay in sync. See Section 19 of `docs/architecture-guide.md`.
 
 **Locale-sensitive formatting** (dates, numbers, currencies) is runtime behavior driven by `Intl` APIs — governed by the active locale, not by this policy.
 
@@ -92,7 +160,7 @@ This project uses a **three-layer versioning model** defined in full in Section 
 
 ### Source of truth
 
-The canonical product version lives in `docs/project-definition.md` under `Base version`.
+The canonical product version lives in `CLAUDE.md` under `## Project Identity → Base version`.
 It must be propagated to every `package.json` in the monorepo and to `CHANGELOG.md` before a release commit is made.
 
 ### When to bump
@@ -108,7 +176,7 @@ It must be propagated to every `package.json` in the monorepo and to `CHANGELOG.
 Execute in this exact order:
 
 ```
-1. Update  docs/project-definition.md       ← bump "Base version"
+1. Update  CLAUDE.md                        ← bump "Base version" under Project Identity
 2. Update  zenvillage-web/package.json      ← set "version" to match
 3. Update  {domain}-lambda/package.json     ← repeat for every Lambda package (when they exist)
 4. Update  CHANGELOG.md                     ← add release section with date and summary
@@ -118,6 +186,42 @@ Execute in this exact order:
 ```
 
 Steps 1–4 must land in the same commit. Never tag before committing, never push the tag without pushing the commit first.
+
+---
+
+## CHANGELOG Maintenance Policy
+
+`CHANGELOG.md` must be kept current throughout the life of a feature branch — not only at release time.
+
+### When to update
+
+Update `CHANGELOG.md` **in the same commit** as the change it documents. Every incremental commit that touches user-visible behavior, adds a new capability, fixes a bug, or removes something must include a corresponding entry in the `[Unreleased]` section.
+
+Do **not** batch changelog entries at the end of a branch. Each entry belongs alongside the commit that introduced it.
+
+### How to write entries
+
+Use the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) categories. Pick the most accurate one:
+
+| Category | Use when |
+|---|---|
+| `Added` | New feature, new route, new component, new domain, new config option |
+| `Changed` | Behavior change in an existing feature, schema migration, UI redesign |
+| `Fixed` | Bug fix — describe the symptom that was corrected |
+| `Removed` | Feature, route, field, or dependency deleted |
+| `Deprecated` | Something marked for future removal |
+| `Security` | Vulnerability fix or security hardening |
+
+Write entries from the user/operator perspective, not the implementation perspective. Describe what changed in the product, not which files were edited.
+
+**Good:** `Added resident financial status badge to the Residents list view`
+**Bad:** `Updated ResidentCard.tsx to include FinancialStatusBadge component`
+
+Group multiple small entries under the same category rather than writing one entry per file touched.
+
+### At release time
+
+When cutting a release (following the Version bump flow), rename `[Unreleased]` to `[{version}] - {date}`, add the new empty `[Unreleased]` section above it, and update the comparison links at the bottom of the file.
 
 ---
 
@@ -162,13 +266,7 @@ Append this section to every PR body. Collect the data from git history and the 
 
 ### Estimated human effort (without AI assistance)
 
-| Seniority | Estimated time | Headcount |
-|---|---|---|
-| Junior | {hours}h | {n} |
-| Mid-level | {hours}h | {n} |
-| Senior | {hours}h | {n} |
-
-> **Total estimated effort:** {total_hours}h across all seniority levels — equivalent to approximately {total_days} work days (8h/day) or {total_weeks} work weeks (40h/week).
+> **Estimated effort:** {hours}h — equivalent to approximately {total_days} work days (8h/day) or {total_weeks} work weeks (40h/week).
 ```
 
 **How to populate each field:**
@@ -176,13 +274,12 @@ Append this section to every PR body. Collect the data from git history and the 
 - **Lines of code manipulated** — run `git diff --stat origin/main...HEAD` and sum the insertions and deletions shown in the final totals line. Exclude lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) from the count.
 - **Branch duration** — use `git log --diff-filter=A --follow --format="%ad" --date=short -- .` on the first commit of the branch to get the start date; the PR date is today's date.
 - **Technologies involved** — list every language, framework, library, and toolchain touched by the diff (e.g. TypeScript, React, Next.js, Tailwind CSS, Prisma, PostgreSQL, Docker). Derive from changed file extensions and import statements; do not list technologies present in the repo but untouched by this PR.
-- **Estimated human effort** — reason from the scope of the diff (number of new components, API routes, schema changes, config files, test coverage) to produce a realistic estimate of how long a human engineer at each seniority level would need to deliver the same result working alone, without AI assistance. Use the following reference ranges:
-  - Junior: typically 3–5× longer than senior
-  - Mid-level: typically 1.5–2.5× longer than senior
-  - Senior: baseline — estimate the senior time first, then derive the others
-  - Express time in hours (e.g. `8h`, `2h`). If the scope is very small (< 1 h senior), use `< 1h`.
-  - Headcount should almost always be 1 per seniority tier unless the scope clearly requires parallel work.
-- **Total estimated effort** — sum the estimated hours for all three seniority tiers (Junior + Mid-level + Senior). Then compute:
-  - `{total_days}` = `{total_hours}` ÷ 8, rounded to one decimal place
-  - `{total_weeks}` = `{total_hours}` ÷ 40, rounded to one decimal place
-  - If any tier uses `< 1h`, treat it as `0.5h` for arithmetic purposes and note the approximation inline.
+- **Estimated human effort** — produce a single realistic estimate of how long a human engineer would need to deliver the same result working alone, without AI assistance. Base the estimate on:
+  - **Volume:** total lines of code manipulated (added + removed), weighted by complexity (boilerplate vs. logic-heavy code).
+  - **Breadth:** number of distinct technologies involved — each additional technology adds ramp-up and integration overhead.
+  - **Scope indicators:** number of new components, API routes, schema changes, config files, and test coverage added.
+  - Express the result in hours (e.g. `8h`, `2h`). If the scope is very small (< 1h), use `< 1h`.
+- **Total estimated effort** — use the single estimated hours value from above. Then compute:
+  - `{total_days}` = `{hours}` ÷ 8, rounded to one decimal place
+  - `{total_weeks}` = `{hours}` ÷ 40, rounded to one decimal place
+  - If the estimate is `< 1h`, treat it as `0.5h` for arithmetic purposes and note the approximation inline.

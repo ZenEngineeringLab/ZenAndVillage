@@ -11,7 +11,12 @@
     "residents": "Residents",
     "employees": "Employees",
     "settings": "Settings",
-    "help": "Help"
+    "help": "Help",
+    "admin": "Platform Admin",
+    "adminOverview": "Overview",
+    "adminSubscriptions": "Subscriptions",
+    "adminTenants": "Tenants",
+    "adminPlans": "Plans"
   },
   "header": {
     "search": "Search...",
@@ -129,8 +134,8 @@
       "joinDate": "Join Date"
     },
     "type": {
-      "property_manager": "Property Manager",
-      "independent_condominium": "Independent Condo"
+      "management_company": "Management Company",
+      "independent_condo": "Independent Condo"
     },
     "plan": {
       "starter": "Starter",
@@ -139,9 +144,8 @@
     },
     "status": {
       "active": "Active",
-      "trial": "Trial",
       "suspended": "Suspended",
-      "inactive": "Inactive"
+      "canceled": "Canceled"
     },
     "fields": {
       "name": "Name",
@@ -157,6 +161,14 @@
       "billingCycleMonthly": "Monthly",
       "billingCycleAnnual": "Annual"
     },
+    "subscriptionStatus": {
+      "pending_approval": "Pending",
+      "trial": "Trial",
+      "active": "Active",
+      "delinquent": "Delinquent",
+      "suspended": "Suspended",
+      "canceled": "Canceled"
+    },
     "trial": {
       "daysRemaining": "{{count}} days remaining",
       "expired": "Trial expired"
@@ -165,8 +177,11 @@
       "banner": "This tenant is currently suspended. Access to features is restricted."
     },
     "usage": {
+      "limits": "Plan limits",
       "condominiums": "Condominiums",
-      "units": "Units"
+      "units": "Units",
+      "adminUsers": "Admin Users",
+      "limit": "Limit: {{count}}"
     }
   },
   "propertyManagers": {
@@ -180,13 +195,11 @@
       "cnpj": "CNPJ",
       "location": "City/State",
       "condominiums": "Condominiums",
-      "status": "Status",
-      "whiteLabel": "White-Label"
+      "status": "Status"
     },
     "tabs": {
       "general": "General",
-      "address": "Address",
-      "whiteLabel": "White-Label"
+      "address": "Address"
     },
     "fields": {
       "legalName": "Legal Name",
@@ -202,13 +215,7 @@
       "complement": "Complement",
       "neighborhood": "Neighborhood",
       "city": "City",
-      "state": "State",
-      "whiteLabelEnabled": "Enable White-Label",
-      "platformName": "Platform Name",
-      "primaryColor": "Primary Color",
-      "secondaryColor": "Secondary Color",
-      "customDomain": "Custom Domain",
-      "customSenderEmail": "Custom Sender Email"
+      "state": "State"
     },
     "detail": {
       "title": "Property Manager Details",
@@ -415,8 +422,8 @@
     "thisMonth": "this month",
     "tenantGrowth": "Tenant Growth",
     "tenantGrowthDesc": "Cumulative tenants registered over the last 6 months",
-    "planMix": "Plan Distribution",
-    "planMixDesc": "Active tenants by subscription plan",
+    "subscriptionStatus": "Subscription Status",
+    "subscriptionStatusDesc": "Tenants by current subscription status",
     "financialStatus": "Financial Status",
     "financialStatusDesc": "Residents by payment standing",
     "condoTypes": "Condominium Types",
@@ -430,6 +437,232 @@
     "email": "Email",
     "password": "Password",
     "signIn": "Sign in",
-    "loginError": "Invalid email or password."
+    "loginError": "Invalid email or password.",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Create one",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Start your free trial today",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "confirmPassword": "Confirm Password",
+    "createAccount": "Create Account",
+    "registerError": "Could not create account. Please try again.",
+    "passwordMismatch": "Passwords do not match.",
+    "verifyEmailTitle": "Check your inbox",
+    "verifyEmailSubtitle": "We sent a 6-digit verification code to {{email}}",
+    "verificationCode": "Verification Code",
+    "verificationCodePlaceholder": "123456",
+    "verifyEmail": "Verify Email",
+    "resendCode": "Resend code",
+    "resendCodeSent": "A new code has been sent to your email.",
+    "verifyEmailError": "Invalid or expired code. Please try again."
+  },
+  "onboarding": {
+    "planSelection": {
+      "title": "Choose your plan",
+      "subtitle": "Select the plan that best fits your organization. You can upgrade at any time.",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "annualDiscount": "Save {{percent}}%",
+      "perMonth": "/mo",
+      "perYear": "/yr",
+      "maxCondos": "Up to {{count}} condominium",
+      "maxCondos_other": "Up to {{count}} condominiums",
+      "maxUnits": "Up to {{count}} unit",
+      "maxUnits_other": "Up to {{count}} units",
+      "maxAdmins": "Up to {{count}} admin user",
+      "maxAdmins_other": "Up to {{count}} admin users",
+      "dataRetention": "{{months}}-month data retention",
+      "apiAccess": "API access included",
+      "supportLabel": {
+        "basic": "Basic support",
+        "priority": "Priority support",
+        "dedicated": "Dedicated support"
+      },
+      "selectPlan": "Select this plan",
+      "selected": "Selected",
+      "companyInfoTitle": "Tell us about your organization",
+      "companyInfoSubtitle": "This information will appear on your account.",
+      "tenantName": "Organization name",
+      "tenantNamePlaceholder": "Acme Condominiums",
+      "tenantType": "Organization type",
+      "tenantTypeManagement": "Property Management Company",
+      "tenantTypeIndependent": "Independent Condominium",
+      "taxId": "CNPJ",
+      "taxIdPlaceholder": "00.000.000/0001-00",
+      "contactEmail": "Contact email",
+      "phone": "Phone (optional)",
+      "responsibleName": "Responsible person (optional)",
+      "responsibleEmail": "Responsible email (optional)",
+      "submitRequest": "Submit request",
+      "submitting": "Submitting…",
+      "submitError": "Failed to submit request. Please try again.",
+      "back": "Back"
+    },
+    "pendingApproval": {
+      "title": "Your request is under review",
+      "subtitle": "We've received your subscription request and our team will review it shortly.",
+      "description": "You'll receive an email notification once your account is approved. This process usually takes 1–2 business days.",
+      "refreshStatus": "Refresh status",
+      "refreshing": "Checking…",
+      "noChange": "No updates yet. Check back later.",
+      "signOut": "Sign out"
+    },
+    "admin": {
+      "access_denied": "You do not have permission to access this area.",
+      "overview": {
+        "title": "Platform Overview",
+        "pendingRequests": "Pending Requests",
+        "totalTenants": "Total Tenants",
+        "activeTenants": "Active Tenants",
+        "totalPlans": "Total Plans",
+        "recentRequests": "Recent Subscription Requests",
+        "noRequests": "No subscription requests yet.",
+        "viewAll": "View all",
+        "status": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected"
+        }
+      },
+      "subscriptions": {
+        "title": "Subscription Requests",
+        "subtitle": "Review and approve or reject subscription requests.",
+        "filterAll": "All",
+        "filterPending": "Pending",
+        "filterApproved": "Approved",
+        "filterRejected": "Rejected",
+        "columns": {
+          "tenant": "Organization",
+          "plan": "Plan",
+          "billing": "Billing",
+          "requestedAt": "Requested",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "status": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected"
+        },
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveTitle": "Approve subscription",
+        "approveSubtitle": "Select the subscription status to activate for this tenant.",
+        "approveStatus": "Subscription status",
+        "approveStatusTrial": "Trial",
+        "approveStatusActive": "Active",
+        "confirmApprove": "Approve",
+        "rejectTitle": "Reject subscription",
+        "rejectSubtitle": "Provide a reason for rejection (minimum 20 characters). The user will be notified and may resubmit.",
+        "rejectionReason": "Rejection reason",
+        "rejectionReasonPlaceholder": "Describe why this subscription request is being rejected…",
+        "confirmReject": "Reject",
+        "empty": "No subscription requests found.",
+        "approveSuccess": "Subscription approved.",
+        "rejectSuccess": "Subscription rejected."
+      },
+      "tenants": {
+        "title": "Tenant Management",
+        "subtitle": "View and manage all platform tenants.",
+        "columns": {
+          "name": "Organization",
+          "type": "Type",
+          "plan": "Plan",
+          "subscriptionStatus": "Subscription",
+          "status": "Status",
+          "createdAt": "Created"
+        },
+        "type": {
+          "management_company": "Management Co.",
+          "independent_condo": "Independent"
+        },
+        "subscriptionStatus": {
+          "pending_approval": "Pending",
+          "trial": "Trial",
+          "active": "Active",
+          "rejected": "Rejected",
+          "suspended": "Suspended",
+          "canceled": "Canceled"
+        },
+        "empty": "No tenants found.",
+        "notImplemented": "The cross-tenant admin endpoint is not yet deployed. Tenants will appear here once GET /v1/admin/tenants is available."
+      },
+      "plans": {
+        "title": "Plan Management",
+        "subtitle": "Create, edit, and manage subscription plans.",
+        "new": "New Plan",
+        "edit": "Edit Plan",
+        "discontinue": "Discontinue",
+        "discontinueConfirm": "Are you sure you want to discontinue this plan? It will no longer appear on the plan selection screen and cannot be reactivated.",
+        "columns": {
+          "name": "Name",
+          "monthlyPrice": "Monthly",
+          "annualPrice": "Annual",
+          "maxCondos": "Max Condos",
+          "status": "Status",
+          "public": "Visible",
+          "actions": "Actions"
+        },
+        "status": {
+          "active": "Active",
+          "discontinued": "Discontinued"
+        },
+        "empty": "No plans found.",
+        "fields": {
+          "name": "Plan name",
+          "description": "Description",
+          "monthlyPrice": "Monthly price (R$)",
+          "annualPrice": "Annual price (R$)",
+          "maxCondos": "Max condominiums",
+          "maxUnitsTotal": "Max total units",
+          "maxAdminUsers": "Max admin users",
+          "dataRetentionMonths": "Data retention (months)",
+          "supportLevel": "Support level",
+          "apiAccess": "API access",
+          "public": "Show on plan selection screen"
+        },
+        "supportLevel": {
+          "basic": "Basic",
+          "priority": "Priority",
+          "dedicated": "Dedicated"
+        },
+        "createSuccess": "Plan created successfully.",
+        "updateSuccess": "Plan updated successfully.",
+        "discontinueSuccess": "Plan discontinued."
+      }
+    },
+    "firstCondoWizard": {
+      "title": "Set up your first condominium",
+      "subtitle": "You're almost ready. Add your first condominium to complete your account setup.",
+      "stepBasic": "Basic info",
+      "stepAddress": "Address",
+      "stepDone": "Done",
+      "condoName": "Condominium name",
+      "condoNamePlaceholder": "Residencial das Flores",
+      "condoType": "Type",
+      "typeResidential": "Residential",
+      "typeCommercial": "Commercial",
+      "typeMixed": "Mixed",
+      "taxId": "CNPJ",
+      "taxIdPlaceholder": "00.000.000/0001-00",
+      "zipCode": "ZIP Code",
+      "street": "Street",
+      "number": "Number",
+      "complement": "Complement",
+      "neighborhood": "Neighborhood",
+      "city": "City",
+      "state": "State",
+      "next": "Next",
+      "back": "Back",
+      "finish": "Complete setup",
+      "finishing": "Saving…",
+      "finishError": "Failed to create condominium. Please try again.",
+      "skipForNow": "Skip for now"
+    }
   }
 }

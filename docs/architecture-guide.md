@@ -2,9 +2,10 @@
 ## Frontend PWA + Serverless AWS
 
 > **How to use this document**
-> Replace `{project}` with your project's short identifier (e.g. `myapp`, `acme`, `foobar`).
+> `{project}` is an intentional placeholder — do **not** replace it directly in this file. Agents and tooling resolve it at task time from `CLAUDE.md` (section **Project Identity**). This keeps the guide reusable across projects without hardcoding any identifier here.
 > This document is the **single source of truth for engineering architecture**.
-> UI decisions (components, tokens, styling, icons) are governed by Section 4 of this document.
+> UI decisions (components, tokens, styling, icons) are governed by Section 15 of this document.
+> Every change made here must be reflected in [`architecture-guide.pt_BR.md`](architecture-guide.pt_BR.md).
 
 ---
 
@@ -82,27 +83,27 @@ real-time requirements, file uploads, and offline support via PWA.
 > a second runtime surface — use it only when the domain team has a strong Python-first reason.
 > Node.js 20 reaches EOL on 30 April 2026 — do not use for new projects.
 
-| Role | Service | MVP status |
-| --- | --- | --- |
-| REST API | Amazon API Gateway HTTP API | ✅ Implemented |
-| Real-time API | Amazon API Gateway WebSocket API | ✅ Implemented |
-| Compute | AWS Lambda (Node.js 22 / TypeScript) | ✅ Implemented |
-| Identity | Amazon Cognito User Pool | ✅ Implemented |
-| Identity Pool (direct S3 access) | Amazon Cognito Identity Pool | 🔜 Post-MVP |
-| Primary data store | Amazon DynamoDB | ✅ Implemented |
-| Change streams | DynamoDB Streams → Lambda | 🔜 Post-MVP |
-| Object storage | Amazon S3 | ✅ Implemented |
-| Analytics / reporting | Amazon Athena (queries S3 exports) | 🔜 Post-MVP |
-| Async events | SQS + SNS | ✅ Implemented |
-| Async events (domain pub/sub) | Amazon EventBridge | 🔜 Post-MVP |
-| Observability | CloudWatch Logs + Metrics + X-Ray | ✅ Implemented |
-| Observability dashboards | CloudWatch Dashboards | 🔜 Post-MVP |
-| Secrets | AWS Secrets Manager | 🔜 Post-MVP (VAPID key manual) |
-| Config | AWS SSM Parameter Store | ✅ Implemented |
-| Middleware | middy v7 (Lambda middleware engine for Powertools) | ✅ Implemented |
-| IaC | AWS CDK (TypeScript) | ✅ Implemented |
-| CI/CD | AWS CodePipeline + CodeBuild | 🔜 Post-MVP |
-| CDN + Hosting | Amazon CloudFront + S3 | ✅ Implemented |
+| Role | Service |
+| --- | --- |
+| REST API | Amazon API Gateway HTTP API |
+| Real-time API | Amazon API Gateway WebSocket API |
+| Compute | AWS Lambda (Node.js 22 / TypeScript) |
+| Identity | Amazon Cognito User Pool |
+| Identity Pool (direct S3 access) | Amazon Cognito Identity Pool |
+| Primary data store | Amazon DynamoDB |
+| Change streams | DynamoDB Streams → Lambda |
+| Object storage | Amazon S3 |
+| Analytics / reporting | Amazon Athena (queries S3 exports) |
+| Async events | SQS + SNS |
+| Async events (domain pub/sub) | Amazon EventBridge |
+| Observability | CloudWatch Logs + Metrics + X-Ray |
+| Observability dashboards | CloudWatch Dashboards |
+| Secrets | AWS Secrets Manager |
+| Config | AWS SSM Parameter Store |
+| Middleware | middy v7 (Lambda middleware engine for Powertools) |
+| IaC | AWS CDK (TypeScript) |
+| CI/CD | AWS CodePipeline + CodeBuild |
+| CDN + Hosting | Amazon CloudFront + S3 |
 
 ### Frontend (PWA)
 
@@ -113,7 +114,7 @@ real-time requirements, file uploads, and offline support via PWA.
 | --- | --- | --- |
 | Framework | React 19 + TypeScript 6 (strict) | This document |
 | Bundler | Vite 8 | This document |
-| UI layer (tokens, components, styling, icons) | shadcn/ui + Tailwind CSS v4 + Lucide React | This document (Section 4) |
+| UI layer (tokens, components, styling, icons) | shadcn/ui + Tailwind CSS v4 + Lucide React | This document (Section 15) |
 | Routing | React Router 7 | This document |
 | Server state | TanStack Query 5 | This document |
 | Client state | Zustand 5 | This document |
@@ -126,7 +127,7 @@ real-time requirements, file uploads, and offline support via PWA.
 
 > **Read the Authority column before adding anything to a component.**
 > If the authority is "This document", the definition is in the referenced section below.
-> All UI decisions (styling, components, icons) are governed by Section 4.
+> All UI decisions (styling, components, icons) are governed by Section 15.
 
 ---
 
@@ -188,36 +189,139 @@ for the official peer dep update.
 
 ---
 
-## 4. UI Stack
+## 4. Project Structure
 
-### Stack
+### Backend
 
-| Layer | Technology | Notes |
-| --- | --- | --- |
-| Component primitives | **shadcn/ui** (Radix UI) | Install via `npx shadcn@latest add <component>` |
-| Styling | **Tailwind CSS v4** | Single styling mechanism — no CSS Modules or plain CSS |
-| Icons | **Lucide React** | Single icon library — no mixing with other sets |
-| Dark mode | Tailwind CSS `dark:` variant | Toggle sets `dark` class on `<html>`; no parallel theming |
+```
+{project}-backend/
+├── infra/
+│   ├── bin/app.ts
+│   ├── stacks/
+│   │   ├── users.stack.ts              # DynamoDB users table (Pre-Token Lambda)
+│   │   ├── cognito.stack.ts
+│   │   ├── api-gateway.stack.ts
+│   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
+│   │   ├── {domain}.stack.ts           # one per domain — one file per business domain
+│   │   └── pipeline.stack.ts           # CodePipeline CI/CD (add when enabling pipeline)
+│   └── constructs/
+│       ├── lambda-with-powertools.ts
+│       └── sqs-with-dlq.ts
+│
+└── lambda/
+    ├── shared/
+    │   ├── tenant-authorizer.handler.ts  # HttpLambdaResponseType.SIMPLE
+    │   ├── extract-context.ts
+    │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
+    ├── auth/
+    │   └── pre-token-generation.handler.ts
+    ├── {domain}/                         # one folder per business domain
+    │   ├── list.handler.ts
+    │   ├── get-by-id.handler.ts
+    │   ├── create.handler.ts
+    │   ├── update.handler.ts
+    │   ├── delete.handler.ts
+    │   ├── domain/                       # Entities, Value Objects
+    │   └── infrastructure/               # DynamoDB repository
+    ├── uploads/
+    │   └── presign.handler.ts
+    └── notifications/
+        ├── ws-connect.handler.ts
+        ├── ws-disconnect.handler.ts
+        ├── notifier.handler.ts           # SQS trigger → WebSocket push
+        ├── list.handler.ts
+        ├── mark-read.handler.ts
+        └── mark-all-read.handler.ts
+```
 
-### Rules
+### Frontend
 
-- **Use shadcn/ui components as the foundation for all UI primitives.** Run `npx shadcn@latest add <component>` before rebuilding anything that already exists in the catalog (Button, Input, Select, Dialog, Sheet, Table, Toast, Badge, Avatar, Skeleton, etc.).
-- **All visual values come from Tailwind tokens.** Never use arbitrary values (`w-[137px]`, `text-[#ff0000]`). If a token is missing, add it to `tailwind.config.ts` and document the decision here.
-- **Icons are always from Lucide React.** `import { IconName } from 'lucide-react'` — never import from heroicons, react-icons, or other libraries.
-- **Dark mode is Tailwind-native.** The `dark` class on `<html>` is the single source of truth. Persist the user's preference in `localStorage` via a small hook; never implement a separate CSS variable strategy.
-- **Component location:** shadcn output lives in `src/shared/components/ui/`; custom composites in `src/shared/components/`. Never scatter UI primitives across feature folders.
-- **Extending shadcn components:** use `cva` (class-variance-authority) for new variants — never hardcode conditional class strings.
+```
+{project}-web/
+├── public/
+│   ├── pwa-192x192.png                   # PWA icons
+│   ├── pwa-512x512.png
+│   └── favicon.svg
+│
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx                          # Amplify.configure() + i18n init here
+│   ├── index.css
+│   │
+│   ├── app/
+│   │   ├── router.tsx                    # Lazy-loaded per feature (React.lazy + Suspense)
+│   │   └── query-client.ts
+│   │
+│   ├── features/                         # One folder per domain — flat structure
+│   │   ├── auth/
+│   │   │   ├── pages/LoginPage.tsx
+│   │   │   └── store/auth.store.ts       # Zustand — user, activeTenantId, tenants
+│   │   ├── dashboard/DashboardPage.tsx
+│   │   ├── {feature}/
+│   │   │   ├── {Feature}Page.tsx         # Page component (lazy-loaded route target)
+│   │   │   ├── {Feature}Form.tsx         # Create / edit form
+│   │   │   ├── {Feature}Detail.tsx       # Detail / side-panel (optional)
+│   │   │   ├── hooks/
+│   │   │   │   └── use{Feature}Query.ts  # TanStack Query hooks + key factory
+│   │   │   ├── services/
+│   │   │   │   └── {feature}.service.ts  # Axios calls — idempotency key generated here
+│   │   │   └── types/
+│   │   │       └── {feature}.types.ts
+│   │   ├── notifications/
+│   │   │   ├── hooks/useNotificationsQuery.ts
+│   │   │   └── services/notifications.service.ts
+│   │   └── preferences/PreferencesPage.tsx
+│   │
+│   ├── i18n/
+│   │   ├── index.ts                      # i18next init (no LanguageDetector plugin)
+│   │   └── locales/
+│   │       ├── en_US.json                # canonical
+│   │       └── pt_BR.json
+│   │
+│   └── shared/
+│       ├── api/
+│       │   ├── http-client.ts            # Axios instance + request/response interceptors
+│       │   └── error-mapper.ts
+│       ├── auth/
+│       │   └── auth.adapter.ts           # Single file that imports aws-amplify
+│       ├── components/
+│       │   ├── AppShell.tsx              # useWebSocket called once here
+│       │   ├── AppHeader.tsx
+│       │   ├── AppSidebar.tsx
+│       │   ├── AuthGuard.tsx
+│       │   ├── DataTable.tsx
+│       │   ├── NotificationPanel.tsx
+│       │   └── ui/                       # shadcn/ui output (button, input, dialog, …)
+│       ├── hooks/
+│       │   ├── useWebSocket.ts           # called once in AppShell
+│       │   ├── useServiceWorkerUpdate.ts
+│       │   ├── useTheme.ts
+│       │   └── useLocale.ts
+│       ├── store/
+│       │   └── app.store.ts              # Zustand — sidebar, theme, locale
+│       └── types/
+│           ├── api.types.ts              # PaginatedResponse<T>, ApiError
+│           └── entities.ts
+│
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+└── .env.example
+```
 
-### What This Document Also Defines
+### Environment Variables (Frontend)
 
-This document defines everything that is **not UI appearance**:
-
-- How components receive data (hooks, TanStack Query, props shape)
-- How components communicate state changes (mutations, Zustand)
-- Which file a component lives in (feature slice structure)
-- How routing, auth guards, and error boundaries wrap pages
-- How forms connect to API services (React Hook Form + Zod + mutation)
-- Testing strategy (what to test, not how the component looks)
+```bash
+# .env.example — values injected by CodeBuild from SSM (never hardcoded)
+VITE_API_BASE_URL=
+VITE_WS_ENDPOINT=
+VITE_COGNITO_USER_POOL_ID=
+VITE_COGNITO_CLIENT_ID=
+VITE_COGNITO_REGION=          # fixed per project  (e.g. us-east-1)
+VITE_VAPID_PUBLIC_KEY=        # VAPID public key for Web Push
+VITE_APP_VERSION=             # injected by CI (git tag or commit SHA)
+VITE_SENTRY_DSN=              # optional — error tracking
+```
 
 ---
 
@@ -230,19 +334,20 @@ every new feature.
 **Both sides must reference this table. Never define a route name in the frontend
 without registering it here first.**
 
-| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store | Status |
-| --- | --- | --- | --- | --- |
-| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`zenvillage-users`) | ✅ MVP |
-| `dashboard` | — | *(client-side only — no backend)* | — | ✅ MVP |
-| `tenants` | `tenants` | `/v1/tenants` | DynamoDB (`zenvillage-tenants`) | ✅ MVP |
-| `property-managers` | `property-managers` | `/v1/property-managers` | DynamoDB (`zenvillage-property-managers`) | ✅ MVP |
-| `condominiums` | `condominiums` | `/v1/condominiums` | DynamoDB (`zenvillage-condominiums`) | ✅ MVP |
-| `residents` | `residents` | `/v1/residents` | DynamoDB (`zenvillage-residents`) | ✅ MVP |
-| `employees` | `employees` | `/v1/employees` | DynamoDB (`zenvillage-employees`) | ✅ MVP |
-| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`zenvillage-notifications`) | ✅ MVP |
-| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`zenvillage-files`) + S3 | ✅ MVP |
-| `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` | ✅ MVP |
-| `settings` | `settings` | `/v1/settings` | DynamoDB | 🔜 Post-MVP |
+| Frontend Feature | Lambda Domain | API Base Path | Primary Data Store |
+| --- | --- | --- | --- |
+| `auth` | `auth` | *(Cognito trigger — no REST routes)* | DynamoDB (`{project}-users`) |
+| `{feature-a}` | — | *(client-side only — no backend)* | — |
+| `{feature-b}` | `{feature-b}` | `/v1/{feature-b}` | DynamoDB (`{project}-{feature-b}`) |
+| `{feature-c}` | `{feature-c}` | `/v1/{feature-c}` | DynamoDB (`{project}-{feature-c}`) |
+| `notifications` | `notifications` | `/v1/notifications` | DynamoDB (`{project}-notifications`) |
+| `uploads` | `uploads` | `/v1/uploads/presign` | DynamoDB (`{project}-files`) + S3 |
+| `preferences` | — | *(client-side only — locale/theme)* | Cognito `custom:locale` |
+| `{feature-d}` | `{feature-d}` | `/v1/{feature-d}` | DynamoDB |
+
+> **Instructions:** Replace `{feature-a}`, `{feature-b}`, etc. with the actual feature names for
+> your project. Add one row per domain at project kickoff. `auth`, `notifications`, `uploads`,
+> and `preferences` are architecture-level features present in every project — keep them as-is.
 
 > **Note:** React Router v7 merged `react-router-dom` into `react-router`.
 > Import everything from `"react-router"` — `react-router-dom` is no longer needed as a separate dependency.
@@ -371,8 +476,17 @@ HTTP 204 No Content  (no body)
 
 ### Pre-Token Generation Lambda — Required
 
-Without this trigger, `tenantId` and `roles` do not exist in the JWT and the entire
-multi-tenancy system fails silently.
+Without this trigger, `tenantId`, `roles`, and `onboardingStatus` do not exist in the JWT
+and the entire multi-tenancy and onboarding-gate system fails silently.
+
+**Claims injected:**
+
+| Claim | Type | Description |
+| --- | --- | --- |
+| `custom:tenantId` | `string` | Active tenant UUID; validated by the Lambda Authorizer on every request |
+| `custom:roles` | `string` (JSON array) | Serialized array of the user's role strings |
+| `custom:userId` | `string` | Internal user UUID (distinct from Cognito `sub`) |
+| `custom:onboardingStatus` | `string` | Current `onboarding_status` value; read by the frontend `AuthGuard` to enforce the subscription gate without an extra API call |
 
 ```typescript
 // lambda/auth/pre-token-generation.handler.ts
@@ -383,9 +497,10 @@ export const handler = async (event: PreTokenGenerationTriggerEvent) => {
   event.response = {
     claimsOverrideDetails: {
       claimsToAddOrOverride: {
-        'custom:tenantId': user.organizationId,
-        'custom:roles':    JSON.stringify(user.roles),
-        'custom:userId':   user.id,
+        'custom:tenantId':        user.tenantId,
+        'custom:roles':           JSON.stringify(user.roles),
+        'custom:userId':          user.id,
+        'custom:onboardingStatus': user.onboardingStatus,
       },
     },
   };
@@ -545,270 +660,12 @@ const api = new HttpApi(this, `{project}-api-${props.env}`, {
 
 ---
 
-## 10. Real-Time Channel (WebSocket API Gateway)
-
-### Architecture
-
-```
-EventBridge (domain event published by any Lambda)
-    │
-    ▼
-SQS ({project}-notifier-queue)
-    │
-    ▼
-Lambda (notifier)
-    ├── Fetches active tenant connections from DynamoDB
-    └── Calls API Gateway WebSocket Management API (postToConnection)
-              │
-              ▼
-        Browser (Service Worker / React hook)
-              │
-              ▼
-        queryClient.invalidateQueries({ queryKey: ['{domain}'] })
-```
-
-### WebSocket Lambda Handlers
-
-```typescript
-// lambda/notifications/ws-connect.handler.ts
-export const handler = async (event: APIGatewayProxyWebsocketHandlerV2) => {
-  const tenantId     = extractTenantFromToken(event.queryStringParameters?.token);
-  const userId       = extractUserIdFromToken(event.queryStringParameters?.token);
-  const connectionId = event.requestContext.connectionId;
-
-  await connectionsRepository.save({
-    PK:  `TENANT#${tenantId}#USER#${userId}`,
-    SK:  `CONN#${connectionId}`,
-    connectionId, tenantId, userId,
-    ttl: Math.floor(Date.now() / 1000) + 7200,
-  });
-
-  return { statusCode: 200 };
-};
-
-// lambda/notifications/notifier.handler.ts  (trigger: SQS)
-export const handler = async (event: SQSEvent) => {
-  for (const record of event.Records) {
-    const notification = JSON.parse(record.body);
-    const connections  = await connectionsRepository.findByTenant(notification.tenantId);
-
-    await Promise.allSettled(
-      connections.map(conn =>
-        apiGwMgmt.postToConnection({
-          ConnectionId: conn.connectionId,
-          Data:         JSON.stringify(notification),
-        }).promise()
-      )
-    );
-  }
-};
-```
-
-### `useWebSocket` Hook (Frontend)
-
-```typescript
-// shared/hooks/useWebSocket.ts
-export const useWebSocket = () => {
-  const { user } = useAuthStore();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!user) return;
-
-    let ws: WebSocket | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let destroyed = false;  // prevents reconnect after unmount
-
-    const connect = async () => {
-      // Always re-fetch token on every (re)connect — handles token expiry
-      const token = await authAdapter.getAccessToken();
-      if (destroyed) return;
-
-      ws = new WebSocket(`${env.VITE_WS_ENDPOINT}?token=${token}&tenantId=${tenantId}`);
-
-      ws.onmessage = ({ data }) => {
-        const event: RealtimeEvent = JSON.parse(data);
-        queryClient.invalidateQueries({ queryKey: [event.domain] });
-        queryClient.setQueryData(
-          notificationKeys.list(),
-          (prev: Notification[]) => [mapToNotification(event), ...(prev ?? [])]
-        );
-      };
-
-      ws.onclose = () => {
-        if (!destroyed) {
-          // Exponential backoff capped at 30s
-          reconnectTimer = setTimeout(connect, Math.min(3000 * 2, 30_000));
-        }
-      };
-    };
-
-    connect();
-
-    // Cleanup: close socket and cancel pending reconnect on logout / unmount
-    return () => {
-      destroyed = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      ws?.close();
-    };
-  }, [user?.id]);
-};
-```
-
-> **Rule:** `useWebSocket` is called **once only** in `AppShell`. Never in individual components.
-
----
-
-## 11. File Upload (Pre-Signed S3)
-
-Never send files through API Gateway.
-
-### End-to-End Flow
-
-```
-1. Frontend → POST /v1/uploads/presign
-   Body: { filename, contentType, domain, metadata? }
-
-2. Lambda → S3.createPresignedPost()
-   Returns: { uploadUrl, fields, fileId, expiresAt }
-
-3. Frontend → PUT {uploadUrl}  (directly to S3, bypassing API Gateway)
-
-4. S3 Event → EventBridge → SQS → Lambda (post-upload-processor)
-
-5. Frontend receives update via WebSocket → invalidates domain cache
-```
-
-### Presign Lambda
-
-```typescript
-// lambda/uploads/presign.handler.ts
-export const handler = async (event: APIGatewayProxyEventV2) => {
-  const { filename, contentType, domain, metadata } = JSON.parse(event.body!);
-  const { tenantId, userId } = extractContext(event);
-  const fileId = randomUUID();
-  const key    = `${tenantId}/${domain}/${fileId}/${filename}`;
-
-  const { url, fields } = await s3.createPresignedPost({
-    Bucket:     process.env.UPLOADS_BUCKET!,
-    Key:        key,
-    Conditions: [
-      ['content-length-range', 0, 52_428_800],
-      ['eq', '$Content-Type', contentType],
-    ],
-    Expires: 300,
-  });
-
-  await fileRepository.createPending({
-    PK: `TENANT#${tenantId}#FILE#${fileId}`, SK: 'METADATA',
-    fileId, tenantId, userId, domain, key, filename, metadata, status: 'PENDING',
-  });
-
-  return ok({ uploadUrl: url, fields, fileId, expiresAt: Date.now() + 300_000 });
-};
-```
-
-### `useFileUpload` Hook (Frontend)
-
-```typescript
-// shared/hooks/useFileUpload.ts
-export const useFileUpload = () => {
-  const [progress, setProgress] = useState(0);
-  const presignMutation = useMutation({
-    mutationFn: (input: PresignInput) => uploadsService.presign(input),
-  });
-
-  const upload = async (file: File, domain: string, metadata?: Record<string, unknown>) => {
-    const { uploadUrl, fields, fileId } = await presignMutation.mutateAsync({
-      filename: file.name, contentType: file.type, domain, metadata,
-    });
-
-    const formData = new FormData();
-    Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
-    formData.append('file', file);
-
-    await axios.post(uploadUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) => setProgress(Math.round((e.progress ?? 0) * 100)),
-    });
-
-    return fileId;
-  };
-
-  return { upload, progress, isUploading: presignMutation.isPending };
-};
-```
-
----
-
-## 12. Push Notifications (Web Push)
-
-### End-to-End Flow
-
-```
-1. REGISTRATION — Frontend → POST /v1/notifications/push-subscription
-   Lambda saves { userId, tenantId, subscription } in DynamoDB (TTL 30d)
-
-2. DELIVERY — EventBridge → SQS → Lambda (push-sender) → Web Push API
-
-3. UNREGISTRATION — Frontend → DELETE /v1/notifications/push-subscription
-```
-
-### Lambda Endpoints
-
-```typescript
-// POST /v1/notifications/push-subscription
-export const registerHandler = async (event: APIGatewayProxyEventV2) => {
-  const { subscription } = JSON.parse(event.body!);
-  const { tenantId, userId } = extractContext(event);
-
-  await subscriptionsRepository.save({
-    PK:  `TENANT#${tenantId}#USER#${userId}`,
-    SK:  `PUSH#${subscription.endpoint.slice(-16)}`,
-    subscription,
-    ttl: Math.floor(Date.now() / 1000) + 30 * 86400,
-  });
-  return created({});
-};
-
-// DELETE /v1/notifications/push-subscription
-export const unregisterHandler = async (event: APIGatewayProxyEventV2) => {
-  const { tenantId, userId } = extractContext(event);
-  await subscriptionsRepository.deleteAll({ tenantId, userId });
-  return noContent();
-};
-```
-
-### Registration Hook (Frontend)
-
-```typescript
-// shared/hooks/usePushSubscription.ts
-export const usePushSubscription = () => {
-  const { user } = useAuthStore();
-
-  useEffect(() => {
-    if (!user || !('PushManager' in window)) return;
-    const register = async () => {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly:      true,
-        applicationServerKey: env.VITE_VAPID_PUBLIC_KEY,
-      });
-      await notificationsService.registerPush(sub.toJSON());
-    };
-    register().catch(console.error);
-  }, [user?.id]);
-};
-```
-
----
-
-## 13. Data Strategy
+## 10. Data Strategy
 
 DynamoDB is the **only primary data store** in this architecture. Every domain owns its
 own table. No VPC, no connection pools, no migration scripts, no provisioned servers.
 
-> **MVP trade-off — ScanCommand:** All MVP `list` handlers use `ScanCommand` with a
+> **Trade-off — ScanCommand:** Initial `list` handlers may use `ScanCommand` with a
 > `FilterExpression` on the tenant prefix. This is acceptable for small data sets during
 > early product phases. At scale (> 10 k items per tenant per table), replace with
 > `QueryCommand` using a GSI with `tenantId` as the partition key and `SK` as the sort key.
@@ -972,7 +829,7 @@ new Function(this, id, {
 
 ---
 
-## 14. Asynchronous Messaging
+## 11. Asynchronous Messaging
 
 ### EventBridge — Domain Events
 
@@ -1009,7 +866,298 @@ Every published event must have a schema registered in the
 
 ---
 
-## 15. Server State — TanStack Query
+## 12. Real-Time Channel (WebSocket API Gateway)
+
+### Architecture
+
+```
+EventBridge (domain event published by any Lambda)
+    │
+    ▼
+SQS ({project}-notifier-queue)
+    │
+    ▼
+Lambda (notifier)
+    ├── Fetches active tenant connections from DynamoDB
+    └── Calls API Gateway WebSocket Management API (postToConnection)
+              │
+              ▼
+        Browser (Service Worker / React hook)
+              │
+              ▼
+        queryClient.invalidateQueries({ queryKey: ['{domain}'] })
+```
+
+### WebSocket Lambda Handlers
+
+```typescript
+// lambda/notifications/ws-connect.handler.ts
+export const handler = async (event: APIGatewayProxyWebsocketHandlerV2) => {
+  const tenantId     = extractTenantFromToken(event.queryStringParameters?.token);
+  const userId       = extractUserIdFromToken(event.queryStringParameters?.token);
+  const connectionId = event.requestContext.connectionId;
+
+  await connectionsRepository.save({
+    PK:  `TENANT#${tenantId}#USER#${userId}`,
+    SK:  `CONN#${connectionId}`,
+    connectionId, tenantId, userId,
+    ttl: Math.floor(Date.now() / 1000) + 7200,
+  });
+
+  return { statusCode: 200 };
+};
+
+// lambda/notifications/notifier.handler.ts  (trigger: SQS)
+export const handler = async (event: SQSEvent) => {
+  for (const record of event.Records) {
+    const notification = JSON.parse(record.body);
+    const connections  = await connectionsRepository.findByTenant(notification.tenantId);
+
+    await Promise.allSettled(
+      connections.map(conn =>
+        apiGwMgmt.postToConnection({
+          ConnectionId: conn.connectionId,
+          Data:         JSON.stringify(notification),
+        }).promise()
+      )
+    );
+  }
+};
+```
+
+### `useWebSocket` Hook (Frontend)
+
+```typescript
+// shared/hooks/useWebSocket.ts
+export const useWebSocket = () => {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;  // prevents reconnect after unmount
+
+    const connect = async () => {
+      // Always re-fetch token on every (re)connect — handles token expiry
+      const token = await authAdapter.getAccessToken();
+      if (destroyed) return;
+
+      ws = new WebSocket(`${env.VITE_WS_ENDPOINT}?token=${token}&tenantId=${tenantId}`);
+
+      ws.onmessage = ({ data }) => {
+        const event: RealtimeEvent = JSON.parse(data);
+        queryClient.invalidateQueries({ queryKey: [event.domain] });
+        queryClient.setQueryData(
+          notificationKeys.list(),
+          (prev: Notification[]) => [mapToNotification(event), ...(prev ?? [])]
+        );
+      };
+
+      ws.onclose = () => {
+        if (!destroyed) {
+          // Exponential backoff capped at 30s
+          reconnectTimer = setTimeout(connect, Math.min(3000 * 2, 30_000));
+        }
+      };
+    };
+
+    connect();
+
+    // Cleanup: close socket and cancel pending reconnect on logout / unmount
+    return () => {
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [user?.id]);
+};
+```
+
+> **Rule:** `useWebSocket` is called **once only** in `AppShell`. Never in individual components.
+
+---
+
+## 13. File Upload (Pre-Signed S3)
+
+Never send files through API Gateway.
+
+### End-to-End Flow
+
+```
+1. Frontend → POST /v1/uploads/presign
+   Body: { filename, contentType, domain, metadata? }
+
+2. Lambda → S3.createPresignedPost()
+   Returns: { uploadUrl, fields, fileId, expiresAt }
+
+3. Frontend → PUT {uploadUrl}  (directly to S3, bypassing API Gateway)
+
+4. S3 Event → EventBridge → SQS → Lambda (post-upload-processor)
+
+5. Frontend receives update via WebSocket → invalidates domain cache
+```
+
+### Presign Lambda
+
+```typescript
+// lambda/uploads/presign.handler.ts
+export const handler = async (event: APIGatewayProxyEventV2) => {
+  const { filename, contentType, domain, metadata } = JSON.parse(event.body!);
+  const { tenantId, userId } = extractContext(event);
+  const fileId = randomUUID();
+  const key    = `${tenantId}/${domain}/${fileId}/${filename}`;
+
+  const { url, fields } = await s3.createPresignedPost({
+    Bucket:     process.env.UPLOADS_BUCKET!,
+    Key:        key,
+    Conditions: [
+      ['content-length-range', 0, 52_428_800],
+      ['eq', '$Content-Type', contentType],
+    ],
+    Expires: 300,
+  });
+
+  await fileRepository.createPending({
+    PK: `TENANT#${tenantId}#FILE#${fileId}`, SK: 'METADATA',
+    fileId, tenantId, userId, domain, key, filename, metadata, status: 'PENDING',
+  });
+
+  return ok({ uploadUrl: url, fields, fileId, expiresAt: Date.now() + 300_000 });
+};
+```
+
+### `useFileUpload` Hook (Frontend)
+
+```typescript
+// shared/hooks/useFileUpload.ts
+export const useFileUpload = () => {
+  const [progress, setProgress] = useState(0);
+  const presignMutation = useMutation({
+    mutationFn: (input: PresignInput) => uploadsService.presign(input),
+  });
+
+  const upload = async (file: File, domain: string, metadata?: Record<string, unknown>) => {
+    const { uploadUrl, fields, fileId } = await presignMutation.mutateAsync({
+      filename: file.name, contentType: file.type, domain, metadata,
+    });
+
+    const formData = new FormData();
+    Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
+    formData.append('file', file);
+
+    await axios.post(uploadUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => setProgress(Math.round((e.progress ?? 0) * 100)),
+    });
+
+    return fileId;
+  };
+
+  return { upload, progress, isUploading: presignMutation.isPending };
+};
+```
+
+---
+
+## 14. Push Notifications (Web Push)
+
+### End-to-End Flow
+
+```
+1. REGISTRATION — Frontend → POST /v1/notifications/push-subscription
+   Lambda saves { userId, tenantId, subscription } in DynamoDB (TTL 30d)
+
+2. DELIVERY — EventBridge → SQS → Lambda (push-sender) → Web Push API
+
+3. UNREGISTRATION — Frontend → DELETE /v1/notifications/push-subscription
+```
+
+### Lambda Endpoints
+
+```typescript
+// POST /v1/notifications/push-subscription
+export const registerHandler = async (event: APIGatewayProxyEventV2) => {
+  const { subscription } = JSON.parse(event.body!);
+  const { tenantId, userId } = extractContext(event);
+
+  await subscriptionsRepository.save({
+    PK:  `TENANT#${tenantId}#USER#${userId}`,
+    SK:  `PUSH#${subscription.endpoint.slice(-16)}`,
+    subscription,
+    ttl: Math.floor(Date.now() / 1000) + 30 * 86400,
+  });
+  return created({});
+};
+
+// DELETE /v1/notifications/push-subscription
+export const unregisterHandler = async (event: APIGatewayProxyEventV2) => {
+  const { tenantId, userId } = extractContext(event);
+  await subscriptionsRepository.deleteAll({ tenantId, userId });
+  return noContent();
+};
+```
+
+### Registration Hook (Frontend)
+
+```typescript
+// shared/hooks/usePushSubscription.ts
+export const usePushSubscription = () => {
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user || !('PushManager' in window)) return;
+    const register = async () => {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: env.VITE_VAPID_PUBLIC_KEY,
+      });
+      await notificationsService.registerPush(sub.toJSON());
+    };
+    register().catch(console.error);
+  }, [user?.id]);
+};
+```
+
+---
+
+## 15. UI Stack
+
+### Stack
+
+| Layer | Technology | Notes |
+| --- | --- | --- |
+| Component primitives | **shadcn/ui** (Radix UI) | Install via `npx shadcn@latest add <component>` |
+| Styling | **Tailwind CSS v4** | Single styling mechanism — no CSS Modules or plain CSS |
+| Icons | **Lucide React** | Single icon library — no mixing with other sets |
+| Dark mode | Tailwind CSS `dark:` variant | Toggle sets `dark` class on `<html>`; no parallel theming |
+
+### Rules
+
+- **Use shadcn/ui components as the foundation for all UI primitives.** Run `npx shadcn@latest add <component>` before rebuilding anything that already exists in the catalog (Button, Input, Select, Dialog, Sheet, Table, Toast, Badge, Avatar, Skeleton, etc.).
+- **All visual values come from Tailwind tokens.** Never use arbitrary values (`w-[137px]`, `text-[#ff0000]`). If a token is missing, add it to `tailwind.config.ts` and document the decision here.
+- **Icons are always from Lucide React.** `import { IconName } from 'lucide-react'` — never import from heroicons, react-icons, or other libraries.
+- **Dark mode is Tailwind-native.** The `dark` class on `<html>` is the single source of truth. Persist the user's preference in `localStorage` via a small hook; never implement a separate CSS variable strategy.
+- **Component location:** shadcn output lives in `src/shared/components/ui/`; custom composites in `src/shared/components/`. Never scatter UI primitives across feature folders.
+- **Extending shadcn components:** use `cva` (class-variance-authority) for new variants — never hardcode conditional class strings.
+
+### What This Document Also Defines
+
+This document defines everything that is **not UI appearance**:
+
+- How components receive data (hooks, TanStack Query, props shape)
+- How components communicate state changes (mutations, Zustand)
+- Which file a component lives in (feature slice structure)
+- How routing, auth guards, and error boundaries wrap pages
+- How forms connect to API services (React Hook Form + Zod + mutation)
+- Testing strategy (what to test, not how the component looks)
+
+---
+
+## 16. Server State — TanStack Query
 
 All server state is managed by TanStack Query. `useEffect + fetch` is forbidden for
 remote data — no exceptions.
@@ -1072,7 +1220,7 @@ export const queryClient = new QueryClient({
 
 ---
 
-## 16. Client State — Zustand
+## 17. Client State — Zustand
 
 | ✅ Use Zustand for | ❌ Never use Zustand for |
 | --- | --- |
@@ -1097,7 +1245,7 @@ export const useAuthStore = create<AuthState>()(
 
 ---
 
-## 17. PWA — Cache Strategy and Offline Behavior
+## 18. PWA — Cache Strategy and Offline Behavior
 
 ### Cache Strategies (Workbox)
 
@@ -1142,373 +1290,7 @@ export const useServiceWorkerUpdate = () => {
 
 ---
 
-## 18. Observability
-
-### Backend — Lambda Powertools (Required on Every Lambda)
-
-```typescript
-const logger  = new Logger({ serviceName: '{domain}' });
-const metrics = new Metrics({ namespace: '{Project}/{Domain}' });
-const tracer  = new Tracer({ serviceName: '{domain}' });
-
-export const handler = middy(mainHandler)
-  .use(injectLambdaContext(logger))
-  .use(captureLambdaHandler(tracer))
-  .use(logMetrics(metrics));
-```
-
-Every log entry must include: `level`, `message`, `requestId`, `traceId`, `service`,
-`tenantId`, `timestamp`. Never log: JWT tokens, passwords, card data, sensitive PII.
-
-### Alarms per Lambda (Required)
-
-| Metric | Threshold | Action |
-| --- | --- | --- |
-| `Errors` | > 1% over 5 min | SNS → on-call |
-| `Throttles` | > 0 | SNS → on-call |
-| `Duration` | > 80% of configured timeout | SNS → warning |
-| DLQ `NumberOfMessagesVisible` | > 0 | SNS → on-call |
-
-### Frontend — Error Boundary with Correlation
-
-```typescript
-// app/ErrorBoundary.tsx
-componentDidCatch(error: Error, info: ErrorInfo) {
-  ErrorTracker.captureException(error, {
-    extra: {
-      componentStack: info.componentStack,
-      requestId:      getLastApiRequestId(),
-      tenantId:       useAuthStore.getState().tenantId,
-    },
-  });
-}
-```
-
----
-
-## 19. Infrastructure as Code — CDK Outputs → Frontend
-
-No URL is hardcoded anywhere in the repository.
-
-### CDK — Export to Parameter Store
-
-```typescript
-// infra/stacks/api-gateway.stack.ts
-const params = [
-  { name: 'api-url',           value: api.url },
-  { name: 'ws-url',            value: wsApi.apiEndpoint },
-  { name: 'cognito-pool-id',   value: userPool.userPoolId },
-  { name: 'cognito-client-id', value: userPoolClient.userPoolClientId },
-];
-
-for (const { name, value } of params) {
-  new StringParameter(this, `Param-${name}`, {
-    parameterName: `/{project}/${props.env}/${name}`,
-    stringValue:   value,
-  });
-}
-```
-
-### CodeBuild — Consume in the Frontend Build
-
-```yaml
-# buildspec-frontend.yml
-phases:
-  pre_build:
-    commands:
-      - ENV=${ENVIRONMENT:-staging}
-      - SSM="aws ssm get-parameter --query Parameter.Value --output text"
-      - API_URL=$($SSM   --name /{project}/$ENV/api-url)
-      - WS_URL=$($SSM    --name /{project}/$ENV/ws-url)
-      - POOL_ID=$($SSM   --name /{project}/$ENV/cognito-pool-id)
-      - CLIENT_ID=$($SSM --name /{project}/$ENV/cognito-client-id)
-  build:
-    commands:
-      - >
-        VITE_API_BASE_URL=$API_URL VITE_WS_ENDPOINT=$WS_URL
-        VITE_COGNITO_USER_POOL_ID=$POOL_ID VITE_COGNITO_CLIENT_ID=$CLIENT_ID
-        npm run build
-  post_build:
-    commands:
-      - aws s3 sync dist/ s3://{project}-frontend-$ENV/ --delete
-      - aws cloudfront create-invalidation --distribution-id $CF_DIST_ID --paths "/*"
-```
-
----
-
-## 20. Unified CI/CD Pipeline
-
-The frontend never goes to production before the corresponding backend is healthy.
-
-```
-SOURCE
-  Push to `develop` or `main`
-        │
-        ▼
-PARALLEL BUILD
-  ├── Backend: lint + tests + CDK synth
-  └── Frontend: lint + tests + Vite build
-        │
-        ▼
-STAGING BACKEND
-  CDK deploy → smoke tests
-        │  (proceeds only if ✅)
-        ▼
-STAGING FRONTEND
-  CodeBuild reads staging SSM → build → S3 + CloudFront invalidation
-        │
-        ▼
-E2E PLAYWRIGHT
-  Frontend + Backend together on staging
-  Covers: login, CRUD, upload, real-time, push, logout
-        │  (proceeds only if ✅)
-        ▼
-MANUAL APPROVAL
-        │
-        ▼
-PROD BACKEND
-  CDK deploy → health check 5 min
-        │  (proceeds only if ✅)
-        ▼
-PROD FRONTEND
-  CodeBuild reads prod SSM → build → S3 + CloudFront invalidation
-```
-
----
-
-## 21. Project Structure
-
-### Backend
-
-```
-{project}-backend/
-├── infra/
-│   ├── bin/app.ts
-│   ├── stacks/
-│   │   ├── users.stack.ts              # DynamoDB users table (Pre-Token Lambda)
-│   │   ├── cognito.stack.ts
-│   │   ├── api-gateway.stack.ts
-│   │   ├── frontend-hosting.stack.ts   # S3 + CloudFront OAC
-│   │   ├── {domain}.stack.ts           # one per domain (tenants, condominiums, …)
-│   │   └── pipeline.stack.ts           # 🔜 Post-MVP — CodePipeline CI/CD
-│   └── constructs/
-│       ├── lambda-with-powertools.ts
-│       └── sqs-with-dlq.ts
-│
-└── lambda/
-    ├── shared/
-    │   ├── tenant-authorizer.handler.ts  # HttpLambdaResponseType.SIMPLE
-    │   ├── extract-context.ts
-    │   └── response-helpers.ts           # ok(), created(), noContent(), badRequest(), …
-    ├── auth/
-    │   └── pre-token-generation.handler.ts
-    ├── {domain}/                         # tenants | property-managers | condominiums
-    │   ├── list.handler.ts               # residents | employees
-    │   ├── get-by-id.handler.ts
-    │   ├── create.handler.ts
-    │   ├── update.handler.ts
-    │   ├── delete.handler.ts
-    │   ├── domain/                       # Entities, Value Objects
-    │   └── infrastructure/               # DynamoDB repository
-    ├── uploads/
-    │   └── presign.handler.ts
-    └── notifications/
-        ├── ws-connect.handler.ts
-        ├── ws-disconnect.handler.ts
-        ├── notifier.handler.ts           # SQS trigger → WebSocket push
-        ├── list.handler.ts
-        ├── mark-read.handler.ts
-        └── mark-all-read.handler.ts
-```
-
-### Frontend
-
-```
-{project}-web/
-├── public/
-│   ├── pwa-192x192.png                   # PWA icons
-│   ├── pwa-512x512.png
-│   └── favicon.svg
-│
-├── src/
-│   ├── App.tsx
-│   ├── main.tsx                          # Amplify.configure() + i18n init here
-│   ├── index.css
-│   │
-│   ├── app/
-│   │   ├── router.tsx                    # Lazy-loaded per feature (React.lazy + Suspense)
-│   │   └── query-client.ts
-│   │
-│   ├── features/                         # One folder per domain — flat structure
-│   │   ├── auth/
-│   │   │   ├── pages/LoginPage.tsx
-│   │   │   └── store/auth.store.ts       # Zustand — user, activeTenantId, tenants
-│   │   ├── dashboard/DashboardPage.tsx
-│   │   ├── {feature}/
-│   │   │   ├── {Feature}Page.tsx         # Page component (lazy-loaded route target)
-│   │   │   ├── {Feature}Form.tsx         # Create / edit form
-│   │   │   ├── {Feature}Detail.tsx       # Detail / side-panel (optional)
-│   │   │   ├── hooks/
-│   │   │   │   └── use{Feature}Query.ts  # TanStack Query hooks + key factory
-│   │   │   ├── services/
-│   │   │   │   └── {feature}.service.ts  # Axios calls — idempotency key generated here
-│   │   │   └── types/
-│   │   │       └── {feature}.types.ts
-│   │   ├── notifications/
-│   │   │   ├── hooks/useNotificationsQuery.ts
-│   │   │   └── services/notifications.service.ts
-│   │   └── preferences/PreferencesPage.tsx
-│   │
-│   ├── i18n/
-│   │   ├── index.ts                      # i18next init (no LanguageDetector plugin)
-│   │   └── locales/
-│   │       ├── en_US.json                # canonical
-│   │       └── pt_BR.json
-│   │
-│   └── shared/
-│       ├── api/
-│       │   ├── http-client.ts            # Axios instance + request/response interceptors
-│       │   └── error-mapper.ts
-│       ├── auth/
-│       │   └── auth.adapter.ts           # Single file that imports aws-amplify
-│       ├── components/
-│       │   ├── AppShell.tsx              # useWebSocket called once here
-│       │   ├── AppHeader.tsx
-│       │   ├── AppSidebar.tsx
-│       │   ├── AuthGuard.tsx
-│       │   ├── DataTable.tsx
-│       │   ├── NotificationPanel.tsx
-│       │   └── ui/                       # shadcn/ui output (button, input, dialog, …)
-│       ├── hooks/
-│       │   ├── useWebSocket.ts           # called once in AppShell
-│       │   ├── useServiceWorkerUpdate.ts
-│       │   ├── useTheme.ts
-│       │   └── useLocale.ts
-│       ├── store/
-│       │   └── app.store.ts              # Zustand — sidebar, theme, locale
-│       └── types/
-│           ├── api.types.ts              # PaginatedResponse<T>, ApiError
-│           └── entities.ts
-│
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── .env.example
-```
-
-### Environment Variables (Frontend)
-
-```bash
-# .env.example — values injected by CodeBuild from SSM (never hardcoded)
-VITE_API_BASE_URL=
-VITE_WS_ENDPOINT=
-VITE_COGNITO_USER_POOL_ID=
-VITE_COGNITO_CLIENT_ID=
-VITE_COGNITO_REGION=          # fixed per project  (e.g. us-east-1)
-VITE_VAPID_PUBLIC_KEY=        # VAPID public key for Web Push
-VITE_APP_VERSION=             # injected by CI (git tag or commit SHA)
-VITE_SENTRY_DSN=              # optional — error tracking
-```
-
----
-
-## 22. New Feature Checklist (Frontend + Backend)
-
-### Backend
-- [ ] Add row to mapping table (Section 5) with domain, path, and data store
-- [ ] Create CDK Stack with least-privilege IAM per Lambda
-- [ ] Implement hexagonal architecture (domain → application → infrastructure)
-- [ ] Define HTTP API routes with Cognito Authorizer + tenant Lambda Authorizer
-- [ ] Extract `tenantId` from authorizer context — never from the header directly
-- [ ] Use `TENANT#{tenantId}` in DynamoDB partition key on every access
-- [ ] Return responses following the API contract (Section 6)
-- [ ] Include `requestId` (`context.awsRequestId`) in error envelopes
-- [ ] Publish domain event to EventBridge with Schema Registry entry
-- [ ] Create SQS + DLQ for all async consumers
-- [ ] Set Lambda timeout explicitly — use the reference table in Section 13
-- [ ] Enable X-Ray active tracing on Lambda and API Gateway stage
-- [ ] Configure structured logs with Lambda Powertools Logger (via middy)
-- [ ] Emit business metrics with Lambda Powertools Metrics (EMF, via middy)
-- [ ] Create CloudWatch Alarms for errors, throttles, and latency
-- [ ] Export endpoint URLs to SSM if the frontend needs them
-- [ ] Apply Lambda Powertools Idempotency with `X-Idempotency-Key` for POST/PUT/PATCH on API Gateway handlers
-- [ ] For SQS consumer Lambdas: use the EventBridge `eventId` as the idempotency key, not `X-Idempotency-Key`
-- [ ] If cross-entity atomicity is required: use `TransactWriteItems` (up to 100 items)
-- [ ] If domain needs change reactions (audit, projections): enable DynamoDB Streams on the table
-- [ ] If domain needs aggregations or reports: design the S3 export path and Athena query
-
-### Frontend
-- [ ] Add row to mapping table (Section 5)
-- [ ] Create feature slice under `src/features/{feature}/` with full structure
-- [ ] Define Zod schema + inferred TypeScript types
-- [ ] Implement service with path `/v1/{domain}/...` (no `/api/` prefix)
-- [ ] Implement query key factory (no hardcoded strings)
-- [ ] Implement TanStack Query hooks (query + mutation) — never `useEffect + fetch`
-- [ ] Generate `X-Idempotency-Key` in the service — not in the hook
-- [ ] Register lazy-loaded routes with `React.lazy` + `Suspense` + `ErrorBoundary`
-- [ ] Build page and feature components using **shadcn/ui** — run `npx shadcn@latest add <component>` before rebuilding any existing primitive
-- [ ] Do not use Tailwind arbitrary values — all colors, spacing, and radii from `tailwind.config.ts` tokens
-- [ ] Verify keyboard navigation and ARIA compliance — Radix UI primitives handle most contracts; validate with axe-core
-- [ ] Write RTL integration test covering the primary data flow (not visual appearance)
-- [ ] Write Playwright E2E test for the happy path
-- [ ] Verify offline behavior with cached data
-- [ ] If real-time events: confirm `useWebSocket` invalidates `queryKey: ['{domain}']`
-- [ ] If file upload: use `useFileUpload` hook — never POST file through API Gateway
-- [ ] Export only public API via `index.ts` — no internal cross-feature imports
-
----
-
-## 23. Anti-Patterns (Forbidden — Both Sides)
-
-### Backend
-
-| Anti-Pattern | Why It Is Forbidden |
-| --- | --- |
-| Reading `tenantId` from the `x-tenant-id` header in Lambda handler | Easily forged — always use authorizer context |
-| DynamoDB without `TENANT#` in the partition key | Tenant data silently mixes across tenants |
-| Lambda without DLQ on an async trigger | Failures disappear with no visibility |
-| Lambda using the AWS default timeout (3s) | Always set explicitly — use the reference table in Section 13 |
-| Secrets stored in Lambda environment variables | Visible in AWS console — always use Secrets Manager |
-| IAM with wildcard (`*`) on sensitive actions | Always scope to specific table/bucket ARNs |
-| Synchronous Lambda-to-Lambda chain (A→B→C) | Use Step Functions or EventBridge/SQS |
-| Hardcoded ARNs or API URLs | Always via environment variables or CDK outputs |
-| Manual change in the AWS console | Everything via CDK — no exceptions in staging/prod |
-| Publishing an event without a Schema Registry entry | Event contracts must be explicit and versioned |
-| Using `X-Idempotency-Key` as idempotency key in SQS consumers | SQS consumers never receive this header — use EventBridge `eventId` instead |
-| Running aggregation queries directly against a DynamoDB table | Aggregations go to Athena over S3 exports — never scan the primary table |
-| Writing to DynamoDB inside a DynamoDB Streams consumer of the same table | Creates an infinite trigger loop — write to a different table or publish to EventBridge |
-
-### Frontend — Engineering
-
-| Anti-Pattern | Why It Is Forbidden |
-| --- | --- |
-| `useEffect + useState + fetch` for server data | Always TanStack Query — no exceptions |
-| Reading `requestId` from the HTTP response header | Read from `error.response.data.error.requestId` (body) |
-| Posting a file directly through API Gateway | Use `useFileUpload` hook (pre-signed S3) |
-| PWA cache for sensitive data (financial, audit) | `NetworkOnly` required — never serve stale |
-| `X-Idempotency-Key` generated in the hook | Generate in the service so the key travels with retries |
-| Importing one feature inside another feature | Use router, Zustand, or events — never direct import |
-| Calling `useWebSocket` in multiple components | Once in `AppShell`, distributed via TanStack Query cache |
-| Hardcoding URLs in `.env.production` | Values always come from SSM via CodeBuild |
-| Amplify imports outside `shared/auth/` | Fully encapsulate inside the auth adapter |
-| Expired refresh token with no redirect to `/login` | Interceptor must catch, clear store, and redirect |
-| Routes without `ErrorBoundary` + `Suspense` | Every lazy route needs both fallbacks |
-
-### Frontend — UI Stack Violations
-
-| Anti-Pattern | Why It Is Forbidden |
-| --- | --- |
-| Using Tailwind arbitrary values (`w-[137px]`, `text-[#ff0000]`) | All values must come from `tailwind.config.ts` tokens — arbitrary values create drift |
-| Adding CSS Modules or plain `.css` files for component styling | Tailwind CSS is the single styling mechanism; parallel systems diverge |
-| Rebuilding a component already in the shadcn/ui catalog | Run `npx shadcn@latest add <component>` — never rebuild Button, Input, Dialog, etc. |
-| Importing icons from any library other than Lucide React | Single icon set maintains visual and bundle consistency |
-| Implementing dark mode outside the Tailwind `dark:` class strategy | The `dark` class on `<html>` is the single theming source of truth |
-| Overriding shadcn component styles with inline styles or `!important` | Extend via `cva` variants in the component file — never patch from outside |
-| Adding tokens to `theme.extend` without documenting them here | Token additions must be recorded in this document to remain discoverable |
-
----
-
-## 24. Internationalization (i18n)
+## 19. Internationalization (i18n)
 
 ### Supported Locales
 
@@ -1586,6 +1368,236 @@ The custom `LanguageDetector` must implement the detection algorithm defined abo
 
 ---
 
+## 20. Observability
+
+### Backend — Lambda Powertools (Required on Every Lambda)
+
+```typescript
+const logger  = new Logger({ serviceName: '{domain}' });
+const metrics = new Metrics({ namespace: '{Project}/{Domain}' });
+const tracer  = new Tracer({ serviceName: '{domain}' });
+
+export const handler = middy(mainHandler)
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer))
+  .use(logMetrics(metrics));
+```
+
+Every log entry must include: `level`, `message`, `requestId`, `traceId`, `service`,
+`tenantId`, `timestamp`. Never log: JWT tokens, passwords, card data, sensitive PII.
+
+### Alarms per Lambda (Required)
+
+| Metric | Threshold | Action |
+| --- | --- | --- |
+| `Errors` | > 1% over 5 min | SNS → on-call |
+| `Throttles` | > 0 | SNS → on-call |
+| `Duration` | > 80% of configured timeout | SNS → warning |
+| DLQ `NumberOfMessagesVisible` | > 0 | SNS → on-call |
+
+### Frontend — Error Boundary with Correlation
+
+```typescript
+// app/ErrorBoundary.tsx
+componentDidCatch(error: Error, info: ErrorInfo) {
+  ErrorTracker.captureException(error, {
+    extra: {
+      componentStack: info.componentStack,
+      requestId:      getLastApiRequestId(),
+      tenantId:       useAuthStore.getState().tenantId,
+    },
+  });
+}
+```
+
+---
+
+## 21. Infrastructure as Code — CDK Outputs → Frontend
+
+No URL is hardcoded anywhere in the repository.
+
+### CDK — Export to Parameter Store
+
+```typescript
+// infra/stacks/api-gateway.stack.ts
+const params = [
+  { name: 'api-url',           value: api.url },
+  { name: 'ws-url',            value: wsApi.apiEndpoint },
+  { name: 'cognito-pool-id',   value: userPool.userPoolId },
+  { name: 'cognito-client-id', value: userPoolClient.userPoolClientId },
+];
+
+for (const { name, value } of params) {
+  new StringParameter(this, `Param-${name}`, {
+    parameterName: `/{project}/${props.env}/${name}`,
+    stringValue:   value,
+  });
+}
+```
+
+### CodeBuild — Consume in the Frontend Build
+
+```yaml
+# buildspec-frontend.yml
+phases:
+  pre_build:
+    commands:
+      - ENV=${ENVIRONMENT:-staging}
+      - SSM="aws ssm get-parameter --query Parameter.Value --output text"
+      - API_URL=$($SSM   --name /{project}/$ENV/api-url)
+      - WS_URL=$($SSM    --name /{project}/$ENV/ws-url)
+      - POOL_ID=$($SSM   --name /{project}/$ENV/cognito-pool-id)
+      - CLIENT_ID=$($SSM --name /{project}/$ENV/cognito-client-id)
+  build:
+    commands:
+      - >
+        VITE_API_BASE_URL=$API_URL VITE_WS_ENDPOINT=$WS_URL
+        VITE_COGNITO_USER_POOL_ID=$POOL_ID VITE_COGNITO_CLIENT_ID=$CLIENT_ID
+        npm run build
+  post_build:
+    commands:
+      - aws s3 sync dist/ s3://{project}-frontend-$ENV/ --delete
+      - aws cloudfront create-invalidation --distribution-id $CF_DIST_ID --paths "/*"
+```
+
+---
+
+## 22. Unified CI/CD Pipeline
+
+The frontend never goes to production before the corresponding backend is healthy.
+
+```
+SOURCE
+  Push to `develop` or `main`
+        │
+        ▼
+PARALLEL BUILD
+  ├── Backend: lint + tests + CDK synth
+  └── Frontend: lint + tests + Vite build
+        │
+        ▼
+STAGING BACKEND
+  CDK deploy → smoke tests
+        │  (proceeds only if ✅)
+        ▼
+STAGING FRONTEND
+  CodeBuild reads staging SSM → build → S3 + CloudFront invalidation
+        │
+        ▼
+E2E PLAYWRIGHT
+  Frontend + Backend together on staging
+  Covers: login, CRUD, upload, real-time, push, logout
+        │  (proceeds only if ✅)
+        ▼
+MANUAL APPROVAL
+        │
+        ▼
+PROD BACKEND
+  CDK deploy → health check 5 min
+        │  (proceeds only if ✅)
+        ▼
+PROD FRONTEND
+  CodeBuild reads prod SSM → build → S3 + CloudFront invalidation
+```
+
+---
+
+## 23. New Feature Checklist (Frontend + Backend)
+
+### Backend
+- [ ] Add row to mapping table (Section 5) with domain, path, and data store
+- [ ] Create CDK Stack with least-privilege IAM per Lambda
+- [ ] Implement hexagonal architecture (domain → application → infrastructure)
+- [ ] Define HTTP API routes with Cognito Authorizer + tenant Lambda Authorizer
+- [ ] Extract `tenantId` from authorizer context — never from the header directly
+- [ ] Use `TENANT#{tenantId}` in DynamoDB partition key on every access
+- [ ] Return responses following the API contract (Section 6)
+- [ ] Include `requestId` (`context.awsRequestId`) in error envelopes
+- [ ] Publish domain event to EventBridge with Schema Registry entry
+- [ ] Create SQS + DLQ for all async consumers
+- [ ] Set Lambda timeout explicitly — use the reference table in Section 10
+- [ ] Enable X-Ray active tracing on Lambda and API Gateway stage
+- [ ] Configure structured logs with Lambda Powertools Logger (via middy)
+- [ ] Emit business metrics with Lambda Powertools Metrics (EMF, via middy)
+- [ ] Create CloudWatch Alarms for errors, throttles, and latency
+- [ ] Export endpoint URLs to SSM if the frontend needs them
+- [ ] Apply Lambda Powertools Idempotency with `X-Idempotency-Key` for POST/PUT/PATCH on API Gateway handlers
+- [ ] For SQS consumer Lambdas: use the EventBridge `eventId` as the idempotency key, not `X-Idempotency-Key`
+- [ ] If cross-entity atomicity is required: use `TransactWriteItems` (up to 100 items)
+- [ ] If domain needs change reactions (audit, projections): enable DynamoDB Streams on the table
+- [ ] If domain needs aggregations or reports: design the S3 export path and Athena query
+
+### Frontend
+- [ ] Add row to mapping table (Section 5)
+- [ ] Create feature slice under `src/features/{feature}/` with full structure
+- [ ] Define Zod schema + inferred TypeScript types
+- [ ] Implement service with path `/v1/{domain}/...` (no `/api/` prefix)
+- [ ] Implement query key factory (no hardcoded strings)
+- [ ] Implement TanStack Query hooks (query + mutation) — never `useEffect + fetch`
+- [ ] Generate `X-Idempotency-Key` in the service — not in the hook
+- [ ] Register lazy-loaded routes with `React.lazy` + `Suspense` + `ErrorBoundary`
+- [ ] Build page and feature components using **shadcn/ui** — run `npx shadcn@latest add <component>` before rebuilding any existing primitive
+- [ ] Do not use Tailwind arbitrary values — all colors, spacing, and radii from `tailwind.config.ts` tokens
+- [ ] Verify keyboard navigation and ARIA compliance — Radix UI primitives handle most contracts; validate with axe-core
+- [ ] Write RTL integration test covering the primary data flow (not visual appearance)
+- [ ] Write Playwright E2E test for the happy path
+- [ ] Verify offline behavior with cached data
+- [ ] If real-time events: confirm `useWebSocket` invalidates `queryKey: ['{domain}']`
+- [ ] If file upload: use `useFileUpload` hook — never POST file through API Gateway
+- [ ] Export only public API via `index.ts` — no internal cross-feature imports
+
+---
+
+## 24. Anti-Patterns (Forbidden — Both Sides)
+
+### Backend
+
+| Anti-Pattern | Why It Is Forbidden |
+| --- | --- |
+| Reading `tenantId` from the `x-tenant-id` header in Lambda handler | Easily forged — always use authorizer context |
+| DynamoDB without `TENANT#` in the partition key | Tenant data silently mixes across tenants |
+| Lambda without DLQ on an async trigger | Failures disappear with no visibility |
+| Lambda using the AWS default timeout (3s) | Always set explicitly — use the reference table in Section 10 |
+| Secrets stored in Lambda environment variables | Visible in AWS console — always use Secrets Manager |
+| IAM with wildcard (`*`) on sensitive actions | Always scope to specific table/bucket ARNs |
+| Synchronous Lambda-to-Lambda chain (A→B→C) | Use Step Functions or EventBridge/SQS |
+| Hardcoded ARNs or API URLs | Always via environment variables or CDK outputs |
+| Manual change in the AWS console | Everything via CDK — no exceptions in staging/prod |
+| Publishing an event without a Schema Registry entry | Event contracts must be explicit and versioned |
+| Using `X-Idempotency-Key` as idempotency key in SQS consumers | SQS consumers never receive this header — use EventBridge `eventId` instead |
+| Running aggregation queries directly against a DynamoDB table | Aggregations go to Athena over S3 exports — never scan the primary table |
+| Writing to DynamoDB inside a DynamoDB Streams consumer of the same table | Creates an infinite trigger loop — write to a different table or publish to EventBridge |
+
+### Frontend — Engineering
+
+| Anti-Pattern | Why It Is Forbidden |
+| --- | --- |
+| `useEffect + useState + fetch` for server data | Always TanStack Query — no exceptions |
+| Reading `requestId` from the HTTP response header | Read from `error.response.data.error.requestId` (body) |
+| Posting a file directly through API Gateway | Use `useFileUpload` hook (pre-signed S3) |
+| PWA cache for sensitive data (financial, audit) | `NetworkOnly` required — never serve stale |
+| `X-Idempotency-Key` generated in the hook | Generate in the service so the key travels with retries |
+| Importing one feature inside another feature | Use router, Zustand, or events — never direct import |
+| Calling `useWebSocket` in multiple components | Once in `AppShell`, distributed via TanStack Query cache |
+| Hardcoding URLs in `.env.production` | Values always come from SSM via CodeBuild |
+| Amplify imports outside `shared/auth/` | Fully encapsulate inside the auth adapter |
+| Expired refresh token with no redirect to `/login` | Interceptor must catch, clear store, and redirect |
+| Routes without `ErrorBoundary` + `Suspense` | Every lazy route needs both fallbacks |
+
+### Frontend — UI Stack Violations
+
+| Anti-Pattern | Why It Is Forbidden |
+| --- | --- |
+| Using Tailwind arbitrary values (`w-[137px]`, `text-[#ff0000]`) | All values must come from `tailwind.config.ts` tokens — arbitrary values create drift |
+| Adding CSS Modules or plain `.css` files for component styling | Tailwind CSS is the single styling mechanism; parallel systems diverge |
+| Rebuilding a component already in the shadcn/ui catalog | Run `npx shadcn@latest add <component>` — never rebuild Button, Input, Dialog, etc. |
+| Importing icons from any library other than Lucide React | Single icon set maintains visual and bundle consistency |
+| Implementing dark mode outside the Tailwind `dark:` class strategy | The `dark` class on `<html>` is the single theming source of truth |
+| Overriding shadcn component styles with inline styles or `!important` | Extend via `cva` variants in the component file — never patch from outside |
+| Adding tokens to `theme.extend` without documenting them here | Token additions must be recorded in this document to remain discoverable |
+
+---
+
 ## 25. Versioning Strategy
 
 This project uses a **three-layer versioning model**. Each layer has a distinct purpose and a distinct owner. Do not conflate them.
@@ -1596,8 +1608,8 @@ A single SemVer version represents a coordinated release of all components in th
 
 | Where | Role |
 | --- | --- |
-| `docs/project-definition.md` — `Base version` field | **Single source of truth** — change this first |
-| `zenvillage-web/package.json` — `version` field | Propagated copy — must stay in sync |
+| `CLAUDE.md` — `Base version` field (under Project Identity) | **Single source of truth** — change this first |
+| `{project}-web/package.json` — `version` field | Propagated copy — must stay in sync |
 | `{domain}-lambda/package.json` — `version` field (when created) | Propagated copy — must stay in sync |
 | `CHANGELOG.md` | Human-readable release history |
 | Git tag `vX.Y.Z` | Immutable release artifact — CI/CD gates on this |
@@ -1633,3 +1645,341 @@ Controls which code is running in AWS at any given moment, without SemVer overhe
 ### Version Bump Flow
 
 The step-by-step release procedure is defined in `CLAUDE.md` under **Versioning Policy**. The git tag `vX.Y.Z` is the canonical release marker; CI/CD pipelines key off it.
+
+---
+
+## 26. Cost Reference
+
+> **Prices sourced from AWS public pricing pages — May 2026, us-east-1 region.**
+> All values are in USD. Prices may change; verify at [aws.amazon.com/pricing](https://aws.amazon.com/pricing) before budget planning.
+> Free tier limits marked **Always Free** are permanent. Those marked **12-month Free Tier** apply only to new AWS accounts in the first year.
+
+### 26.1 Cost Model Overview
+
+This architecture is entirely pay-per-use. There are no reserved instances, no hourly servers, and no minimum fees. The cost model has three zones:
+
+| Zone | Description |
+| --- | --- |
+| **Zero cost** | Usage stays within the always-free tier of every service |
+| **Free tier buffer** | Usage grows but stays within 12-month new-account free tier |
+| **Billed** | Any service exceeds its free tier threshold for the billing month |
+
+**For a new project at zero users, the monthly AWS bill is $0.** The free tiers across Lambda, DynamoDB, Cognito, S3, CloudFront, SQS, CloudWatch, and X-Ray are generous enough to sustain a project from launch to meaningful user volume before any invoice appears.
+
+---
+
+### 26.2 AWS Lambda
+
+> Pricing: [aws.amazon.com/lambda/pricing](https://aws.amazon.com/lambda/pricing/)
+
+**Billing model:** charged on two dimensions — number of invocations and compute duration (memory × time).
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Requests | 1,000,000 / month | $0.20 per million | Always Free |
+| Duration | 400,000 GB-seconds / month | $0.0000166667 per GB-second | Always Free |
+
+**Duration calculation:** `(memory in MB / 1024) × execution time in seconds`. A 512 MB function running for 200 ms = 0.1 GB-second. Duration is rounded up to the nearest 1 ms.
+
+**When billing starts:** after the 1,000,000th invocation or the 400,000th GB-second in the calendar month — whichever is exceeded first.
+
+**Practical scale:** A typical CRUD API handler (512 MB, ~100 ms average) costs approximately **$0 up to ~8 million requests/month** under the free tier. After that, 10 million requests costs roughly **$1.80/month** in request fees plus duration fees.
+
+**Tip:** Run on ARM (Graviton2) — same price per GB-second, up to 34 % better performance per dollar due to efficiency gains.
+
+---
+
+### 26.3 Amazon DynamoDB
+
+> Pricing: [aws.amazon.com/dynamodb/pricing/on-demand](https://aws.amazon.com/dynamodb/pricing/on-demand/)
+
+**Billing model (on-demand mode):** charged per read and write request unit consumed, plus storage.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Write Request Units (WRU) | 25 WCU/month (≈ 2.16 M writes/day) | $0.625 per million WRUs | Always Free |
+| Read Request Units (RRU) | 25 RCU/month | $0.125 per million RRUs | Always Free |
+| Storage | 25 GB / month | $0.25 per GB (Standard) | Always Free |
+| DynamoDB Streams reads | 2,500,000 reads / month | $0.02 per 100,000 reads | Always Free |
+
+**Request unit consumption:**
+- Standard write: 1 WRU per 1 KB (or fraction thereof)
+- Transactional write: 2 WRUs per 1 KB
+- Eventually consistent read: 0.5 RRU per 4 KB
+- Strongly consistent read: 1 RRU per 4 KB
+- Transactional read: 2 RRUs per 4 KB
+
+**When billing starts:** when monthly writes exceed the free WCU budget or reads exceed the free RCU budget. The free tier is permanently available — it does not expire.
+
+**Tip:** The free tier is per AWS account, not per table. Spreading load across multiple tables does not increase the free allowance.
+
+---
+
+### 26.4 Amazon API Gateway
+
+> Pricing: [aws.amazon.com/api-gateway/pricing](https://aws.amazon.com/api-gateway/pricing/)
+
+This architecture uses two API Gateway types: **HTTP API** (REST endpoints) and **WebSocket API** (real-time channel).
+
+#### HTTP API
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| API calls | 1,000,000 / month | $1.00 per million (first 300M), then $0.90/M | 12-month Free Tier |
+| Data transfer out | — | $0.09 per GB | — |
+
+> HTTP API is **3.5× cheaper** than REST API ($1.00 vs $3.50 per million calls). Always use HTTP API for new projects.
+
+#### WebSocket API
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Messages | 1,000,000 / month | $1.00 per million | 12-month Free Tier |
+| Connection minutes | 750,000 / month | $0.25 per million minutes | 12-month Free Tier |
+
+Messages are metered in 32 KB chunks (a 96 KB message = 3 messages).
+
+**When billing starts:** after the 12-month free tier expires for new accounts, or immediately for existing accounts. At $1.00/M, 10 million HTTP API calls cost **$10/month**.
+
+---
+
+### 26.5 Amazon Cognito
+
+> Pricing: [aws.amazon.com/cognito/pricing](https://aws.amazon.com/cognito/pricing/)
+
+**Billing model:** charged per Monthly Active User (MAU). A MAU is a user who performs any identity operation (sign-up, sign-in, sign-out, token refresh, password change, attribute update) at least once in the calendar month. Subsequent sessions in the same month are not re-billed.
+
+| Tier | Free MAUs / month | Price per MAU (above free tier) | Tier Type |
+| --- | --- | --- | --- |
+| Lite / Essentials (direct sign-in) | 10,000 | $0.0055 (first 90K above free) → $0.0046 | Always Free |
+| SAML 2.0 / OIDC federation | 50 | $0.015 | Always Free |
+| Cognito Identity Pools | Unlimited | $0.00 | Always Free |
+
+**When billing starts:** when active users in the month exceed 10,000 (direct sign-in). The 10,001st MAU costs $0.0055.
+
+**Practical scale:**
+- 0–10,000 MAU → **$0/month**
+- 10,000–100,000 MAU → ~**$0.50–$4.95/month**
+- 100,000–1,000,000 MAU → ~**$4.95–$45/month**
+
+---
+
+### 26.6 Amazon S3
+
+> Pricing: [aws.amazon.com/s3/pricing](https://aws.amazon.com/s3/pricing/)
+
+**Billing model:** charged on storage volume, API requests, and data transfer out.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Storage (S3 Standard) | 5 GB / month | $0.023 per GB | 12-month Free Tier |
+| PUT / COPY / POST requests | 2,000 / month | $0.005 per 1,000 | 12-month Free Tier |
+| GET / SELECT requests | 20,000 / month | $0.0004 per 1,000 | 12-month Free Tier |
+| DELETE requests | — | Free | — |
+| Data transfer out to internet | 100 GB / month (aggregated) | $0.09 per GB | Always Free |
+| Data transfer to CloudFront | — | Free | — |
+
+**When billing starts:** when storage exceeds 5 GB or request counts exceed free limits (for new accounts in year 1). Data transfer to CloudFront is always free — all user-facing downloads should go through CloudFront, not direct S3 URLs.
+
+**Tip:** Never expose S3 bucket URLs directly to users. Serve assets via CloudFront — this eliminates data transfer charges from S3 and adds CDN caching.
+
+---
+
+### 26.7 Amazon CloudFront
+
+> Pricing: [aws.amazon.com/cloudfront/pricing](https://aws.amazon.com/cloudfront/pricing/)
+
+**Billing model:** charged on data transferred out to the internet and number of HTTPS requests.
+
+| Dimension | Free Tier | Price After Free Tier (US/EU) | Tier Type |
+| --- | --- | --- | --- |
+| Data transfer out | 1 TB / month | $0.085/GB (next 9 TB), $0.080/GB (next 40 TB) | Always Free |
+| HTTPS requests | 10,000,000 / month | $0.0100 per 10,000 requests | Always Free |
+| CloudFront Functions | 2,000,000 invocations / month | $0.10 per million | Always Free |
+
+**When billing starts:** after 1 TB of monthly egress or 10 million requests. For a typical SaaS app serving a React PWA (~2 MB gzipped) to 10,000 users/month, data transfer is approximately 20 GB — well within the free tier.
+
+**Tip:** CloudFront has one of the most generous always-free tiers on AWS. The 1 TB/month free egress covers a large majority of early-stage SaaS products at no cost.
+
+---
+
+### 26.8 Amazon SQS
+
+> Pricing: [aws.amazon.com/sqs/pricing](https://aws.amazon.com/sqs/pricing/)
+
+**Billing model:** charged per API request. Each `Send`, `Receive`, `Delete`, or `ChangeMessageVisibility` call counts as one request. Payloads larger than 64 KB are billed in 64 KB chunks.
+
+| Queue Type | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Standard Queue | 1,000,000 requests / month | $0.40 per million requests | Always Free |
+| FIFO Queue | 1,000,000 requests / month | $0.50 per million requests | Always Free |
+
+**When billing starts:** after the 1,000,000th request in the calendar month. For the standard async pattern in this architecture (notifier, email, push, audit queues), each user action generates roughly 3–5 SQS requests. At 10,000 active users/day, monthly SQS requests stay within the free tier.
+
+---
+
+### 26.9 Amazon EventBridge
+
+> Pricing: [aws.amazon.com/eventbridge/pricing](https://aws.amazon.com/eventbridge/pricing/)
+
+**Billing model:** charged per custom event published to a custom event bus. Events are metered in 64 KB chunks.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Custom events published | None | $1.00 per million events | — |
+| Delivery to same-account services | — | Free | — |
+| AWS service events (management) | — | Free | — |
+
+**When billing starts:** immediately upon publishing the first custom event. There is no free tier for custom events — every event is billed.
+
+**Practical impact:** At 1 event per user action and 100,000 actions/month, the cost is **$0.10/month**. EventBridge is one of the lowest-cost services in this stack.
+
+**Tip:** Keep event payloads under 64 KB to avoid multi-chunk billing. The required schema defined in Section 11 (eventId, source, detailType, entityId, tenantId, userId, timestamp, metadata) fits comfortably within 1 KB.
+
+---
+
+### 26.10 Amazon SNS
+
+> Pricing: [aws.amazon.com/sns/pricing](https://aws.amazon.com/sns/pricing/)
+
+**Billing model:** charged per API request and per notification delivery. Mobile push notifications (iOS APNs, Android FCM) are free to deliver.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| API requests | 1,000,000 / month | $0.50 per million requests | Always Free |
+| Mobile push delivery (APNs, FCM) | — | Free | — |
+| HTTP/HTTPS delivery | — | $0.60 per million deliveries | — |
+| Email delivery | — | $2.00 per 100,000 deliveries | — |
+
+**When billing starts:** after 1 million API requests per month. In the fan-out pattern used here (EventBridge → SQS → Lambda), SNS is used primarily for alarm notifications — volume is negligible.
+
+---
+
+### 26.11 Amazon CloudWatch
+
+> Pricing: [aws.amazon.com/cloudwatch/pricing](https://aws.amazon.com/cloudwatch/pricing/)
+
+**Billing model:** charged per log GB ingested, per custom metric, per alarm, and per dashboard.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Log ingestion | 5 GB / month | $0.50 per GB | Always Free |
+| Log storage (archive) | 5 GB / month | $0.03 per GB / month | Always Free |
+| Custom metrics | 10 metrics / month | $0.30 per metric (first 10K) → $0.10 → $0.05 | Always Free |
+| API requests | 1,000,000 / month | $0.01 per 1,000 requests | Always Free |
+| Alarms (standard resolution) | 10 alarms / month | $0.10 per metric per alarm | Always Free |
+| Dashboards | 3 dashboards / month | $3.00 per additional dashboard | Always Free |
+
+**When billing starts:** when any single dimension exceeds its free quota in the month.
+
+**Practical impact:** Structured logs from Lambda Powertools (Section 20) average ~1–2 KB per invocation. At 1 million Lambda invocations/month, log ingestion is ~1–2 GB — within the 5 GB free tier. The primary cost driver at scale is **custom metrics**, not logs.
+
+**Tip:** Lambda Powertools EMF metrics (Section 20) create one CloudWatch metric per metric name per Lambda function. With 4 required alarms per Lambda (errors, throttles, duration, DLQ) × N Lambda functions, plan for `4N` metrics. At $0.30/metric, keep Lambda function count lean during early phases.
+
+---
+
+### 26.12 AWS X-Ray
+
+> Pricing: [aws.amazon.com/xray/pricing](https://aws.amazon.com/xray/pricing/)
+
+**Billing model:** charged per trace recorded and per trace retrieved/scanned.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Traces recorded | 100,000 / month | $5.00 per million traces | Always Free |
+| Traces retrieved / scanned | 1,000,000 / month | $0.50 per million traces | Always Free |
+
+**When billing starts:** after 100,000 traces recorded or 1,000,000 traces retrieved in the month.
+
+**Tip:** X-Ray sampling rules control what fraction of requests are traced. The default sampling rate is 1 request/second + 5 % of additional requests. For most SaaS applications, this keeps recorded traces well within the free tier. Do not set sampling to 100 % in production without budget analysis.
+
+---
+
+### 26.13 AWS Secrets Manager
+
+> Pricing: [aws.amazon.com/secrets-manager/pricing](https://aws.amazon.com/secrets-manager/pricing/)
+
+**Billing model:** charged per secret stored per month and per API call.
+
+| Dimension | Free Tier | Price | Notes |
+| --- | --- | --- | --- |
+| Secrets stored | None (permanent) | $0.40 per secret / month | Billing starts on day 1 |
+| API calls | None (permanent) | $0.05 per 10,000 API calls | — |
+
+**When billing starts:** immediately upon creating the first secret. At $0.40/secret/month, a project with 10 secrets costs **$4.00/month**.
+
+**Architecture note:** Prioritize Secrets Manager for database credentials, third-party API keys, and signing keys. Introduce it before launch to avoid managing secrets manually at the application layer.
+
+**Tip:** Lambda functions cache Secrets Manager responses in memory across warm invocations. A single `getSecretValue` call per Lambda warm-start amortizes the API cost to near zero.
+
+---
+
+### 26.14 AWS SSM Parameter Store
+
+> Pricing: [aws.amazon.com/systems-manager/pricing](https://aws.amazon.com/systems-manager/pricing/)
+
+**Billing model:** standard parameters and standard-throughput API calls are permanently free.
+
+| Dimension | Free Tier | Price After Free Tier | Tier Type |
+| --- | --- | --- | --- |
+| Standard parameters (≤ 4 KB) | Unlimited | Free | Always Free |
+| Standard-throughput API calls | Unlimited | Free | Always Free |
+| Higher-throughput API calls | — | $0.05 per 10,000 interactions | — |
+| Advanced parameters (> 4 KB) | — | $0.05 per parameter / month | — |
+
+**When billing starts:** never for standard parameters at standard throughput. Higher throughput (> 40 transactions/second per account-region) triggers charges.
+
+**Usage in this architecture:** CDK exports infrastructure URLs (API Gateway, Cognito, WebSocket) to Parameter Store at deploy time. CodeBuild reads them at build time. Both are infrequent, low-throughput operations — **cost is $0**.
+
+---
+
+### 26.15 Amazon Athena
+
+> Pricing: [aws.amazon.com/athena/pricing](https://aws.amazon.com/athena/pricing/)
+
+**Billing model:** charged per TB of data scanned per SQL query. No charge for failed queries.
+
+| Dimension | Free Tier | Price | Notes |
+| --- | --- | --- | --- |
+| SQL queries | None | $5.00 per TB scanned | Charged per query |
+| Minimum scan | None (SQL) | No minimum | — |
+
+**When billing starts:** on the first query. There is no free tier.
+
+**Cost optimization — critical:**
+
+| Technique | Effect on Cost | Implementation |
+| --- | --- | --- |
+| Partition by date/tenant | Up to 99 % reduction | Export data to `s3://.../year=YYYY/month=MM/` |
+| Compress with GZIP / Snappy | ~3× reduction | Enable compression in the DynamoDB Streams exporter |
+| Use columnar format (Parquet) | ~4× reduction | Convert JSON exports to Parquet via Glue or Lambda |
+| Combined (partition + compress + Parquet) | Up to ~12× reduction | Standard for any production analytics path |
+
+**Practical impact:** Without optimization, scanning 1 TB/query at $5.00/TB makes Athena expensive. With partitioning and Parquet, the same analytical query may scan only 10–50 GB — reducing cost to $0.05–$0.25 per query. Always implement partitioning before enabling Athena in production.
+
+---
+
+### 26.16 Cost Summary Table
+
+The table below shows the **monthly free tier ceiling** — the approximate usage level at which the first AWS dollar is charged for a greenfield project.
+
+| Service | Billing Trigger | Free Until | Notes |
+| --- | --- | --- | --- |
+| Lambda | > 1M invocations OR > 400K GB-s / month | ~8M req/month at 512 MB / 100 ms avg | Always Free |
+| DynamoDB | > free WCU/RCU budget or > 25 GB storage | Millions of reads/writes per day | Always Free |
+| API Gateway HTTP | > 1M calls / month | 1M calls/month | 12-month only |
+| API Gateway WebSocket | > 1M messages / month | 1M messages/month | 12-month only |
+| Cognito | > 10,000 MAU / month | 10K monthly active users | Always Free |
+| S3 | > 5 GB storage or PUT/GET limits | ~2,500 file uploads / month | 12-month only |
+| CloudFront | > 1 TB egress or > 10M requests / month | ~500K page loads / month | Always Free |
+| SQS | > 1M requests / month | ~200K user actions / day | Always Free |
+| EventBridge | First custom event published | $0 — no free tier | Billed from day 1 |
+| SNS | > 1M API requests / month | High volume of alarm notifications | Always Free |
+| CloudWatch Logs | > 5 GB ingested / month | ~1M Lambda invocations / month | Always Free |
+| CloudWatch Metrics | > 10 custom metrics / month | 2–3 Lambda functions fully alarmed | Always Free |
+| X-Ray | > 100K traces recorded / month | Most apps at default sampling rate | Always Free |
+| Secrets Manager | First secret created | $0 — no free tier | $0.40/secret/month |
+| SSM Parameter Store | Never (standard) | Unlimited | Always Free |
+| Athena | First query | $0 — no free tier | $5.00/TB scanned |
+
+> **Key insight:** EventBridge, Secrets Manager, and Athena have **no free tier** — they incur costs from the first use. Budget for these explicitly. All other services in this architecture have meaningful free tiers that cover early-stage product usage.

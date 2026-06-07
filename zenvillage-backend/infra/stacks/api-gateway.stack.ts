@@ -52,11 +52,15 @@ export class ApiGatewayStack extends Stack {
 
     // SIMPLE response type matches the handler's { isAuthorized, context } return shape.
     // IAM would require a full policy document — not used here.
+    // Only Authorization is a required identity source. X-Tenant-Id is read
+    // inside the authorizer when present, but is intentionally NOT required:
+    // platform admins are tenantless and must still be authorized (a missing
+    // required identity source makes API Gateway return 401 without ever
+    // invoking the authorizer Lambda).
     this.defaultAuthorizer = new HttpLambdaAuthorizer('TenantAuthorizer', authorizerFn, {
       responseTypes: [HttpLambdaResponseType.SIMPLE],
       identitySource: [
         '$request.header.Authorization',
-        '$request.header.X-Tenant-Id',
       ],
       resultsCacheTtl: Duration.minutes(5),
     })
@@ -119,6 +123,16 @@ export class ApiGatewayStack extends Stack {
       methods: [method],
       integration: new HttpLambdaIntegration(`Integration-${method}-${routePath.replace(/\//g, '-').replace(/[{}]/g, '')}`, fn),
       authorizer: this.defaultAuthorizer,
+    })
+  }
+
+  /** Route with no authorizer — for public endpoints (e.g. user registration). */
+  addPublicRoute(method: HttpMethod, routePath: string, fn: IFunction): void {
+    this.httpApi.addRoutes({
+      path: routePath,
+      methods: [method],
+      integration: new HttpLambdaIntegration(`PublicIntegration-${method}-${routePath.replace(/\//g, '-').replace(/[{}]/g, '')}`, fn),
+      authorizer: new HttpNoneAuthorizer(),
     })
   }
 

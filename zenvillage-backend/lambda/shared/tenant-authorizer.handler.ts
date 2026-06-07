@@ -32,10 +32,35 @@ export const handler = async (
   const token = authHeader.slice(7)
   const claims = extractClaims(token)
 
-  const tokenTenantId = claims['custom:tenantId']
+  const tokenTenantId = claims['custom:tenantId'] ?? ''
   const userId = claims['custom:userId'] ?? claims['sub']
   const roles = claims['custom:roles'] ?? '[]'
 
+  let parsedRoles: string[] = []
+  try {
+    parsedRoles = JSON.parse(roles)
+  } catch {
+    parsedRoles = []
+  }
+  const isPlatformAdmin = parsedRoles.includes('platform_admin')
+
+  // Platform admins operate across tenants (e.g. approving subscriptions) and
+  // have no tenant context, so they are authorized without an X-Tenant-Id.
+  // The cross-tenant scope is still enforced per-route by the handler's own
+  // platform_admin role check.
+  if (isPlatformAdmin) {
+    logger.info('Platform admin authorized', { userId })
+    return {
+      isAuthorized: true,
+      context: {
+        tenantId: headerTenantId || tokenTenantId,
+        userId,
+        roles,
+      },
+    }
+  }
+
+  // Tenant-scoped users must present an X-Tenant-Id matching their token.
   if (!headerTenantId) {
     logger.warn('X-Tenant-Id header missing')
     throw new Error('Unauthorized')
