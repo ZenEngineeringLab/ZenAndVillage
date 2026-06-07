@@ -9,6 +9,9 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **Agent behavior: `main` is now PR-only** — added a Branch Protection Policy to `CLAUDE.md` forbidding direct commits/pushes to `main` and any bypass of branch protection (`--admin`, "Bypass rules and merge", `--no-verify`); every change reaches `main` through a reviewed PR. The Versioning Policy version-bump flow was updated to land the bump via a release-branch PR, tag the merged commit, and publish a GitHub Release from that tag.
+
 ## [0.3.0] - 2026-06-07
 
 ### Fixed
