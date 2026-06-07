@@ -300,7 +300,7 @@ async function seedTenants(): Promise<void> {
 async function seedPropertyManagers(): Promise<void> {
   const propertyManagers = [
     {
-      PK: `TENANT#${t1Id}#PROPERTY_MANAGER#${pm1Id}`,
+      PK: `TENANT#${t1Id}#PROPMGR#${pm1Id}`,
       SK: 'PROFILE',
       id: pm1Id,
       tenantId: t1Id,
@@ -325,7 +325,7 @@ async function seedPropertyManagers(): Promise<void> {
       updatedAt: now(),
     },
     {
-      PK: `TENANT#${t3Id}#PROPERTY_MANAGER#${pm2Id}`,
+      PK: `TENANT#${t3Id}#PROPMGR#${pm2Id}`,
       SK: 'PROFILE',
       id: pm2Id,
       tenantId: t3Id,
@@ -361,7 +361,7 @@ async function seedPropertyManagers(): Promise<void> {
 async function seedCondominiums(): Promise<void> {
   const condominiums = [
     {
-      PK: `TENANT#${t1Id}#CONDOMINIUM#${c1Id}`,
+      PK: `TENANT#${t1Id}#CONDO#${c1Id}`,
       SK: 'PROFILE',
       id: c1Id,
       tenantId: t1Id,
@@ -391,7 +391,7 @@ async function seedCondominiums(): Promise<void> {
       updatedAt: now(),
     },
     {
-      PK: `TENANT#${t1Id}#CONDOMINIUM#${c2Id}`,
+      PK: `TENANT#${t1Id}#CONDO#${c2Id}`,
       SK: 'PROFILE',
       id: c2Id,
       tenantId: t1Id,
@@ -421,7 +421,7 @@ async function seedCondominiums(): Promise<void> {
       updatedAt: now(),
     },
     {
-      PK: `TENANT#${t1Id}#CONDOMINIUM#${c3Id}`,
+      PK: `TENANT#${t1Id}#CONDO#${c3Id}`,
       SK: 'PROFILE',
       id: c3Id,
       tenantId: t1Id,
