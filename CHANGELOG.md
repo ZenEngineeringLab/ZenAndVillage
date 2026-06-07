@@ -9,6 +9,8 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-07
+
 ### Fixed
 - **Seeded condominiums and property managers never appeared in their lists** — the seed wrote partition keys (`TENANT#{id}#CONDOMINIUM#…`, `TENANT#{id}#PROPERTY_MANAGER#…`) that did not match the prefixes the repositories query with (`#CONDO#`, `#PROPMGR#`), so the `begins_with` list scans returned nothing while residents/employees (whose prefixes matched) worked. Aligned the seed keys to the repository conventions
 - **Tenants screen crash (`Cannot read properties of undefined (reading 'activeCondos')`)** — the seed wrote tenants in the legacy schema (`condominiumsLimit`, `plan`, `cnpj`, `joinDate`, `type: property_manager`), so the canonical Tenants UI crashed reading `usageLimits`. Realigned the seeded tenants to the canonical entity (`usageLimits`, `planId`, `taxId`, `subscriptionStatus`, `createdAt`, `type: management_company|independent_condo`) and hardened `TenantsPage`/`TenantDetailPanel` to tolerate missing `usageLimits` so malformed rows degrade gracefully instead of taking down the whole route
@@ -127,6 +129,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Domain knowledge base (en-US and pt-BR)
 - Agent behavior rules: incremental commit policy, PR policy with AI Productivity Analysis, versioning strategy
 
-[Unreleased]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ZenEngineeringLab/ZenAndVillage/releases/tag/v0.1.0
